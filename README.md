@@ -1,58 +1,40 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/i9Zy4NKR)
-# Econ Project Templates: Modern, Reproducible Research in Economics
+# Replication of Comunale & Nguyen (2025): MacroEconomic Uncertainty for the Euro Area
 
-![MIT license](https://img.shields.io/github/license/OpenSourceEconomics/econ-project-templates)
-[![Documentation Status](https://readthedocs.org/projects/econ-project-templates/badge/?version=stable)](https://econ-project-templates.readthedocs.io/en/stable/)
-[![image](https://github.com/OpenSourceEconomics/econ-project-templates/actions/workflows/main.yml/badge.svg)](https://github.com/OpenSourceEconomics/econ-project-templates/actions/workflows/main.yml)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OpenSourceEconomics/econ-project-templates/main.svg)](https://results.pre-commit.ci/latest/github/OpenSourceEconomics/econ-project-templates/main)
+## Project Overview
 
-This project provides a "batteries-included" template for economists to produce fully
-reproducible research. It replaces fragile, manual workflows with a robust, automated
-pipeline.
+This project replicates the MacroEconomic Uncertainty (MEU) measure for the euro area developed by Comunale and Nguyen (2025, Journal of International Money and Finance). The MEU follows the methodology of Jurado, Ludvigson, and Ng (AER 2015), measuring uncertainty as the conditional volatility of unforecastable components of macroeconomic time series.
 
-## Why Reproducibility?
+## Data
 
-Reproducibility is about **your peace of mind**. It means knowing that if you find a
-mistake in your raw data three days before submission, you can re-run your entire
-project—tables, figures, and paper—with a single command. It means your future self (and
-your co-authors) can understand and run your code on a new machine without spending a
-week fighting dependency hell.
+The replication requires a large monthly dataset of approximately **1,330 variables** (after cleaning) covering **19 euro area countries** from **January 2003** onward.
 
-## Quick Start (The "Magic" Moment)
+### Data Sources
+- **Eurostat**: Industrial production, labor market, prices, trade, sentiment indicators
+- **ECB Statistical Data Warehouse (SDW)**: Financial variables, monetary aggregates, exchange rates
+- **OECD**: Confidence indicators, leading indicators, long-term rates, share prices
+- **BIS**: Nominal effective exchange rates
 
-Experience the reproducibility of this template in less than five minutes:
+### Country-Specific Variables (up to 122 per country)
 
-1. **Install [Pixi](https://pixi.sh/)** (our only prerequisite).
-1. **Clone this repository**.
-1. **Run and view the results**:
+| Category | Examples |
+|----------|----------|
+| Industrial Production | Total industry, manufacturing, capital goods, consumer goods, energy |
+| Labor Market | Employment indices, unemployment rates, hours worked, wages |
+| Prices | PPI, HICP (overall, energy, food, services), import price indices |
+| Activity Indicators | Car registrations, turnover indices, building permits |
+| Trade | Imports and exports with world |
+| Sentiment & Surveys | Economic sentiment, consumer/industrial/services confidence |
+| Financial | Loans, deposits, debt securities, share prices, spreads |
 
-```bash
-# View the research paper in your browser
-pixi run view-paper
+### Euro Area-Level Variables (30 series)
+- Government bond yields (2y, 3y, 5y, 7y, 10y)
+- Money market rates (Euribor 1m, 3m, 6m, 1y; Eonia)
+- Dow Jones Euro Stoxx indices (broad and sector-specific)
+- Monetary aggregates (M1, M3, currency in circulation)
+- Bilateral exchange rates (USD, GBP, JPY, CHF, CNY)
 
-# View the presentation slides
-pixi run view-pres
-```
+## References
 
-These commands automatically handle environment setup, data cleaning, analysis, and
-launching the output servers.
+- Jurado, K., Ludvigson, S.C., & Ng, S. (2015). Measuring Uncertainty. *American Economic Review*, 105(3), 1177-1216.
+- Comunale, M., & Nguyen, A.D.M. (2025). A comprehensive MacroEconomic uncertainty measure for the euro area. *Journal of International Money and Finance*, 157, 103370.
 
-## Documentation
-
-Full documentation is available at
-[econ-project-templates.readthedocs.io](https://econ-project-templates.readthedocs.io/).
-
-## Contributing
-
-We welcome suggestions on anything from improving the documentation to reporting bugs
-and requesting new features. Please open an
-[issue](https://github.com/OpenSourceEconomics/econ-project-templates/issues) in these
-cases.
-
-### Contributors
-
-@hmgaudecker @timmens
-
-### Former Contributor and Creator of pytask
-
-@tobiasraabe
