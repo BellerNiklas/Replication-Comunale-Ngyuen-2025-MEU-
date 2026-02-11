@@ -19,8 +19,8 @@ for fmt, produces in {
         paper_md: Path = DOCUMENTS / "paper.md",
         myst_yml: Path = ROOT / "myst.yml",
         refs: Path = DOCUMENTS / "refs.bib",
-        figure: Path = DOCUMENTS / "public" / "smoking_by_marital_status.png",
-        table: Path = DOCUMENTS / "tables" / "estimation_results.md",
+        # figure: Path = DOCUMENTS / "public" / "smoking_by_marital_status.png",
+        # table: Path = DOCUMENTS / "tables" / "estimation_results.md",
         produces: Path = produces,
     ) -> None:
         """Compile the paper from MyST Markdown using Jupyter Book 2.0."""
@@ -38,8 +38,8 @@ for fmt, produces in {
 @pytask.task(id="presentation")
 def task_compile_presentation(
     pres_md: Path = DOCUMENTS / "presentation.md",
-    table: Path = DOCUMENTS / "tables" / "estimation_results.md",
-    figure: Path = DOCUMENTS / "public" / "smoking_by_marital_status.png",
+    # table: Path = DOCUMENTS / "tables" / "estimation_results.md",
+    # figure: Path = DOCUMENTS / "public" / "smoking_by_marital_status.png",
     produces: Path = ROOT / "presentation.pdf",
 ) -> None:
     """Compile the presentation from Slidev Markdown to PDF."""
