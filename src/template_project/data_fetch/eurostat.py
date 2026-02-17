@@ -33,9 +33,9 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             {"id": "002", "nace_r2": "C", "desc": "Manufacturing (NACE C)"},
             {"id": "003", "nace_r2": "B", "desc": "Mining and Quarrying (NACE B)"},
             {"id": "004", "nace_r2": "D", "desc": "Energy (NACE D)"},
-            {"id": "005", "nace_r2": "C10_C12", "desc": "Food Products (NACE C10-C12)"},
-            {"id": "006", "nace_r2": "C13_C15", "desc": "Textiles (NACE C13-C15)"},
-            {"id": "007", "nace_r2": "C16_C18", "desc": "Wood and Paper (NACE C16-C18)"},
+            {"id": "005", "nace_r2": "C10-C12", "desc": "Food Products (NACE C10-C12)"},
+            {"id": "006", "nace_r2": "C13-C15", "desc": "Textiles (NACE C13-C15)"},
+            {"id": "007", "nace_r2": "C16-C18", "desc": "Wood and Paper (NACE C16-C18)"},
             {"id": "008", "nace_r2": "C20", "desc": "Chemicals (NACE C20)"},
             {"id": "009", "nace_r2": "C24", "desc": "Basic Metals (NACE C24)"},
             {"id": "010", "nace_r2": "C26", "desc": "Electronics (NACE C26)"},
@@ -59,7 +59,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "series_prefix": "DE_LAB_UNEMP",
         "variables": [
             {"id": "001", "age": "TOTAL", "sex": "T", "desc": "Unemployment Rate - Total"},
-            {"id": "002", "age": "Y15-24", "sex": "T", "desc": "Unemployment Rate - Youth (15-24)"},
+            {"id": "002", "age": "Y_LT25", "sex": "T", "desc": "Unemployment Rate - Youth (<25)"},
             {"id": "003", "age": "Y25-74", "sex": "T", "desc": "Unemployment Rate - Prime Age (25-74)"},
             {"id": "004", "age": "TOTAL", "sex": "M", "desc": "Unemployment Rate - Male"},
             {"id": "005", "age": "TOTAL", "sex": "F", "desc": "Unemployment Rate - Female"},
@@ -78,11 +78,57 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         },
         "series_prefix": "DE_LAB_COST",
         "variables": [
-            {"id": "001", "nace_r2": "B-E", "desc": "Labor Cost - Industry (NACE B-E)"},
+            # NOTE: Valid NACE codes discovered via get_par_values(): B-E36, C, individual sectors
+            # F (Construction) and G-N (Services) do NOT exist in this dataset
+            {"id": "001", "nace_r2": "B-E36", "desc": "Labor Cost - Industry (NACE B-E36)"},
             {"id": "002", "nace_r2": "C", "desc": "Labor Cost - Manufacturing (NACE C)"},
-            {"id": "003", "nace_r2": "G-N", "desc": "Labor Cost - Services (NACE G-N)"},
         ],
     },
+
+    # NOTE: Employment and Hours Worked datasets NOT AVAILABLE via eurostat Python package
+    # Diagnostic via get_pars() confirms STS_INEM_M and STS_INHW_M datasets do not exist
+    # in the accessible Eurostat API (return 'NoneType' errors even for basic parameter queries)
+    # Quarterly versions (STS_INEM_Q, STS_INHW_Q) also unavailable
+    # These datasets may be deprecated, restricted, or only available via different access methods
+    # TODO: Investigate Eurostat Data Browser direct download or alternative data sources
+    #
+    # "STS_INEM_M": {
+    #     "category": 2,
+    #     "category_name": "Labor_market_indicators",
+    #     "base_filters": {
+    #         "geo": "DE",
+    #         "s_adj": "SCA",
+    #         "unit": "I21",
+    #     },
+    #     "series_prefix": "DE_LAB_EMP",
+    #     "variables": [
+    #         {"id": "001", "nace_r2": "B-E", "desc": "Employment - Industry (NACE B-E)"},
+    #         {"id": "002", "nace_r2": "B", "desc": "Employment - Mining (NACE B)"},
+    #         {"id": "003", "nace_r2": "C", "desc": "Employment - Manufacturing (NACE C)"},
+    #         {"id": "004", "nace_r2": "D", "desc": "Employment - Energy (NACE D)"},
+    #         {"id": "005", "nace_r2": "E", "desc": "Employment - Water/Waste (NACE E)"},
+    #         {"id": "006", "nace_r2": "F", "desc": "Employment - Construction (NACE F)"},
+    #         {"id": "007", "nace_r2": "G-N", "desc": "Employment - Services (NACE G-N)"},
+    #     ],
+    # },
+    #
+    # "STS_INHW_M": {
+    #     "category": 2,
+    #     "category_name": "Labor_market_indicators",
+    #     "base_filters": {
+    #         "geo": "DE",
+    #         "s_adj": "SCA",
+    #         "unit": "I21",
+    #     },
+    #     "series_prefix": "DE_LAB_HOURS",
+    #     "variables": [
+    #         {"id": "001", "nace_r2": "B-E", "desc": "Hours Worked - Industry (NACE B-E)"},
+    #         {"id": "002", "nace_r2": "C", "desc": "Hours Worked - Manufacturing (NACE C)"},
+    #         {"id": "003", "nace_r2": "F", "desc": "Hours Worked - Construction (NACE F)"},
+    #         {"id": "004", "nace_r2": "G-I", "desc": "Hours Worked - Trade/Transport (NACE G-I)"},
+    #         {"id": "005", "nace_r2": "G-N", "desc": "Hours Worked - Services (NACE G-N)"},
+    #     ],
+    # },
 
     # ========================================================================
     # Category 3: Prices (~22 variables)
@@ -114,13 +160,14 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "geo": "DE",
             "unit": "I21",
             "s_adj": "NSA",
+            "indic_bt": "PRC_IMP",  # Total imports (not split by EU/non-EU)
         },
         "series_prefix": "DE_PRICE_IMP",
         "variables": [
-            {"id": "001", "nace_r2": "MIG_TOT", "desc": "Import Price - Total (MIG)"},
-            {"id": "002", "nace_r2": "MIG_CAG", "desc": "Import Price - Capital Goods (MIG)"},
-            {"id": "003", "nace_r2": "MIG_ING", "desc": "Import Price - Intermediate Goods (MIG)"},
-            {"id": "004", "nace_r2": "MIG_COG", "desc": "Import Price - Consumer Goods (MIG)"},
+            {"id": "001", "cpa2_1": "CPA_B-D", "desc": "Import Price - Total Industry"},
+            {"id": "002", "cpa2_1": "CPA_MIG_CAG", "desc": "Import Price - Capital Goods (MIG)"},
+            {"id": "003", "cpa2_1": "CPA_MIG_ING", "desc": "Import Price - Intermediate Goods (MIG)"},
+            {"id": "004", "cpa2_1": "CPA_MIG_COG", "desc": "Import Price - Consumer Goods (MIG)"},
         ],
     },
 
@@ -181,23 +228,43 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         ],
     },
 
+    "STS_INTV_M": {
+        "category": 4,
+        "category_name": "Activity_indicators",
+        "base_filters": {
+            "geo": "DE",
+            "s_adj": "NSA",
+            "unit": "I21",
+        },
+        "series_prefix": "DE_ACT_CAR",
+        "variables": [
+            {"id": "001", "indic_sb": "TOVT", "desc": "Car Registrations - Total Vehicles"},
+        ],
+    },
+
     # ========================================================================
     # Category 5: Trade (~2 variables)
     # ========================================================================
-    "EXT_ST_EA19": {
-        "category": 5,
-        "category_name": "Trade",
-        "base_filters": {
-            "geo": "DE",
-            "unit": "MIO_EUR",
-            "s_adj": "NSA",
-        },
-        "series_prefix": "DE_TRADE",
-        "variables": [
-            {"id": "EXP_001", "stk_flow": "EXP", "partner": "EXT_EU28", "desc": "Exports - Extra EU (Goods)"},
-            {"id": "IMP_001", "stk_flow": "IMP", "partner": "EXT_EU28", "desc": "Imports - Extra EU (Goods)"},
-        ],
-    },
+    # NOTE: Trade datasets currently inaccessible via Eurostat API
+    # Multiple datasets tested (EXT_ST_EA19, COMEXT, BOP_ITS6_M, NAMA_10_EXI_M, STS_INTVT_M)
+    # all return 'NoneType' object has no attribute 'get' errors
+    # TODO: Investigate alternative data sources or wait for API fix
+    # Commenting out for now to allow other variables to be fetched successfully
+    #
+    # "EXT_ST_EA19": {
+    #     "category": 5,
+    #     "category_name": "Trade",
+    #     "base_filters": {
+    #         "geo": "DE",
+    #         "unit": "MIO_EUR",
+    #         "s_adj": "NSA",
+    #     },
+    #     "series_prefix": "DE_TRADE",
+    #     "variables": [
+    #         {"id": "EXP_001", "stk_flow": "EXP", "partner": "EXT_EU28", "desc": "Exports - Extra EU (Goods)"},
+    #         {"id": "IMP_001", "stk_flow": "IMP", "partner": "EXT_EU28", "desc": "Imports - Extra EU (Goods)"},
+    #     ],
+    # },
 
     # ========================================================================
     # Category 6: Sentiment (~6 variables)
@@ -211,24 +278,14 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         },
         "series_prefix": "DE_SENT",
         "variables": [
+            # NOTE: All sentiment codes discovered via get_par_values('EI_BSSI_M_R2', 'indic')
+            # EI_BSCO_M has different codes and was causing failures
             {"id": "ESI_001", "indic": "BS-ESI-I", "desc": "Economic Sentiment Indicator"},
-        ],
-    },
-
-    "EI_BSCO_M": {
-        "category": 6,
-        "category_name": "Sentiment",
-        "base_filters": {
-            "geo": "DE",
-            "s_adj": "SA",
-        },
-        "series_prefix": "DE_SENT",
-        "variables": [
             {"id": "CONS_001", "indic": "BS-CSMCI-BAL", "desc": "Consumer Confidence Indicator"},
             {"id": "RET_001", "indic": "BS-RCI-BAL", "desc": "Retail Confidence Indicator"},
-            {"id": "CONST_001", "indic": "BS-CONG-BAL", "desc": "Construction Confidence Indicator"},
+            {"id": "CONST_001", "indic": "BS-CCI-BAL", "desc": "Construction Confidence Indicator"},
             {"id": "IND_001", "indic": "BS-ICI-BAL", "desc": "Industrial Confidence Indicator"},
-            {"id": "SERV_001", "indic": "BS-SERV-BAL", "desc": "Services Confidence Indicator"},
+            {"id": "SERV_001", "indic": "BS-SCI-BAL", "desc": "Services Confidence Indicator"},
         ],
     },
 }
@@ -475,7 +532,8 @@ def transform_eurostat_data(
     """
     # Identify non-time columns (metadata dimensions)
     non_time_cols = ["freq", "geo", "nace_r2", "s_adj", "unit", "coicop",
-                     "age", "sex", "indic", "stk_flow", "partner"]
+                     "age", "sex", "indic", "stk_flow", "partner",
+                     "cpa2_1", "indic_bt", "indic_sb"]  # cpa2_1/indic_bt for prices, indic_sb for car registrations
 
     # Time columns are those not in the metadata list
     # Also exclude any columns ending with '_flag' as those are quality flags

@@ -96,6 +96,7 @@ template_project = { path = ".", editable = true }
 pdbp = "*"
 tabulate = "*"
 eurostat = "*"
+requests = ">=2.28"
 
 [tool.pixi.tasks]
 ty = { cmd = "ty check", description = "Check typing" }
