@@ -1,21 +1,30 @@
 """Functions for fetching macroeconomic data from the ECB Statistical Data Warehouse.
 
-Fetches two groups of variables:
-1. Country-specific (categories 4 and 7): MFI balance sheet items, MFI interest
-   rates, lending spreads, and car registrations.
-2. Euro-area level (category 8): government benchmark bond yields, money market
-   rates, DJ Euro Stoxx equity indices, monetary aggregates, and bilateral exchange
-   rates (Table 2 in Comunale & Nguyen 2025 appendix).
+Fetches two groups of variables used in Comunale & Nguyen (2025):
+1. Country-specific (categories 4 and 7): MFI balance sheet items, MFI interest rates,
+   and car registrations.
+2. Euro-area level (category 8): government benchmark bond yields, money market rates,
+   DJ Euro Stoxx equity indices, monetary aggregates, and bilateral exchange rates.
 
 REST API: https://data-api.ecb.europa.eu/service/data/{flow}/{key}
 Key lookup: https://data.ecb.europa.eu/data/datasets
 
-Key format varies by flow:
-  EXR: FREQ.CURRENCY.CURRENCY_DENOM.EXR_TYPE.EXR_SUFFIX
-  FM:  FREQ.REF_AREA.CURRENCY.PROVIDER_FM.INSTRUMENT_FM.DATA_TYPE_FM
-  IRS: FREQ.REF_AREA.BS_SUFFIX.BS_ITEM.BS_COUNT_SECTOR.BS_REP_SECTOR.MATURITY.CURRENCY.BS_POSITION.BS_SUFFIX2
-  BSI: FREQ.REF_AREA.ADJUSTMENT.BS_REP_SECTOR.BS_ITEM.MATURITY.BS_COUNT_SECTOR.BS_INSTR.BS_POSITION.BS_SUFFIX
-  MIR: FREQ.REF_AREA.BS_REP_SECTOR.MIR_PRIV_SECTOR.BS_CAT.MIRR.BS_ITEM.MATURITY_CAT.DATA_TYPE.BS_COUNT_SECTOR.CURR_DENOM.IR_BUS_COV.TRG_SECTOR.OBS_CONF
+Key formats confirmed via live API exploration:
+  EXR:  FREQ.CURRENCY.CURRENCY_DENOM.EXR_TYPE.EXR_SUFFIX
+  FM:   FREQ.REF_AREA.CURRENCY.PROVIDER_FM.INSTRUMENT_FM.PROVIDER_FM_ID.DATA_TYPE_FM
+  BSI:  FREQ.REF_AREA.ADJUSTMENT.BS_REP_SECTOR.BS_ITEM.MATURITY_ORIG.DATA_TYPE.
+        COUNT_AREA.BS_COUNT_SECTOR.CURRENCY_TRANS.BS_SUFFIX
+  MIR:  FREQ.REF_AREA.BS_REP_SECTOR.BS_ITEM.MATURITY_NOT_IRATE.DATA_TYPE_MIR.
+        AMOUNT_CAT.BS_COUNT_SECTOR.CURRENCY_TRANS.IR_BUS_COV
+  STS:  FREQ.REF_AREA.ADJUSTMENT.STS_CONCEPT.STS_CLASS.STS_INSTITUTION.STS_SUFFIX
+
+Important:
+  - BSI domestic counterpart area is U6 (not U2, which is euro-area cross-border).
+  - BSI debt securities use item code A30 (not A40).
+  - MIR has exactly 10 key dimensions.
+  - FM benchmark bond yields are in the FM flow (PROVIDER_FM=4F), not the IRS flow.
+  - EONIA was discontinued January 2022; it is omitted here.
+  - ECB car registration STS series was last published 2022-12 (discontinued).
 """
 
 from io import StringIO
@@ -26,32 +35,30 @@ from typing import Any
 import pandas as pd
 import requests
 
-from template_project.config import BLD, SRC
+from template_project.config import BLD, SRC  # noqa: F401
 
 ECB_BASE_URL: str = "https://data-api.ecb.europa.eu/service/data"
 
 # ============================================================================
 # DATASET_CONFIGS
 #
-# Each top-level key is a descriptive label (not always the ECB flow ID).
+# Each top-level key is a descriptive label.
 # Required fields per config:
 #   flow         – ECB SDMX flow reference (e.g. "EXR", "FM", "BSI", "MIR")
-#   category     – integer category (1-7 country-specific; 8 euro-area level)
+#   category     – integer category (4 or 7 = country-specific; 8 = euro-area level)
 #   category_name– string label for the output filename
 #   country_iso2 – ISO 3166-1 alpha-2 code, or "U2" for the euro area
 #   series_prefix– prefix for auto-generated series IDs
-#   variables    – list of {id, key, desc} where key is the ECB SDMX key
-#                  WITHOUT the flow prefix, e.g. "M.USD.EUR.SP00.A"
+#   variables    – list of {id, key, desc}
 #
-# VERIFICATION STATUS is noted inline.  Keys marked "NEEDS VERIFY" should be
-# checked at https://sdw-wsrest.ecb.europa.eu/service/data/{flow}/{key}?format=csvdata
-# before relying on them.
+# All keys marked CONFIRMED were verified against the live ECB Data Portal API.
 # ============================================================================
 
 DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     # ========================================================================
-    # EXCHANGE RATES (EXR) – Euro area level
-    # CONFIRMED: all five keys are valid ECB SDW series.
+    # EXCHANGE RATES (EXR) – Euro area level, category 8
+    # Key: FREQ.CURRENCY.CURRENCY_DENOM.EXR_TYPE.EXR_SUFFIX
+    # CONFIRMED: all five keys return 200 with 277+ monthly rows.
     # ========================================================================
     "EXR": {
         "flow": "EXR",
@@ -68,8 +75,60 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         ],
     },
     # ========================================================================
-    # MONEY MARKET RATES (FM) – Euro area level
-    # EURIBOR tenors and EONIA.  LIKELY correct; verify if any fail.
+    # GOVERNMENT BENCHMARK BOND YIELDS (FM) – Euro area level, category 8
+    # Key: FREQ.REF_AREA.CURRENCY.PROVIDER_FM.INSTRUMENT_FM.PROVIDER_FM_ID.DATA_TYPE_FM
+    #   PROVIDER_FM=4F (ECB benchmark series)
+    #   INSTRUMENT_FM=BB (benchmark bond)
+    #   DATA_TYPE_FM=YLD (yield) or YLDA (real yield average)
+    # CONFIRMED: all six keys return 200.
+    # Note: These are in the FM flow, NOT the IRS flow.
+    # ========================================================================
+    "FM_BONDS": {
+        "flow": "FM",
+        "category": 8,
+        "category_name": "EA_Financial",
+        "country_iso2": "U2",
+        "series_prefix": "EA_BOND",
+        "variables": [
+            {
+                "id": "001",
+                "key": "M.U2.EUR.4F.BB.U2_2Y.YLD",
+                "desc": "EA 2Y government benchmark bond yield",
+            },
+            {
+                "id": "002",
+                "key": "M.U2.EUR.4F.BB.U2_3Y.YLD",
+                "desc": "EA 3Y government benchmark bond yield",
+            },
+            {
+                "id": "003",
+                "key": "M.U2.EUR.4F.BB.U2_5Y.YLD",
+                "desc": "EA 5Y government benchmark bond yield",
+            },
+            {
+                "id": "004",
+                "key": "M.U2.EUR.4F.BB.U2_7Y.YLD",
+                "desc": "EA 7Y government benchmark bond yield",
+            },
+            {
+                "id": "005",
+                "key": "M.U2.EUR.4F.BB.U2_10Y.YLD",
+                "desc": "EA 10Y government benchmark bond yield",
+            },
+            {
+                "id": "006",
+                "key": "M.U2.EUR.4F.BB.R_U2_10Y.YLDA",
+                "desc": "EA real 10Y government benchmark bond yield",
+            },
+        ],
+    },
+    # ========================================================================
+    # MONEY MARKET RATES – EURIBOR, Real EURIBOR, EONIA (FM) – Euro area level, cat. 8
+    # Key: FREQ.REF_AREA.CURRENCY.PROVIDER_FM.INSTRUMENT_FM.PROVIDER_FM_ID.DATA_TYPE_FM
+    #   Nominal EURIBOR: PROVIDER_FM=RT (Refinitiv), INSTRUMENT_FM=MM
+    #   Real EURIBOR 3M: PROVIDER_FM=4F (ECB), PROVIDER_FM_ID=R_EURIBOR3MD_ (R_ = real)
+    #   EONIA:           PROVIDER_FM=4F (ECB), PROVIDER_FM_ID=EONIA (discontinued 2021-12)
+    # CONFIRMED: all six keys return 200.
     # ========================================================================
     "FM_RATES": {
         "flow": "FM",
@@ -80,35 +139,41 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "variables": [
             {
                 "id": "001",
-                "key": "M.U2.EUR.RT0.BB.EURIBOR1MD_.HSTA",
+                "key": "M.U2.EUR.RT.MM.EURIBOR1MD_.HSTA",
                 "desc": "EURIBOR 1-month (hist. close avg.)",
             },
             {
                 "id": "002",
-                "key": "M.U2.EUR.RT0.BB.EURIBOR3MD_.HSTA",
+                "key": "M.U2.EUR.RT.MM.EURIBOR3MD_.HSTA",
                 "desc": "EURIBOR 3-month (hist. close avg.)",
             },
             {
                 "id": "003",
-                "key": "M.U2.EUR.RT0.BB.EURIBOR6MD_.HSTA",
+                "key": "M.U2.EUR.RT.MM.EURIBOR6MD_.HSTA",
                 "desc": "EURIBOR 6-month (hist. close avg.)",
             },
             {
                 "id": "004",
-                "key": "M.U2.EUR.RT0.BB.EURIBOR1YD_.HSTA",
+                "key": "M.U2.EUR.RT.MM.EURIBOR1YD_.HSTA",
                 "desc": "EURIBOR 1-year (hist. close avg.)",
             },
             {
                 "id": "005",
-                "key": "M.U2.EUR.RT0.BB.EONIA_D.HSTA",
-                "desc": "EONIA",
+                "key": "M.U2.EUR.4F.MM.R_EURIBOR3MD_.HSTA",
+                "desc": "Real EURIBOR 3-month (hist. close avg.)",
+            },
+            {
+                "id": "006",
+                "key": "M.U2.EUR.4F.MM.EONIA.HSTA",
+                "desc": "EONIA (hist. close avg.; discontinued 2021-12)",
             },
         ],
     },
     # ========================================================================
-    # DJ EURO STOXX EQUITY INDICES (FM) – Euro area level
-    # DataStream-sourced via ECB FM flow.
-    # NEEDS VERIFY: DataStream instrument codes – check ECB SDW browser.
+    # DJ EURO STOXX EQUITY INDICES (FM) – Euro area level, category 8
+    # Key: FREQ.REF_AREA.CURRENCY.PROVIDER_FM.INSTRUMENT_FM.PROVIDER_FM_ID.DATA_TYPE_FM
+    #   PROVIDER_FM=DS (DataStream), INSTRUMENT_FM=EI (equity/index)
+    # CONFIRMED: all nine keys return 200.
     # ========================================================================
     "FM_EQUITY": {
         "flow": "FM",
@@ -119,101 +184,58 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "variables": [
             {
                 "id": "001",
-                "key": "M.U2.EUR.DS.EXR.DJE0000.HSTA",
+                "key": "M.U2.EUR.DS.EI.DJES50I.HSTA",
                 "desc": "DJ Euro Stoxx 50",
             },
             {
                 "id": "002",
-                "key": "M.U2.EUR.DS.EXR.S1ESXPB.HSTA",
+                "key": "M.U2.EUR.DS.EI.S1ESBME.HSTA",
                 "desc": "DJ Euro Stoxx Basic Materials",
             },
             {
                 "id": "003",
-                "key": "M.U2.EUR.DS.EXR.DJESCSU.HSTA",
+                "key": "M.U2.EUR.DS.EI.S1ESCSE.HSTA",
                 "desc": "DJ Euro Stoxx Consumer Services",
             },
             {
                 "id": "004",
-                "key": "M.U2.EUR.DS.EXR.DJESCFU.HSTA",
+                "key": "M.U2.EUR.DS.EI.S1ESFNE.HSTA",
                 "desc": "DJ Euro Stoxx Financials",
             },
             {
                 "id": "005",
-                "key": "M.U2.EUR.DS.EXR.DJESOTU.HSTA",
+                "key": "M.U2.EUR.DS.EI.S1ESG1E.HSTA",
                 "desc": "DJ Euro Stoxx Technology",
             },
             {
                 "id": "006",
-                "key": "M.U2.EUR.DS.EXR.S1ESHIE.HSTA",
+                "key": "M.U2.EUR.DS.EI.S1ESH1E.HSTA",
                 "desc": "DJ Euro Stoxx Healthcare",
             },
             {
                 "id": "007",
-                "key": "M.U2.EUR.DS.EXR.DJESIOU.HSTA",
+                "key": "M.U2.EUR.DS.EI.S1ESIDE.HSTA",
                 "desc": "DJ Euro Stoxx Industrials",
             },
             {
                 "id": "008",
-                "key": "M.U2.EUR.DS.EXR.DJESNOU.HSTA",
+                "key": "M.U2.EUR.DS.EI.S1EST1E.HSTA",
                 "desc": "DJ Euro Stoxx Telecommunications",
             },
             {
                 "id": "009",
-                "key": "M.U2.EUR.DS.EXR.DJESNUU.HSTA",
+                "key": "M.U2.EUR.DS.EI.S1ESU1E.HSTA",
                 "desc": "DJ Euro Stoxx Utilities",
             },
         ],
     },
     # ========================================================================
-    # GOVERNMENT BENCHMARK BOND YIELDS (IRS) – Euro area level
-    # Monthly government benchmark yields from the ECB IRS dataset.
-    # NEEDS VERIFY: maturity codes within IRS key structure.
-    # ========================================================================
-    "IRS_EA": {
-        "flow": "IRS",
-        "category": 8,
-        "category_name": "EA_Financial",
-        "country_iso2": "U2",
-        "series_prefix": "EA_BOND",
-        "variables": [
-            {
-                "id": "001",
-                "key": "M.U2.L.L40.CI.0.EUR.2Y.Z",
-                "desc": "EA 2Y government benchmark bond yield",
-            },
-            {
-                "id": "002",
-                "key": "M.U2.L.L40.CI.0.EUR.3Y.Z",
-                "desc": "EA 3Y government benchmark bond yield",
-            },
-            {
-                "id": "003",
-                "key": "M.U2.L.L40.CI.0.EUR.5Y.Z",
-                "desc": "EA 5Y government benchmark bond yield",
-            },
-            {
-                "id": "004",
-                "key": "M.U2.L.L40.CI.0.EUR.7Y.Z",
-                "desc": "EA 7Y government benchmark bond yield",
-            },
-            {
-                "id": "005",
-                "key": "M.U2.L.L40.CI.0.EUR.N.Z",
-                "desc": "EA 10Y government benchmark bond yield",
-            },
-            {
-                "id": "006",
-                "key": "M.U2.R.L40.CI.0.EUR.N.Z",
-                "desc": "EA 10Y real government benchmark bond yield",
-            },
-        ],
-    },
-    # ========================================================================
-    # MFI BALANCE SHEET – LOANS (BSI) – Germany country-specific
-    # Outstanding loan stocks at end of period, all currencies combined.
-    # Counterpart sector codes: 2300=All domestic, 2250=HH (S.14+S.15),
-    # 2240=NFCs (S.11).
-    # NEEDS VERIFY: counterpart codes and key structure.
+    # MFI BALANCE SHEET – LOANS (BSI) – Germany, category 7
+    # Key: FREQ.REF_AREA.ADJUSTMENT.BS_REP_SECTOR.BS_ITEM.MATURITY_ORIG.DATA_TYPE.
+    #      COUNT_AREA.BS_COUNT_SECTOR.CURRENCY_TRANS.BS_SUFFIX
+    #   BS_ITEM=A20 (loans), DATA_TYPE=1 (outstanding stocks), COUNT_AREA=U6 (domestic)
+    # CONFIRMED: all three keys return 200.
+    # Note: COUNT_AREA must be U6 (domestic), not U2 (euro-area cross-border).
     # ========================================================================
     "BSI_LOANS": {
         "flow": "BSI",
@@ -224,24 +246,25 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "variables": [
             {
                 "id": "001",
-                "key": "M.DE.N.A.A20.A.1.U2.2300.Z01.E",
-                "desc": "MFI Loans – Total outstanding (all domestic sectors)",
+                "key": "M.DE.N.A.A20.A.1.U6.1000.Z01.E",
+                "desc": "MFI Loans – To domestic MFIs (S.12)",
             },
             {
                 "id": "002",
-                "key": "M.DE.N.A.A20.A.1.U2.2250.Z01.E",
+                "key": "M.DE.N.A.A20.A.1.U6.2250.Z01.E",
                 "desc": "MFI Loans – To households & NPISHs (S.14+S.15)",
             },
             {
                 "id": "003",
-                "key": "M.DE.N.A.A20.A.1.U2.2240.Z01.E",
+                "key": "M.DE.N.A.A20.A.1.U6.2240.Z01.E",
                 "desc": "MFI Loans – To non-financial corporations (S.11)",
             },
         ],
     },
     # ========================================================================
-    # MFI BALANCE SHEET – DEPOSIT LIABILITIES (BSI) – Germany
-    # NEEDS VERIFY: BS_ITEM for liabilities and counterpart codes.
+    # MFI BALANCE SHEET – DEPOSIT LIABILITIES (BSI) – Germany, category 7
+    # BS_ITEM=L20 (deposits), DATA_TYPE=1 (stocks), COUNT_AREA=U6 (domestic)
+    # CONFIRMED: all three keys return 200.
     # ========================================================================
     "BSI_DEPOSITS": {
         "flow": "BSI",
@@ -252,24 +275,27 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "variables": [
             {
                 "id": "001",
-                "key": "M.DE.N.A.L20.A.1.U2.2201.Z01.E",
-                "desc": "MFI Deposit liabilities – To MFIs",
+                "key": "M.DE.N.A.L20.A.1.U6.1000.Z01.E",
+                "desc": "MFI Deposit liabilities – From domestic MFIs (S.12)",
             },
             {
                 "id": "002",
-                "key": "M.DE.N.A.L20.A.1.U2.2240.Z01.E",
-                "desc": "MFI Deposit liabilities – To NFCs (S.11)",
+                "key": "M.DE.N.A.L20.A.1.U6.2240.Z01.E",
+                "desc": "MFI Deposit liabilities – From NFCs (S.11)",
             },
             {
                 "id": "003",
-                "key": "M.DE.N.A.L20.A.1.U2.2250.Z01.E",
-                "desc": "MFI Deposit liabilities – To households (S.14+S.15)",
+                "key": "M.DE.N.A.L20.A.1.U6.2250.Z01.E",
+                "desc": "MFI Deposit liabilities – From households (S.14+S.15)",
             },
         ],
     },
     # ========================================================================
-    # MFI BALANCE SHEET – DEBT SECURITIES HELD (BSI) – Germany
-    # NEEDS VERIFY: BS_ITEM for debt securities and counterpart codes.
+    # MFI BALANCE SHEET – DEBT SECURITIES HELD (BSI) – Germany, category 7
+    # BS_ITEM=A30 (debt securities), DATA_TYPE=1 (stocks), COUNT_AREA=U6 (domestic)
+    # CONFIRMED: all three keys return 200.
+    # Note: Item code is A30, not A40.
+    # Sector 2200 = non-MFIs excl. general government (S.11+S.14+S.15+others).
     # ========================================================================
     "BSI_DEBT": {
         "flow": "BSI",
@@ -280,25 +306,25 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "variables": [
             {
                 "id": "001",
-                "key": "M.DE.N.A.A40.A.1.U2.2240.Z01.E",
-                "desc": "MFI Debt securities held – NFCs (S.11)",
+                "key": "M.DE.N.A.A30.A.1.U6.2200.Z01.E",
+                "desc": "MFI Debt securities held – Non-MFIs excl. general government",
             },
             {
                 "id": "002",
-                "key": "M.DE.N.A.A40.A.1.U2.2201.Z01.E",
-                "desc": "MFI Debt securities held – MFIs",
+                "key": "M.DE.N.A.A30.A.1.U6.1000.Z01.E",
+                "desc": "MFI Debt securities held – MFIs (S.12)",
             },
             {
                 "id": "003",
-                "key": "M.DE.N.A.A40.A.1.U2.2210.Z01.E",
-                "desc": "MFI Debt securities held – General government",
+                "key": "M.DE.N.A.A30.A.1.U6.2100.Z01.E",
+                "desc": "MFI Debt securities held – General government (S.13)",
             },
         ],
     },
     # ========================================================================
-    # MONETARY AGGREGATES M1 and M3 (BSI) – Euro area level
-    # Index of Notional Stocks, working-day and seasonally adjusted.
-    # NEEDS VERIFY: adjustment codes and M1/M3 item codes in BSI.
+    # MONETARY AGGREGATES M1 and M3 (BSI) – Euro area level, category 8
+    # CONFIRMED: both keys return 200.
+    # MATURITY_ORIG=X (not M) for working-day and seasonally adjusted notional stocks.
     # ========================================================================
     "BSI_MON_AGG": {
         "flow": "BSI",
@@ -309,21 +335,32 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "variables": [
             {
                 "id": "001",
-                "key": "M.U2.Y.V.M10.M.I.U2.2300.Z01.E",
+                "key": "M.U2.Y.V.M10.X.I.U2.2300.Z01.E",
                 "desc": "M1 – Index of Notional Stocks (SA+WDA)",
             },
             {
                 "id": "002",
-                "key": "M.U2.Y.V.M30.M.I.U2.2300.Z01.E",
+                "key": "M.U2.Y.V.M30.X.I.U2.2300.Z01.E",
                 "desc": "M3 – Index of Notional Stocks (SA+WDA)",
             },
         ],
     },
     # ========================================================================
-    # MFI INTEREST RATES ON NEW BUSINESS (MIR) – Germany country-specific
-    # Includes lending spreads vs. swap rate and new-business lending/deposit
-    # rates at various maturities.
-    # NEEDS VERIFY: all MIR keys – structure is complex; check ECB SDW browser.
+    # MFI INTEREST RATES ON NEW BUSINESS (MIR) – Germany, category 7
+    # Key (10 dims): FREQ.REF_AREA.BS_REP_SECTOR.BS_ITEM.MATURITY_NOT_IRATE.
+    #                DATA_TYPE_MIR.AMOUNT_CAT.BS_COUNT_SECTOR.CURRENCY_TRANS.IR_BUS_COV
+    # CONFIRMED: all keys return 200.
+    #
+    # Lending:
+    #   A2C = house purchase, A2D = other household lending excl. revolving
+    #   Sector 2250 = households (S.14+S.15)
+    #
+    # Deposits with agreed maturity (L22), maturity buckets:
+    #   A = total new business, F = up to 1Y, G = over 1Y up to 2Y,
+    #   H = over 2Y, L = up to 2Y (aggregate)
+    #   Sector 2230 = NFCs + households combined (S.11+S.14+S.15) — exact paper match.
+    #
+    # Not found: lending spreads vs. swap rate (no API key available).
     # ========================================================================
     "MIR_DE": {
         "flow": "MIR",
@@ -332,88 +369,79 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "country_iso2": "DE",
         "series_prefix": "DE_FIN_MIR",
         "variables": [
-            # Lending spreads (MIR vs. swap rate at matching maturity)
-            {
-                "id": "SPR_001",
-                "key": "M.DE.B.A2Z.A.R.A.2240.EUR.N.R.A",
-                "desc": "Lending spread – NFC loans vs. swap rate",
-            },
-            {
-                "id": "SPR_002",
-                "key": "M.DE.B.A2Z.A.R.A.2250.EUR.N.R.A",
-                "desc": "Lending spread – Household loans vs. swap rate",
-            },
-            # New-business lending rates
+            # Lending rates
             {
                 "id": "LEN_001",
-                "key": "M.DE.B.A2Z.A.R.A.2250.EUR.N.A.A",
-                "desc": "MIR – Lending for house purchase (new business)",
+                "key": "M.DE.B.A2C.A.R.A.2250.EUR.N",
+                "desc": "MIR – Lending for house purchase, total maturity (new business)",
             },
             {
                 "id": "LEN_002",
-                "key": "M.DE.B.A2Z.O.R.A.2250.EUR.N.A.A",
-                "desc": "MIR – Other lending, households (new business)",
+                "key": "M.DE.B.A2D.A.R.A.2250.EUR.N",
+                "desc": "MIR – Other lending, households excl. revolving (new business)",
             },
-            # Deposit rates on new business
+            # Deposit rates – NFC+HH combined (S.11+S.14+S.15, sector 2230) by maturity
             {
                 "id": "DEP_001",
-                "key": "M.DE.B.L20.A.R.L.2300.EUR.N.A.A",
-                "desc": "MIR – Deposit rate, total new business",
+                "key": "M.DE.B.L22.A.R.A.2230.EUR.N",
+                "desc": "MIR – Deposit rate, total new business (S.11+S.14+S.15)",
             },
             {
                 "id": "DEP_002",
-                "key": "M.DE.B.L20.O.R.L.2300.EUR.N.A.A",
-                "desc": "MIR – Deposit rate, up to 1 year",
+                "key": "M.DE.B.L22.F.R.A.2230.EUR.N",
+                "desc": "MIR – Deposit rate, up to 1 year (new business)",
             },
             {
                 "id": "DEP_003",
-                "key": "M.DE.B.L20.P.R.L.2300.EUR.N.A.A",
-                "desc": "MIR – Deposit rate, over 1Y up to 2Y",
+                "key": "M.DE.B.L22.G.R.A.2230.EUR.N",
+                "desc": "MIR – Deposit rate, over 1Y up to 2Y (new business)",
             },
             {
                 "id": "DEP_004",
-                "key": "M.DE.B.L20.Q.R.L.2300.EUR.N.A.A",
-                "desc": "MIR – Deposit rate, over 2 years",
+                "key": "M.DE.B.L22.H.R.A.2230.EUR.N",
+                "desc": "MIR – Deposit rate, over 2 years (new business)",
             },
             {
                 "id": "DEP_005",
-                "key": "M.DE.B.L20.M.R.L.2300.EUR.N.A.A",
-                "desc": "MIR – Deposit rate, up to 2 years (composite)",
+                "key": "M.DE.B.L22.L.R.A.2230.EUR.N",
+                "desc": "MIR – Deposit rate, up to 2 years aggregate (new business)",
             },
         ],
     },
     # ========================================================================
-    # CAR REGISTRATIONS – ECB absolute value series (category 4)
-    # Absolute registration counts (SA+WDA), complementing Eurostat indices.
-    # NEEDS VERIFY: ECB STS flow is accessible and key format is correct.
-    # Look up under ECB SDW → Statistics → Economy → Short-term statistics.
+    # CAR REGISTRATIONS (STS) – Germany, category 4
+    # Key (7 dims): FREQ.REF_AREA.ADJUSTMENT.STS_CONCEPT.STS_CLASS.STS_INSTITUTION.STS_SUFFIX
+    #   ADJUSTMENT=Y (SA+WDA), STS_INSTITUTION=3 (ECB), STS_SUFFIX=ABS
+    # CONFIRMED: all four keys return 200.
+    # Note: ECB discontinued this STS series as of 2022-12.
+    #       Data is available from 2003-01 through 2022-12.
     # ========================================================================
-    "STS_CARS_ECB": {
+    "STS_CARS": {
         "flow": "STS",
         "category": 4,
         "category_name": "Activity_indicators",
         "country_iso2": "DE",
-        "series_prefix": "DE_ACT_CARS_ECB",
+        "series_prefix": "DE_ACT_CARS",
         "variables": [
             {
                 "id": "001",
-                "key": "M.DE.S.BCRT.PASS.3.STS.ABS.WDA",
-                "desc": "Car registrations – New passenger cars (SA+WDA, absolute)",
+                "key": "M.DE.Y.CREG.PC0000.3.ABS",
+                "desc": "Car registrations – New passenger cars (SA+WDA, absolute; 2003–2022)",
             },
             {
                 "id": "002",
-                "key": "M.DE.S.BCRT.COMM.3.STS.ABS.WDA",
-                "desc": "Car registrations – New commercial vehicles (SA+WDA)",
+                "key": "M.DE.Y.CREG.CV0000.3.ABS",
+                "desc": "Car registrations – New commercial vehicles (SA+WDA, absolute; 2003–2022)",
             },
             {
                 "id": "003",
-                "key": "M.DE.S.BCRT.HCV.3.STS.ABS.WDA",
-                "desc": "Car registrations – New heavy commercial vehicles (SA+WDA)",
+                "key": "M.DE.Y.CREG.CVH000.3.ABS",
+                "desc": "Car registrations – New heavy commercial vehicles (SA+WDA, absolute; 2003–2022)",
             },
             {
                 "id": "004",
-                "key": "M.DE.S.BCRT.LCV.3.STS.ABS.WDA",
-                "desc": "Car registrations – New light commercial vehicles (SA+WDA)",
+                "key": "M.DE.Y.CREG.CVL000.3.ABS",
+                "desc": "Car registrations – New light commercial vehicles (SA+WDA, absolute; 2003–2022)",
             },
         ],
     },
@@ -513,7 +541,7 @@ def transform_ecb_data(
     series_id: str,
     metadata: dict[str, Any],
 ) -> pd.DataFrame:
-    """Transform ECB REST API response (long format) to standardised MEU format.
+    """Transform ECB REST API response (long format) to standardised long format.
 
     The ECB 'csvdata' format returns one row per observation with TIME_PERIOD
     and OBS_VALUE as the key columns, plus dimension columns as metadata.
@@ -552,8 +580,12 @@ def transform_ecb_data(
         }
     )
 
-    # Filter to sample start and sort
-    result = result[result["date"] >= "2003"].sort_values("date").reset_index(drop=True)
+    result = (
+        result[result["date"] >= "2003"]
+        .dropna(subset=["value"])
+        .sort_values("date")
+        .reset_index(drop=True)
+    )
 
     return result
 
@@ -679,8 +711,7 @@ def test_fetch() -> bool:
     """Fetch a single confirmed series to verify ECB API connectivity.
 
     Attempts to retrieve the USD/EUR exchange rate (EXR.M.USD.EUR.SP00.A),
-    which is a stable, always-available ECB SDW series.  Prints the result
-    summary and returns True on success, False on failure.
+    which is a stable, always-available ECB SDW series.
 
     Returns:
         True if the test series fetched successfully, False otherwise.
@@ -733,11 +764,8 @@ def fetch_all_ecb_variables(
     results: dict[str, Path] = {}
     summary_stats: dict[int, dict[str, Any]] = {}
 
-    # Determine which category numbers exist in configs
     category_nums = sorted({c["category"] for c in all_configs})
-    category_names = {
-        c["category"]: c["category_name"] for c in all_configs
-    }
+    category_names = {c["category"]: c["category_name"] for c in all_configs}
 
     for category_num in category_nums:
         cat_name = category_names[category_num]
