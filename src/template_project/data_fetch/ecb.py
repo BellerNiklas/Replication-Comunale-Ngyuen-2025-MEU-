@@ -80,7 +80,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     #   PROVIDER_FM=4F (ECB benchmark series)
     #   INSTRUMENT_FM=BB (benchmark bond)
     #   DATA_TYPE_FM=YLD (yield) or YLDA (real yield average)
-    # CONFIRMED: all six keys return 200.
+    # CONFIRMED: all five keys return 200.
     # Note: These are in the FM flow, NOT the IRS flow.
     # ========================================================================
     "FM_BONDS": {
@@ -107,16 +107,11 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "004",
-                "key": "M.U2.EUR.4F.BB.U2_7Y.YLD",
-                "desc": "EA 7Y government benchmark bond yield",
-            },
-            {
-                "id": "005",
                 "key": "M.U2.EUR.4F.BB.U2_10Y.YLD",
                 "desc": "EA 10Y government benchmark bond yield",
             },
             {
-                "id": "006",
+                "id": "005",
                 "key": "M.U2.EUR.4F.BB.R_U2_10Y.YLDA",
                 "desc": "EA real 10Y government benchmark bond yield",
             },
@@ -173,7 +168,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     # DJ EURO STOXX EQUITY INDICES (FM) – Euro area level, category 8
     # Key: FREQ.REF_AREA.CURRENCY.PROVIDER_FM.INSTRUMENT_FM.PROVIDER_FM_ID.DATA_TYPE_FM
     #   PROVIDER_FM=DS (DataStream), INSTRUMENT_FM=EI (equity/index)
-    # CONFIRMED: all nine keys return 200.
+    # CONFIRMED: all ten keys return 200.
     # ========================================================================
     "FM_EQUITY": {
         "flow": "FM",
@@ -189,41 +184,46 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "002",
+                "key": "M.U2.EUR.DS.EI.DJEURST.HSTA",
+                "desc": "DJ Euro Stoxx Price Index",
+            },
+            {
+                "id": "003",
                 "key": "M.U2.EUR.DS.EI.S1ESBME.HSTA",
                 "desc": "DJ Euro Stoxx Basic Materials",
             },
             {
-                "id": "003",
+                "id": "004",
                 "key": "M.U2.EUR.DS.EI.S1ESCSE.HSTA",
                 "desc": "DJ Euro Stoxx Consumer Services",
             },
             {
-                "id": "004",
+                "id": "005",
                 "key": "M.U2.EUR.DS.EI.S1ESFNE.HSTA",
                 "desc": "DJ Euro Stoxx Financials",
             },
             {
-                "id": "005",
+                "id": "006",
                 "key": "M.U2.EUR.DS.EI.S1ESG1E.HSTA",
                 "desc": "DJ Euro Stoxx Technology",
             },
             {
-                "id": "006",
+                "id": "007",
                 "key": "M.U2.EUR.DS.EI.S1ESH1E.HSTA",
                 "desc": "DJ Euro Stoxx Healthcare",
             },
             {
-                "id": "007",
+                "id": "008",
                 "key": "M.U2.EUR.DS.EI.S1ESIDE.HSTA",
                 "desc": "DJ Euro Stoxx Industrials",
             },
             {
-                "id": "008",
+                "id": "009",
                 "key": "M.U2.EUR.DS.EI.S1EST1E.HSTA",
                 "desc": "DJ Euro Stoxx Telecommunications",
             },
             {
-                "id": "009",
+                "id": "010",
                 "key": "M.U2.EUR.DS.EI.S1ESU1E.HSTA",
                 "desc": "DJ Euro Stoxx Utilities",
             },
@@ -322,9 +322,10 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         ],
     },
     # ========================================================================
-    # MONETARY AGGREGATES M1 and M3 (BSI) – Euro area level, category 8
-    # CONFIRMED: both keys return 200.
+    # MONETARY AGGREGATES M1, M3 and Currency in Circulation (BSI) – Euro area, cat. 8
+    # CONFIRMED: all three keys return 200.
     # MATURITY_ORIG=X (not M) for working-day and seasonally adjusted notional stocks.
+    # L10 = currency in circulation (BS_ITEM).
     # ========================================================================
     "BSI_MON_AGG": {
         "flow": "BSI",
@@ -343,6 +344,11 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
                 "key": "M.U2.Y.V.M30.X.I.U2.2300.Z01.E",
                 "desc": "M3 – Index of Notional Stocks (SA+WDA)",
             },
+            {
+                "id": "003",
+                "key": "M.U2.Y.V.L10.X.I.U2.2300.Z01.E",
+                "desc": "Currency in circulation – Index of Notional Stocks (SA+WDA)",
+            },
         ],
     },
     # ========================================================================
@@ -351,13 +357,17 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     #                DATA_TYPE_MIR.AMOUNT_CAT.BS_COUNT_SECTOR.CURRENCY_TRANS.IR_BUS_COV
     # CONFIRMED: all keys return 200.
     #
-    # Lending:
+    # Lending – individual instrument types:
     #   A2C = house purchase, A2D = other household lending excl. revolving
     #   Sector 2250 = households (S.14+S.15)
     #
+    # Lending – cost-of-borrowing composites (A2J = A2C + A2A + A2Z):
+    #   FM = up to 1 year, KM = over 1 year
+    #   Sector 2230 = NFCs + households combined (S.11+S.14+S.15)
+    #
     # Deposits with agreed maturity (L22), maturity buckets:
     #   A = total new business, F = up to 1Y, G = over 1Y up to 2Y,
-    #   H = over 2Y, L = up to 2Y (aggregate)
+    #   H = over 2Y, K = over 1Y (cost-of-borrowing), L = up to 2Y (aggregate)
     #   Sector 2230 = NFCs + households combined (S.11+S.14+S.15) — exact paper match.
     #
     # Not found: lending spreads vs. swap rate (no API key available).
@@ -369,7 +379,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "country_iso2": "DE",
         "series_prefix": "DE_FIN_MIR",
         "variables": [
-            # Lending rates
+            # Lending rates – individual instrument types
             {
                 "id": "LEN_001",
                 "key": "M.DE.B.A2C.A.R.A.2250.EUR.N",
@@ -379,6 +389,17 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
                 "id": "LEN_002",
                 "key": "M.DE.B.A2D.A.R.A.2250.EUR.N",
                 "desc": "MIR – Other lending, households excl. revolving (new business)",
+            },
+            # Lending rates – cost-of-borrowing composites (A2J), NFC+HH (2230)
+            {
+                "id": "LEN_003",
+                "key": "M.DE.B.A2J.FM.R.A.2230.EUR.N",
+                "desc": "MIR – Cost-of-borrowing loans, up to 1 year, NFC+HH (new business)",
+            },
+            {
+                "id": "LEN_004",
+                "key": "M.DE.B.A2J.KM.R.A.2230.EUR.N",
+                "desc": "MIR – Cost-of-borrowing loans, over 1 year, NFC+HH (new business)",
             },
             # Deposit rates – NFC+HH combined (S.11+S.14+S.15, sector 2230) by maturity
             {
@@ -403,6 +424,11 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "DEP_005",
+                "key": "M.DE.B.L22.K.R.A.2230.EUR.N",
+                "desc": "MIR – Deposit rate, over 1 year (cost-of-borrowing, new business)",
+            },
+            {
+                "id": "DEP_006",
                 "key": "M.DE.B.L22.L.R.A.2230.EUR.N",
                 "desc": "MIR – Deposit rate, up to 2 years aggregate (new business)",
             },

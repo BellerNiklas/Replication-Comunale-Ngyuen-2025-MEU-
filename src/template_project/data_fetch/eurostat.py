@@ -14,10 +14,12 @@ import pandas as pd
 from template_project.config import BLD, SRC
 
 
-# Dataset configurations for all ~70 Eurostat variables across 6 categories
+# Dataset configurations for all Eurostat variables across 6 categories.
+# Every non-time dimension must be pinned in filters; omitting one causes the
+# API to return all combinations silently (dimension explosion).
 DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     # ========================================================================
-    # Category 1: Industrial Production (~13 variables)
+    # Category 1: Industrial Production (13 variables)
     # ========================================================================
     "STS_INPR_M": {
         "category": 1,
@@ -26,6 +28,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "geo": "DE",
             "s_adj": "SCA",
             "unit": "I21",
+            "startPeriod": 2003,
         },
         "series_prefix": "DE_IND_PROD",
         "variables": [
@@ -46,7 +49,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     },
 
     # ========================================================================
-    # Category 2: Labor Market (~21 variables)
+    # Category 2: Labor Market
     # ========================================================================
     "UNE_RT_M": {
         "category": 2,
@@ -55,6 +58,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "geo": "DE",
             "s_adj": "SA",
             "unit": "PC_ACT",
+            "startPeriod": 2003,
         },
         "series_prefix": "DE_LAB_UNEMP",
         "variables": [
@@ -66,8 +70,9 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         ],
     },
 
-    # Note: STS_INEM_M and STS_INHW_M have known API issues - included for completeness
-    # but may fail during fetch (will be skipped gracefully)
+    # STS_INLB_M carries three indicators via indic_bt: EMP, HW, WAGE.
+    # Previously only WAGE was intended but indic_bt was omitted → 3x explosion.
+    # Now we fetch all three explicitly as separate variables.
     "STS_INLB_M": {
         "category": 2,
         "category_name": "Labor_market_indicators",
@@ -75,63 +80,24 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "geo": "DE",
             "s_adj": "SCA",
             "unit": "I21",
+            "startPeriod": 2003,
         },
-        "series_prefix": "DE_LAB_COST",
+        "series_prefix": "DE_LAB",
         "variables": [
-            # NOTE: Valid NACE codes discovered via get_par_values(): B-E36, C, individual sectors
-            # F (Construction) and G-N (Services) do NOT exist in this dataset
-            {"id": "001", "nace_r2": "B-E36", "desc": "Labor Cost - Industry (NACE B-E36)"},
-            {"id": "002", "nace_r2": "C", "desc": "Labor Cost - Manufacturing (NACE C)"},
+            # Wages & salaries
+            {"id": "WAGE_001", "nace_r2": "B-E36", "indic_bt": "WAGE", "desc": "Gross wages & salaries - Industry (B-E36)"},
+            {"id": "WAGE_002", "nace_r2": "C", "indic_bt": "WAGE", "desc": "Gross wages & salaries - Manufacturing (C)"},
+            # Employment indices
+            {"id": "EMP_001", "nace_r2": "B-E36", "indic_bt": "EMP", "desc": "Employment index - Industry (B-E36)"},
+            {"id": "EMP_002", "nace_r2": "C", "indic_bt": "EMP", "desc": "Employment index - Manufacturing (C)"},
+            # Hours worked indices
+            {"id": "HW_001", "nace_r2": "B-E36", "indic_bt": "HW", "desc": "Hours worked index - Industry (B-E36)"},
+            {"id": "HW_002", "nace_r2": "C", "indic_bt": "HW", "desc": "Hours worked index - Manufacturing (C)"},
         ],
     },
 
-    # NOTE: Employment and Hours Worked datasets NOT AVAILABLE via eurostat Python package
-    # Diagnostic via get_pars() confirms STS_INEM_M and STS_INHW_M datasets do not exist
-    # in the accessible Eurostat API (return 'NoneType' errors even for basic parameter queries)
-    # Quarterly versions (STS_INEM_Q, STS_INHW_Q) also unavailable
-    # These datasets may be deprecated, restricted, or only available via different access methods
-    # TODO: Investigate Eurostat Data Browser direct download or alternative data sources
-    #
-    # "STS_INEM_M": {
-    #     "category": 2,
-    #     "category_name": "Labor_market_indicators",
-    #     "base_filters": {
-    #         "geo": "DE",
-    #         "s_adj": "SCA",
-    #         "unit": "I21",
-    #     },
-    #     "series_prefix": "DE_LAB_EMP",
-    #     "variables": [
-    #         {"id": "001", "nace_r2": "B-E", "desc": "Employment - Industry (NACE B-E)"},
-    #         {"id": "002", "nace_r2": "B", "desc": "Employment - Mining (NACE B)"},
-    #         {"id": "003", "nace_r2": "C", "desc": "Employment - Manufacturing (NACE C)"},
-    #         {"id": "004", "nace_r2": "D", "desc": "Employment - Energy (NACE D)"},
-    #         {"id": "005", "nace_r2": "E", "desc": "Employment - Water/Waste (NACE E)"},
-    #         {"id": "006", "nace_r2": "F", "desc": "Employment - Construction (NACE F)"},
-    #         {"id": "007", "nace_r2": "G-N", "desc": "Employment - Services (NACE G-N)"},
-    #     ],
-    # },
-    #
-    # "STS_INHW_M": {
-    #     "category": 2,
-    #     "category_name": "Labor_market_indicators",
-    #     "base_filters": {
-    #         "geo": "DE",
-    #         "s_adj": "SCA",
-    #         "unit": "I21",
-    #     },
-    #     "series_prefix": "DE_LAB_HOURS",
-    #     "variables": [
-    #         {"id": "001", "nace_r2": "B-E", "desc": "Hours Worked - Industry (NACE B-E)"},
-    #         {"id": "002", "nace_r2": "C", "desc": "Hours Worked - Manufacturing (NACE C)"},
-    #         {"id": "003", "nace_r2": "F", "desc": "Hours Worked - Construction (NACE F)"},
-    #         {"id": "004", "nace_r2": "G-I", "desc": "Hours Worked - Trade/Transport (NACE G-I)"},
-    #         {"id": "005", "nace_r2": "G-N", "desc": "Hours Worked - Services (NACE G-N)"},
-    #     ],
-    # },
-
     # ========================================================================
-    # Category 3: Prices (~22 variables)
+    # Category 3: Prices (22 variables)
     # ========================================================================
     "STS_INPP_M": {
         "category": 3,
@@ -140,6 +106,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "geo": "DE",
             "unit": "I21",
             "s_adj": "NSA",
+            "startPeriod": 2003,
         },
         "series_prefix": "DE_PRICE_PPI",
         "variables": [
@@ -160,7 +127,8 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "geo": "DE",
             "unit": "I21",
             "s_adj": "NSA",
-            "indic_bt": "PRC_IMP",  # Total imports (not split by EU/non-EU)
+            "indic_bt": "PRC_IMP",
+            "startPeriod": 2003,
         },
         "series_prefix": "DE_PRICE_IMP",
         "variables": [
@@ -177,6 +145,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "base_filters": {
             "geo": "DE",
             "unit": "I15",
+            "startPeriod": 2003,
         },
         "series_prefix": "DE_PRICE_HICP",
         "variables": [
@@ -195,8 +164,10 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     },
 
     # ========================================================================
-    # Category 4: Activity Indicators (~6 variables)
+    # Category 4: Activity Indicators
     # ========================================================================
+    # Retail turnover: indic_bt has VOL_SLS (deflated) and NETTUR (nominal).
+    # Paper wants deflated → pin indic_bt="VOL_SLS".
     "STS_TRTU_M": {
         "category": 4,
         "category_name": "Activity_indicators",
@@ -204,70 +175,52 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "geo": "DE",
             "unit": "I21",
             "s_adj": "SCA",
+            "indic_bt": "VOL_SLS",
+            "startPeriod": 2003,
         },
         "series_prefix": "DE_ACT_TURN",
         "variables": [
             {"id": "001", "nace_r2": "G47", "desc": "Turnover - Retail Trade (NACE G47)"},
             {"id": "002", "nace_r2": "G47_FOOD", "desc": "Turnover - Food Retail"},
-            {"id": "003", "nace_r2": "G47_NFOOD", "desc": "Turnover - Non-Food Retail"},
+            {"id": "003", "nace_r2": "G47_NFOOD_X_G473", "desc": "Turnover - Non-Food Retail (excl. fuel)"},
         ],
     },
 
+    # Building permits: uses cpa2_1 (NOT nace_r2). indic_bt has BPRM_DW (dwellings)
+    # and BPRM_SQM (floor area). For DE, aggregate cpa2_1 codes only exist for
+    # BPRM_SQM (useful floor area in m²), not BPRM_DW. Use SCA + BPRM_SQM.
     "STS_COBP_M": {
         "category": 4,
         "category_name": "Activity_indicators",
         "base_filters": {
             "geo": "DE",
             "unit": "I21",
-            # Note: s_adj not supported for this dataset
+            "s_adj": "SCA",
+            "indic_bt": "BPRM_SQM",
+            "startPeriod": 2003,
         },
         "series_prefix": "DE_ACT_BUILD",
         "variables": [
-            {"id": "001", "nace_r2": "F", "desc": "Building Permits - Total Construction (NACE F)"},
-            {"id": "002", "nace_r2": "F41", "desc": "Building Permits - Buildings (NACE F41)"},
+            {"id": "001", "cpa2_1": "CPA_F41001_41002", "desc": "Building Permits - All Buildings (floor area)"},
+            {"id": "002", "cpa2_1": "CPA_F41001", "desc": "Building Permits - Residential (floor area)"},
+            {"id": "003", "cpa2_1": "CPA_F41002", "desc": "Building Permits - Non-Residential (floor area)"},
         ],
     },
 
-    "STS_INTV_M": {
-        "category": 4,
-        "category_name": "Activity_indicators",
-        "base_filters": {
-            "geo": "DE",
-            "s_adj": "NSA",
-            "unit": "I21",
-        },
-        "series_prefix": "DE_ACT_CAR",
-        "variables": [
-            {"id": "001", "indic_sb": "TOVT", "desc": "Car Registrations - Total Vehicles"},
-        ],
-    },
+    # NOTE: STS_INTV_M is industry turnover (indic_bt=NETTUR), NOT car registrations.
+    # Car registrations come from ECB (already in ecb.py as DE_ACT_CARS_001..004).
+    # Removed to avoid confusion.
 
     # ========================================================================
-    # Category 5: Trade (~2 variables)
+    # Category 5: Trade
     # ========================================================================
-    # NOTE: Trade datasets currently inaccessible via Eurostat API
-    # Multiple datasets tested (EXT_ST_EA19, COMEXT, BOP_ITS6_M, NAMA_10_EXI_M, STS_INTVT_M)
-    # all return 'NoneType' object has no attribute 'get' errors
-    # TODO: Investigate alternative data sources or wait for API fix
-    # Commenting out for now to allow other variables to be fetched successfully
-    #
-    # "EXT_ST_EA19": {
-    #     "category": 5,
-    #     "category_name": "Trade",
-    #     "base_filters": {
-    #         "geo": "DE",
-    #         "unit": "MIO_EUR",
-    #         "s_adj": "NSA",
-    #     },
-    #     "series_prefix": "DE_TRADE",
-    #     "variables": [
-    #         {"id": "EXP_001", "stk_flow": "EXP", "partner": "EXT_EU28", "desc": "Exports - Extra EU (Goods)"},
-    #         {"id": "IMP_001", "stk_flow": "IMP", "partner": "EXT_EU28", "desc": "Imports - Extra EU (Goods)"},
-    #     ],
-    # },
+    # TODO: ds-059366 (Comext) uses a separate API endpoint
+    # (https://ec.europa.eu/eurostat/api/comext/dissemination).
+    # The eurostat Python package may not support DS-prefixed datasets.
+    # Needs investigation with sdmx package or direct API call.
 
     # ========================================================================
-    # Category 6: Sentiment (~6 variables)
+    # Category 6: Sentiment (6 variables)
     # ========================================================================
     "EI_BSSI_M_R2": {
         "category": 6,
@@ -275,11 +228,10 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         "base_filters": {
             "geo": "DE",
             "s_adj": "SA",
+            "startPeriod": 2003,
         },
         "series_prefix": "DE_SENT",
         "variables": [
-            # NOTE: All sentiment codes discovered via get_par_values('EI_BSSI_M_R2', 'indic')
-            # EI_BSCO_M has different codes and was causing failures
             {"id": "ESI_001", "indic": "BS-ESI-I", "desc": "Economic Sentiment Indicator"},
             {"id": "CONS_001", "indic": "BS-CSMCI-BAL", "desc": "Consumer Confidence Indicator"},
             {"id": "RET_001", "indic": "BS-RCI-BAL", "desc": "Retail Confidence Indicator"},
@@ -341,129 +293,28 @@ def generate_all_variable_configs() -> list[dict[str, Any]]:
     return all_configs
 
 
-def get_variable_config() -> list[dict[str, Any]]:
-    """Return configuration for Germany variables to fetch.
+_SPECIAL_FILTER_KEYS = {"startPeriod", "endPeriod"}
 
-    Returns:
-        List of dictionaries containing:
-        - series_id: Identifier in manifest
-        - dataset_id: Eurostat dataset code
-        - filters: Dictionary of filter parameters
-        - description: Human-readable description
 
+def validate_filters(dataset_id: str, filters: dict[str, str | list[str]]) -> None:
+    """Check that all filter keys are valid dimensions for the dataset.
+
+    Raises ValueError if any filter key is not a real dimension,
+    which would cause Eurostat to silently return unfiltered data
+    (dimension explosion).
     """
-    return [
-        {
-            "series_id": "DE_IND_PROD_001",
-            "dataset_id": "STS_INPR_M",
-            "filters": {
-                "geo": "DE",
-                "nace_r2": "B-D",
-                "s_adj": "SCA",
-                "unit": "I21",
-            },
-            "description": "Industrial Production - Total Industry",
-        },
-        {
-            "series_id": "DE_IND_PROD_002",
-            "dataset_id": "STS_INPR_M",
-            "filters": {
-                "geo": "DE",
-                "nace_r2": "C",
-                "s_adj": "SCA",
-                "unit": "I21",
-            },
-            "description": "Industrial Production - Manufacturing",
-        },
-        {
-            "series_id": "DE_LAB_UNEMP_001",
-            "dataset_id": "UNE_RT_M",
-            "filters": {
-                "geo": "DE",
-                "age": "TOTAL",
-                "sex": "T",
-                "unit": "PC_ACT",
-                "s_adj": "SA",
-            },
-            "description": "Unemployment Rate",
-        },
-        # Note: STS_INEM_M and STS_INHW_M have API structure issues
-        # Commented out for now - can be added with correct dataset codes later
-        # {
-        #     "series_id": "DE_LAB_EMP_001",
-        #     "dataset_id": "STS_INEM_M",
-        #     "filters": {
-        #         "geo": "DE",
-        #         "nace_r2": "B-D",
-        #         "s_adj": "SCA",
-        #         "unit": "I21",
-        #     },
-        #     "description": "Employment Index - Total",
-        # },
-        # {
-        #     "series_id": "DE_LAB_HOURS_001",
-        #     "dataset_id": "STS_INHW_M",
-        #     "filters": {
-        #         "geo": "DE",
-        #         "nace_r2": "B-D",
-        #         "s_adj": "SCA",
-        #         "unit": "I21",
-        #     },
-        #     "description": "Hours Worked Index",
-        # },
-        {
-            "series_id": "DE_PRICE_PPI_001",
-            "dataset_id": "STS_INPP_M",
-            "filters": {
-                "geo": "DE",
-                "nace_r2": "B-D",
-                "unit": "I21",
-                "s_adj": "NSA",
-            },
-            "description": "Producer Price Index - Total",
-        },
-        {
-            "series_id": "DE_PRICE_HICP_001",
-            "dataset_id": "PRC_HICP_MIDX",
-            "filters": {
-                "geo": "DE",
-                "coicop": "CP00",
-                "unit": "I15",
-            },
-            "description": "HICP - Overall Index",
-        },
-        {
-            "series_id": "DE_PRICE_HICP_002",
-            "dataset_id": "PRC_HICP_MIDX",
-            "filters": {
-                "geo": "DE",
-                "coicop": "NRG",
-                "unit": "I15",
-            },
-            "description": "HICP - Energy",
-        },
-        {
-            "series_id": "DE_SENT_ESI_001",
-            "dataset_id": "EI_BSSI_M_R2",
-            "filters": {
-                "geo": "DE",
-                "s_adj": "SA",
-                "indic": "BS-ESI-I",
-            },
-            "description": "Economic Sentiment Indicator",
-        },
-        {
-            "series_id": "DE_ACT_BUILD_001",
-            "dataset_id": "STS_COBP_M",
-            "filters": {
-                "geo": "DE",
-                "nace_r2": "F",
-                "unit": "I21",
-                # Note: s_adj not supported for this dataset
-            },
-            "description": "Building Permits",
-        },
-    ]
+    raw_dims = eurostat.get_pars(dataset_id)
+    if raw_dims is None:
+        msg = f"{dataset_id}: get_pars() returned None — dataset may not exist"
+        raise ValueError(msg)
+    dims = set(raw_dims)
+    unknown = [k for k in filters if k not in dims and k not in _SPECIAL_FILTER_KEYS]
+    if unknown:
+        msg = (
+            f"{dataset_id}: unknown filter keys {unknown}. "
+            f"Valid dims: {sorted(dims)}"
+        )
+        raise ValueError(msg)
 
 
 def fetch_eurostat_series(
@@ -485,13 +336,15 @@ def fetch_eurostat_series(
         as additional columns.
 
     Raises:
-        ValueError: If dataset_id is empty.
+        ValueError: If dataset_id is empty or filters contain invalid keys.
         RuntimeError: If API request fails after all retries.
 
     """
     if not dataset_id:
         msg = "dataset_id cannot be empty"
         raise ValueError(msg)
+
+    validate_filters(dataset_id, filters)
 
     max_retries = 3
     for attempt in range(max_retries):
@@ -567,9 +420,6 @@ def transform_eurostat_data(
         "category_name": metadata.get("category_name", ""),
     })
 
-    # Filter to data from 2003 onwards (as per paper)
-    result = result[result["date"] >= "2003"]
-
     # Sort by date
     result = result.sort_values("date").reset_index(drop=True)
 
@@ -614,14 +464,12 @@ def save_series_to_csv(data: pd.DataFrame, output_path: Path) -> None:
 def fetch_category_variables(
     category_num: int,
     all_configs: list[dict[str, Any]],
-    manifest: pd.DataFrame,
 ) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
     """Fetch all variables for a specific category.
 
     Args:
         category_num: Category number to fetch (1-6).
         all_configs: Full list of variable configurations.
-        manifest: Manifest DataFrame for metadata lookup.
 
     Returns:
         Tuple of (successful_data, failed_series):
@@ -642,6 +490,7 @@ def fetch_category_variables(
         filters = var_config["filters"]
         description = var_config["description"]
         category_name = var_config["category_name"]
+        country_iso2 = filters.get("geo", "DE")
 
         print(f"  [{i}/{len(category_configs)}] {series_id}: {description}")
 
@@ -649,17 +498,8 @@ def fetch_category_variables(
             # Fetch from Eurostat
             raw_data = fetch_eurostat_series(dataset_id, filters)
 
-            # Get metadata from manifest or use description
-            manifest_row = manifest[manifest["series_id"] == series_id]
-            if not manifest_row.empty:
-                variable_name = manifest_row.iloc[0]["variable_name"]
-                country_iso2 = manifest_row.iloc[0]["country_iso2"]
-            else:
-                variable_name = description
-                country_iso2 = "DE"
-
             metadata = {
-                "variable_name": variable_name,
+                "variable_name": description,
                 "country_iso2": country_iso2,
                 "category": category_num,
                 "category_name": category_name,
@@ -751,163 +591,89 @@ def save_category_csv(
 
 def fetch_germany_variables(
     output_dir: Path,
-    manifest_path: Path,
-    *,
-    use_category_files: bool = True,
 ) -> dict[str, Path]:
     """Fetch all Germany variables defined in configuration.
 
     Args:
         output_dir: Directory where CSV files will be saved.
-        manifest_path: Path to series_manifest.csv for metadata lookup.
-        use_category_files: If True, save category-based CSVs (default).
-                           If False, save individual variable CSVs (legacy).
 
     Returns:
-        Dictionary mapping category/series_id to file path.
-        - If use_category_files=True: keys are 'category_1', 'category_2', etc.
-        - If use_category_files=False: keys are series_ids (legacy behavior)
+        Dictionary mapping 'category_N' to file path.
 
     """
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load manifest for metadata
-    manifest = pd.read_csv(manifest_path)
+    # Generate all variable configs
+    all_configs = generate_all_variable_configs()
 
-    if use_category_files:
-        # === CATEGORY-BASED OUTPUT (NEW) ===
-        # Generate all variable configs
-        all_configs = generate_all_variable_configs()
+    results: dict[str, Path] = {}
+    summary_stats: dict[int, dict[str, Any]] = {}
 
-        results: dict[str, Path] = {}
-        summary_stats: dict[int, dict[str, Any]] = {}
+    # Process each category sequentially
+    for category_num in range(1, 7):  # Categories 1-6
+        # Get category name from first config in category
+        category_configs = [c for c in all_configs if c["category"] == category_num]
+        if not category_configs:
+            continue
 
-        # Process each category sequentially
-        for category_num in range(1, 7):  # Categories 1-6
-            # Get category name from first config in category
-            category_configs = [c for c in all_configs if c["category"] == category_num]
-            if not category_configs:
-                continue
+        category_name = category_configs[0]["category_name"]
 
-            category_name = category_configs[0]["category_name"]
+        print(f"\nFetching Category {category_num}: {category_name} ({len(category_configs)} variables)")
 
-            print(f"\nFetching Category {category_num}: {category_name} ({len(category_configs)} variables)")
+        # Fetch all variables in category
+        successful_data, failed_series = fetch_category_variables(
+            category_num, all_configs
+        )
 
-            # Fetch all variables in category
-            successful_data, failed_series = fetch_category_variables(
-                category_num, all_configs, manifest
+        # Track statistics
+        total = len(category_configs)
+        success_count = len(successful_data)
+        fail_count = len(failed_series)
+
+        summary_stats[category_num] = {
+            "total": total,
+            "success": success_count,
+            "failed": fail_count,
+            "failed_series": failed_series,
+            "category_name": category_name,
+        }
+
+        if successful_data:
+            # Concatenate and save
+            category_df = concatenate_category_data(
+                successful_data, category_num, category_name
             )
+            output_path = save_category_csv(
+                category_df, category_num, category_name, output_dir
+            )
+            results[f"category_{category_num}"] = output_path
 
-            # Track statistics
-            total = len(category_configs)
-            success_count = len(successful_data)
-            fail_count = len(failed_series)
+            print(f"\n  Category {category_num}: {success_count}/{total} "
+                  f"variables succeeded ({fail_count} failed)")
+            print(f"    Saved: {output_path.name} ({len(category_df):,} rows)")
+        else:
+            print(f"\n  Category {category_num}: All {total} variables failed!")
 
-            summary_stats[category_num] = {
-                "total": total,
-                "success": success_count,
-                "failed": fail_count,
-                "failed_series": failed_series,
-                "category_name": category_name,
-            }
+    # Print final summary
+    print("\n" + "="*70)
+    print("FINAL SUMMARY")
+    print("="*70)
 
-            if successful_data:
-                # Concatenate and save
-                category_df = concatenate_category_data(
-                    successful_data, category_num, category_name
-                )
-                output_path = save_category_csv(
-                    category_df, category_num, category_name, output_dir
-                )
-                results[f"category_{category_num}"] = output_path
+    total_vars = sum(s["total"] for s in summary_stats.values())
+    total_success = sum(s["success"] for s in summary_stats.values())
+    total_failed = sum(s["failed"] for s in summary_stats.values())
 
-                print(f"\n  Category {category_num}: {success_count}/{total} "
-                      f"variables succeeded ({fail_count} failed)")
-                print(f"    Saved: {output_path.name} ({len(category_df):,} rows)")
-            else:
-                print(f"\n  Category {category_num}: All {total} variables failed!")
+    print(f"\nOverall: {total_success}/{total_vars} variables fetched successfully")
+    print(f"Failed: {total_failed} variables")
 
-        # Print final summary
-        print("\n" + "="*70)
-        print("FINAL SUMMARY")
-        print("="*70)
-
-        total_vars = sum(s["total"] for s in summary_stats.values())
-        total_success = sum(s["success"] for s in summary_stats.values())
-        total_failed = sum(s["failed"] for s in summary_stats.values())
-
-        print(f"\nOverall: {total_success}/{total_vars} variables fetched successfully")
-        print(f"Failed: {total_failed} variables")
-
-        if total_failed > 0:
-            print("\nFailed variables by category:")
-            for cat_num, stats in summary_stats.items():
-                if stats["failed"] > 0:
-                    print(f"\n  Category {cat_num} ({stats['category_name']}):")
-                    for series_id, error in stats["failed_series"].items():
-                        print(f"    - {series_id}: {error[:80]}...")
-
-    else:
-        # === LEGACY INDIVIDUAL FILE OUTPUT ===
-        # Use the old get_variable_config() function
-        variables = get_variable_config()
-
-        results: dict[str, Path] = {}
-        failed: dict[str, str] = {}
-
-        # Fetch each variable individually
-        for var_config in variables:
-            series_id = var_config["series_id"]
-            dataset_id = var_config["dataset_id"]
-            filters = var_config["filters"]
-            description = var_config["description"]
-
-            print(f"Fetching {series_id}: {description}")
-
-            try:
-                # Fetch from Eurostat
-                raw_data = fetch_eurostat_series(dataset_id, filters)
-
-                # Get metadata from manifest
-                manifest_row = manifest[manifest["series_id"] == series_id]
-                if not manifest_row.empty:
-                    variable_name = manifest_row.iloc[0]["variable_name"]
-                    country_iso2 = manifest_row.iloc[0]["country_iso2"]
-                else:
-                    variable_name = description
-                    country_iso2 = "DE"
-
-                metadata = {
-                    "variable_name": variable_name,
-                    "country_iso2": country_iso2,
-                }
-
-                # Transform to long format
-                transformed_data = transform_eurostat_data(raw_data, series_id, metadata)
-
-                # Validate
-                validate_series_data(transformed_data, series_id)
-
-                # Save to CSV
-                output_path = output_dir / f"{series_id}.csv"
-                save_series_to_csv(transformed_data, output_path)
-
-                results[series_id] = output_path
-                print(f"  SUCCESS: {len(transformed_data)} rows saved")
-
-            except (ValueError, RuntimeError) as e:
-                error_msg = str(e)
-                print(f"  SKIPPED: {error_msg}")
-                failed[series_id] = error_msg
-
-        # Print summary
-        print()
-        print(f"Successfully fetched {len(results)}/{len(variables)} variables")
-        if failed:
-            print(f"Failed to fetch {len(failed)} variables:")
-            for series_id, error in failed.items():
-                print(f"  {series_id}: {error}")
+    if total_failed > 0:
+        print("\nFailed variables by category:")
+        for cat_num, stats in summary_stats.items():
+            if stats["failed"] > 0:
+                print(f"\n  Category {cat_num} ({stats['category_name']}):")
+                for series_id, error in stats["failed_series"].items():
+                    print(f"    - {series_id}: {error[:80]}...")
 
     return results
 
@@ -915,13 +681,12 @@ def fetch_germany_variables(
 def main() -> None:
     """Fetch Eurostat data for Germany."""
     output_dir = BLD / "data" / "raw" / "eurostat"
-    manifest_path = SRC / "data" / "series_manifest.csv"
 
     print("Fetching Eurostat data for Germany...")
     print(f"Output directory: {output_dir}")
     print()
 
-    results = fetch_germany_variables(output_dir, manifest_path)
+    results = fetch_germany_variables(output_dir)
 
     if results:
         print()
