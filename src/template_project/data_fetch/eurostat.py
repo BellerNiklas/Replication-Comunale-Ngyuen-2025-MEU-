@@ -17,6 +17,8 @@ from template_project.config import BLD, SRC
 # Dataset configurations for all Eurostat variables across 6 categories.
 # Every non-time dimension must be pinned in filters; omitting one causes the
 # API to return all combinations silently (dimension explosion).
+#
+# Variable specs follow Table 1 of Comunale & Nguyen (2025) appendix.
 DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     # ========================================================================
     # Category 1: Industrial Production (13 variables)
@@ -30,49 +32,49 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "unit": "I21",
             "startPeriod": 2003,
         },
-        "series_prefix": "DE_IND_PROD",
+        "series_prefix": "DE_IP",
         "variables": [
-            {"id": "001", "nace_r2": "B-D", "desc": "Total Industry (NACE B-D)"},
-            {"id": "002", "nace_r2": "C", "desc": "Manufacturing (NACE C)"},
-            {"id": "003", "nace_r2": "B", "desc": "Mining and Quarrying (NACE B)"},
-            {"id": "004", "nace_r2": "D", "desc": "Energy (NACE D)"},
-            {"id": "005", "nace_r2": "C10-C12", "desc": "Food Products (NACE C10-C12)"},
-            {"id": "006", "nace_r2": "C13-C15", "desc": "Textiles (NACE C13-C15)"},
-            {"id": "007", "nace_r2": "C16-C18", "desc": "Wood and Paper (NACE C16-C18)"},
-            {"id": "008", "nace_r2": "C20", "desc": "Chemicals (NACE C20)"},
-            {"id": "009", "nace_r2": "C24", "desc": "Basic Metals (NACE C24)"},
-            {"id": "010", "nace_r2": "C26", "desc": "Electronics (NACE C26)"},
-            {"id": "011", "nace_r2": "C28", "desc": "Machinery (NACE C28)"},
-            {"id": "012", "nace_r2": "C29", "desc": "Transport Equipment (NACE C29)"},
-            {"id": "013", "nace_r2": "MIG_CAG", "desc": "Capital Goods (MIG)"},
+            {"id": "001", "nace_r2": "B-D", "desc": "IP total industry excl construction (B-D)"},
+            {"id": "003", "nace_r2": "B", "desc": "IP mining and quarrying (B)"},
+            {"id": "004", "nace_r2": "C", "desc": "IP manufacturing (C)"},
+            {"id": "005", "nace_r2": "D", "desc": "IP electricity/gas/steam/aircon (D)"},
+            {"id": "007", "nace_r2": "MIG_ING", "desc": "IP MIG intermediate goods"},
+            {"id": "008", "nace_r2": "MIG_CAG", "desc": "IP MIG capital goods"},
+            {"id": "009", "nace_r2": "MIG_DCOG", "desc": "IP MIG durable consumer goods"},
+            {"id": "010", "nace_r2": "MIG_NDCOG", "desc": "IP MIG non-durable consumer goods"},
+            {"id": "011", "nace_r2": "MIG_COG", "desc": "IP consumer goods industry"},
+            {"id": "012", "nace_r2": "MIG_NRG_X_E", "desc": "IP MIG energy (excl section E)"},
+            # NOTE: Appendix wants B-F (incl construction) for IP_001 and B-E36 (excl
+            # construction) for IP_013, but neither code is available via the SDMX API
+            # for STS_INPR_M/DE. B-D is the broadest "industry excl construction"
+            # aggregate that works, so IP_001 and IP_013 are identical here.
+            # The paper drops highly correlated series, so duplication is acceptable.
+            {"id": "013", "nace_r2": "B-D", "desc": "IP total industry excl construction (B-D, duplicate of 001)"},
         ],
     },
 
-    # ========================================================================
-    # Category 2: Labor Market
-    # ========================================================================
-    "UNE_RT_M": {
-        "category": 2,
-        "category_name": "Labor_market_indicators",
+    # Construction production index (missing from previous config)
+    "STS_COPR_M": {
+        "category": 1,
+        "category_name": "Industrial_production",
         "base_filters": {
             "geo": "DE",
-            "s_adj": "SA",
-            "unit": "PC_ACT",
+            "s_adj": "SCA",
+            "unit": "I21",
             "startPeriod": 2003,
         },
-        "series_prefix": "DE_LAB_UNEMP",
+        "series_prefix": "DE_IP",
         "variables": [
-            {"id": "001", "age": "TOTAL", "sex": "T", "desc": "Unemployment Rate - Total"},
-            {"id": "002", "age": "Y_LT25", "sex": "T", "desc": "Unemployment Rate - Youth (<25)"},
-            {"id": "003", "age": "Y25-74", "sex": "T", "desc": "Unemployment Rate - Prime Age (25-74)"},
-            {"id": "004", "age": "TOTAL", "sex": "M", "desc": "Unemployment Rate - Male"},
-            {"id": "005", "age": "TOTAL", "sex": "F", "desc": "Unemployment Rate - Female"},
+            {"id": "002", "nace_r2": "F", "desc": "Construction production index (F)"},
+            {"id": "006", "nace_r2": "F41", "desc": "Construction: all buildings (F41)"},
         ],
     },
 
-    # STS_INLB_M carries three indicators via indic_bt: EMP, HW, WAGE.
-    # Previously only WAGE was intended but indic_bt was omitted → 3x explosion.
-    # Now we fetch all three explicitly as separate variables.
+    # ========================================================================
+    # Category 2: Labor Market (27 variables)
+    # ========================================================================
+    # STS_INLB_M carries three indicators via indic_bt: WAGE, EMP, HW.
+    # Each indicator is crossed with NACE sections and MIG aggregates.
     "STS_INLB_M": {
         "category": 2,
         "category_name": "Labor_market_indicators",
@@ -84,58 +86,114 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         },
         "series_prefix": "DE_LAB",
         "variables": [
-            # Wages & salaries
-            {"id": "WAGE_001", "nace_r2": "B-E36", "indic_bt": "WAGE", "desc": "Gross wages & salaries - Industry (B-E36)"},
-            {"id": "WAGE_002", "nace_r2": "C", "indic_bt": "WAGE", "desc": "Gross wages & salaries - Manufacturing (C)"},
-            # Employment indices
-            {"id": "EMP_001", "nace_r2": "B-E36", "indic_bt": "EMP", "desc": "Employment index - Industry (B-E36)"},
-            {"id": "EMP_002", "nace_r2": "C", "indic_bt": "EMP", "desc": "Employment index - Manufacturing (C)"},
-            # Hours worked indices
-            {"id": "HW_001", "nace_r2": "B-E36", "indic_bt": "HW", "desc": "Hours worked index - Industry (B-E36)"},
-            {"id": "HW_002", "nace_r2": "C", "indic_bt": "HW", "desc": "Hours worked index - Manufacturing (C)"},
+            # Wages & salaries (5 MIG breakdowns)
+            {"id": "WAGE_001", "indic_bt": "WAGE", "nace_r2": "MIG_ING", "desc": "Wages MIG intermediate goods"},
+            {"id": "WAGE_002", "indic_bt": "WAGE", "nace_r2": "MIG_CAG", "desc": "Wages MIG capital goods"},
+            {"id": "WAGE_003", "indic_bt": "WAGE", "nace_r2": "MIG_DCOG", "desc": "Wages MIG durable consumer goods"},
+            {"id": "WAGE_004", "indic_bt": "WAGE", "nace_r2": "MIG_NDCOG", "desc": "Wages MIG non-durable consumer goods"},
+            {"id": "WAGE_005", "indic_bt": "WAGE", "nace_r2": "MIG_NRG", "desc": "Wages MIG energy"},
+            # Employment index (10: NACE sections + MIG aggregates)
+            {"id": "EMP_001", "indic_bt": "EMP", "nace_r2": "B", "desc": "Employment mining and quarrying"},
+            {"id": "EMP_002", "indic_bt": "EMP", "nace_r2": "C", "desc": "Employment manufacturing"},
+            {"id": "EMP_003", "indic_bt": "EMP", "nace_r2": "D", "desc": "Employment electricity/gas"},
+            {"id": "EMP_004", "indic_bt": "EMP", "nace_r2": "B-E36", "desc": "Employment total industry excl construction"},
+            {"id": "EMP_005", "indic_bt": "EMP", "nace_r2": "MIG_ING", "desc": "Employment MIG intermediate goods"},
+            {"id": "EMP_006", "indic_bt": "EMP", "nace_r2": "MIG_CAG", "desc": "Employment MIG capital goods"},
+            {"id": "EMP_007", "indic_bt": "EMP", "nace_r2": "MIG_DCOG", "desc": "Employment MIG durable consumer goods"},
+            {"id": "EMP_008", "indic_bt": "EMP", "nace_r2": "MIG_NDCOG", "desc": "Employment MIG non-durable consumer goods"},
+            {"id": "EMP_010", "indic_bt": "EMP", "nace_r2": "MIG_NRG", "desc": "Employment MIG energy"},
+            # Hours worked index (10: same breakdowns as employment)
+            {"id": "HW_001", "indic_bt": "HW", "nace_r2": "B", "desc": "Hours worked mining and quarrying"},
+            {"id": "HW_002", "indic_bt": "HW", "nace_r2": "C", "desc": "Hours worked manufacturing"},
+            {"id": "HW_003", "indic_bt": "HW", "nace_r2": "D", "desc": "Hours worked electricity/gas"},
+            {"id": "HW_004", "indic_bt": "HW", "nace_r2": "B-E36", "desc": "Hours worked total industry excl construction"},
+            {"id": "HW_005", "indic_bt": "HW", "nace_r2": "MIG_ING", "desc": "Hours worked MIG intermediate goods"},
+            {"id": "HW_006", "indic_bt": "HW", "nace_r2": "MIG_CAG", "desc": "Hours worked MIG capital goods"},
+            {"id": "HW_007", "indic_bt": "HW", "nace_r2": "MIG_DCOG", "desc": "Hours worked MIG durable consumer goods"},
+            {"id": "HW_008", "indic_bt": "HW", "nace_r2": "MIG_NDCOG", "desc": "Hours worked MIG non-durable consumer goods"},
+            {"id": "HW_010", "indic_bt": "HW", "nace_r2": "MIG_NRG", "desc": "Hours worked MIG energy"},
+        ],
+    },
+
+    # Services labour: employment in accommodation & food (NACE I).
+    # May not be available in STS_INLB_M (industry only), so use services dataset.
+    "STS_SELB_M": {
+        "category": 2,
+        "category_name": "Labor_market_indicators",
+        "base_filters": {
+            "geo": "DE",
+            "s_adj": "SCA",
+            "unit": "I21",
+            "startPeriod": 2003,
+        },
+        "series_prefix": "DE_LAB",
+        "variables": [
+            {"id": "EMP_011", "indic_bt": "EMP", "nace_r2": "I", "desc": "Employment accommodation & food services (I)"},
+        ],
+    },
+
+    "UNE_RT_M": {
+        "category": 2,
+        "category_name": "Labor_market_indicators",
+        "base_filters": {
+            "geo": "DE",
+            "s_adj": "SA",
+            "unit": "PC_ACT",
+            "age": "TOTAL",
+            "sex": "T",
+            "startPeriod": 2003,
+        },
+        "series_prefix": "DE_UNEMP",
+        "variables": [
+            {"id": "001", "desc": "Unemployment rate total"},
         ],
     },
 
     # ========================================================================
-    # Category 3: Prices (22 variables)
+    # Category 3: Prices (25 variables)
     # ========================================================================
     "STS_INPP_M": {
         "category": 3,
         "category_name": "Prices",
         "base_filters": {
             "geo": "DE",
-            "unit": "I21",
             "s_adj": "NSA",
+            "unit": "I21",
             "startPeriod": 2003,
         },
-        "series_prefix": "DE_PRICE_PPI",
+        "series_prefix": "DE_PPI",
         "variables": [
-            {"id": "001", "nace_r2": "B-D", "desc": "PPI - Total Industry (NACE B-D)"},
-            {"id": "002", "nace_r2": "C", "desc": "PPI - Manufacturing (NACE C)"},
-            {"id": "003", "nace_r2": "B", "desc": "PPI - Mining (NACE B)"},
-            {"id": "004", "nace_r2": "MIG_CAG", "desc": "PPI - Capital Goods (MIG)"},
-            {"id": "005", "nace_r2": "MIG_ING", "desc": "PPI - Intermediate Goods (MIG)"},
-            {"id": "006", "nace_r2": "MIG_COG", "desc": "PPI - Consumer Goods (MIG)"},
-            {"id": "007", "nace_r2": "MIG_NRG", "desc": "PPI - Energy (MIG)"},
+            {"id": "001", "nace_r2": "C", "desc": "PPI manufacturing"},
+            {"id": "002", "nace_r2": "B-E36", "desc": "PPI total industry excl construction"},
+            {"id": "003", "nace_r2": "MIG_ING", "desc": "PPI MIG intermediate goods"},
+            {"id": "004", "nace_r2": "MIG_CAG", "desc": "PPI MIG capital goods"},
+            {"id": "005", "nace_r2": "MIG_DCOG", "desc": "PPI MIG durable consumer goods"},
+            {"id": "006", "nace_r2": "MIG_NDCOG", "desc": "PPI MIG non-durable consumer goods"},
+            {"id": "007", "nace_r2": "MIG_COG", "desc": "PPI consumer goods industry"},
+            {"id": "008", "nace_r2": "MIG_NRG", "desc": "PPI MIG energy"},
         ],
     },
 
+    # Import prices: CPA-based classification, pin indic_bt="PRC_IMP".
     "STS_INPI_M": {
         "category": 3,
         "category_name": "Prices",
         "base_filters": {
             "geo": "DE",
-            "unit": "I21",
             "s_adj": "NSA",
+            "unit": "I21",
             "indic_bt": "PRC_IMP",
             "startPeriod": 2003,
         },
-        "series_prefix": "DE_PRICE_IMP",
+        "series_prefix": "DE_IMPPR",
         "variables": [
-            {"id": "001", "cpa2_1": "CPA_B-D", "desc": "Import Price - Total Industry"},
-            {"id": "002", "cpa2_1": "CPA_MIG_CAG", "desc": "Import Price - Capital Goods (MIG)"},
-            {"id": "003", "cpa2_1": "CPA_MIG_ING", "desc": "Import Price - Intermediate Goods (MIG)"},
-            {"id": "004", "cpa2_1": "CPA_MIG_COG", "desc": "Import Price - Consumer Goods (MIG)"},
+            {"id": "001", "cpa2_1": "CPA_C", "desc": "Import prices manufactured products"},
+            {"id": "002", "cpa2_1": "CPA_MIG_ING", "desc": "Import prices MIG intermediate goods"},
+            {"id": "003", "cpa2_1": "CPA_MIG_CAG", "desc": "Import prices MIG capital goods"},
+            {"id": "004", "cpa2_1": "CPA_MIG_DCOG", "desc": "Import prices MIG durable consumer goods"},
+            {"id": "005", "cpa2_1": "CPA_MIG_NDCOG", "desc": "Import prices MIG non-durable consumer goods"},
+            {"id": "006", "cpa2_1": "CPA_MIG_COG", "desc": "Import prices consumer goods industry"},
+            {"id": "007", "cpa2_1": "CPA_MIG_NRG_X_E", "desc": "Import prices MIG energy (excl section E)"},
         ],
     },
 
@@ -147,77 +205,127 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             "unit": "I15",
             "startPeriod": 2003,
         },
-        "series_prefix": "DE_PRICE_HICP",
+        "series_prefix": "DE_HICP",
         "variables": [
-            {"id": "001", "coicop": "CP00", "desc": "HICP - Overall Index (CP00)"},
-            {"id": "002", "coicop": "NRG", "desc": "HICP - Energy (NRG)"},
-            {"id": "003", "coicop": "FOOD", "desc": "HICP - Food (FOOD)"},
-            {"id": "004", "coicop": "CP01", "desc": "HICP - Food and Beverages (CP01)"},
-            {"id": "005", "coicop": "CP02", "desc": "HICP - Alcohol and Tobacco (CP02)"},
-            {"id": "006", "coicop": "CP03", "desc": "HICP - Clothing (CP03)"},
-            {"id": "007", "coicop": "CP04", "desc": "HICP - Housing (CP04)"},
-            {"id": "008", "coicop": "CP07", "desc": "HICP - Transport (CP07)"},
-            {"id": "009", "coicop": "SERV", "desc": "HICP - Services (SERV)"},
-            {"id": "010", "coicop": "TOT_X_NRG_FOOD", "desc": "HICP - Core excl. Energy/Food"},
-            {"id": "011", "coicop": "IGD", "desc": "HICP - Industrial Goods (IGD)"},
+            {"id": "001", "coicop": "CP00", "desc": "HICP overall index"},
+            {"id": "002", "coicop": "NRG", "desc": "HICP energy"},
+            {"id": "003", "coicop": "IGD", "desc": "HICP industrial goods"},
+            {"id": "004", "coicop": "GD", "desc": "HICP goods"},
+            {"id": "005", "coicop": "FOOD", "desc": "HICP food incl alcohol & tobacco"},
+            {"id": "006", "coicop": "SERV", "desc": "HICP services"},
+            {"id": "007", "coicop": "CP073", "desc": "HICP transport services"},
+            {"id": "008", "coicop": "TOT_X_HOUS", "desc": "HICP excl housing/water/electricity/gas/other fuels"},
+            {"id": "009", "coicop": "TOT_X_NRG_FOOD", "desc": "HICP excl energy & food"},
+            {"id": "010", "coicop": "TOT_X_EDUC_HLTH_SPR", "desc": "HICP excl education/health/social protection"},
         ],
     },
 
     # ========================================================================
-    # Category 4: Activity Indicators
+    # Category 4: Activity Indicators (17 variables)
     # ========================================================================
-    # Retail turnover: indic_bt has VOL_SLS (deflated) and NETTUR (nominal).
-    # Paper wants deflated → pin indic_bt="VOL_SLS".
-    "STS_TRTU_M": {
-        "category": 4,
-        "category_name": "Activity_indicators",
-        "base_filters": {
-            "geo": "DE",
-            "unit": "I21",
-            "s_adj": "SCA",
-            "indic_bt": "VOL_SLS",
-            "startPeriod": 2003,
-        },
-        "series_prefix": "DE_ACT_TURN",
-        "variables": [
-            {"id": "001", "nace_r2": "G47", "desc": "Turnover - Retail Trade (NACE G47)"},
-            {"id": "002", "nace_r2": "G47_FOOD", "desc": "Turnover - Food Retail"},
-            {"id": "003", "nace_r2": "G47_NFOOD_X_G473", "desc": "Turnover - Non-Food Retail (excl. fuel)"},
-        ],
-    },
-
-    # Building permits: uses cpa2_1 (NOT nace_r2). indic_bt has BPRM_DW (dwellings)
-    # and BPRM_SQM (floor area). For DE, aggregate cpa2_1 codes only exist for
-    # BPRM_SQM (useful floor area in m²), not BPRM_DW. Use SCA + BPRM_SQM.
+    # Building permits: appendix specifies SA (seasonally adjusted, not WD-adjusted),
+    # but SA is rejected by the SDMX API for STS_COBP_M/DE. Only NSA and SCA are
+    # available. Using SCA as closest match; documented deviation from appendix.
     "STS_COBP_M": {
         "category": 4,
         "category_name": "Activity_indicators",
         "base_filters": {
             "geo": "DE",
-            "unit": "I21",
             "s_adj": "SCA",
+            "unit": "I21",
             "indic_bt": "BPRM_SQM",
             "startPeriod": 2003,
         },
-        "series_prefix": "DE_ACT_BUILD",
+        "series_prefix": "DE_BPERM",
         "variables": [
-            {"id": "001", "cpa2_1": "CPA_F41001_41002", "desc": "Building Permits - All Buildings (floor area)"},
-            {"id": "002", "cpa2_1": "CPA_F41001", "desc": "Building Permits - Residential (floor area)"},
-            {"id": "003", "cpa2_1": "CPA_F41002", "desc": "Building Permits - Non-Residential (floor area)"},
+            {"id": "001", "cpa2_1": "CPA_F41001_41002", "desc": "Building permits all buildings (floor area)"},
+            {"id": "002", "cpa2_1": "CPA_F41001", "desc": "Building permits residential (floor area)"},
+            {"id": "003", "cpa2_1": "CPA_F41002", "desc": "Building permits non-residential (floor area)"},
         ],
     },
 
-    # NOTE: STS_INTV_M is industry turnover (indic_bt=NETTUR), NOT car registrations.
-    # Car registrations come from ECB (already in ecb.py as DE_ACT_CARS_001..004).
-    # Removed to avoid confusion.
+    # Retail turnover: deflated (VOL_SLS), WD+SA.
+    "STS_TRTU_M": {
+        "category": 4,
+        "category_name": "Activity_indicators",
+        "base_filters": {
+            "geo": "DE",
+            "s_adj": "SCA",
+            "unit": "I21",
+            "indic_bt": "VOL_SLS",
+            "startPeriod": 2003,
+        },
+        "series_prefix": "DE_RET",
+        "variables": [
+            {"id": "001", "nace_r2": "G47", "desc": "Retail trade incl fuel"},
+            {"id": "002", "nace_r2": "G47_FOOD", "desc": "Retail food"},
+            {"id": "003", "nace_r2": "G47_NFOOD_X_G473", "desc": "Retail non-food excl fuel"},
+            {"id": "004", "nace_r2": "G473", "desc": "Retail automotive fuel"},
+        ],
+    },
+
+    # Industry turnover index (missing from previous config).
+    "STS_INTV_M": {
+        "category": 4,
+        "category_name": "Activity_indicators",
+        "base_filters": {
+            "geo": "DE",
+            "s_adj": "SCA",
+            "unit": "I21",
+            "indic_bt": "NETTUR",
+            "startPeriod": 2003,
+        },
+        "series_prefix": "DE_TURN",
+        "variables": [
+            {"id": "001", "nace_r2": "B", "desc": "Turnover mining and quarrying"},
+            {"id": "002", "nace_r2": "C", "desc": "Turnover manufacturing"},
+            # NOTE: Appendix wants B-E36 ("total industry excl construction") but
+            # B-D, B-E, B-E36 are all rejected by the SDMX API for STS_INTV_M/DE.
+            # B_C (mining + manufacturing) is the broadest working aggregate;
+            # it excludes Energy (D), which is a documented deviation.
+            {"id": "004", "nace_r2": "B_C", "desc": "Turnover total industry proxy (B_C, excl Energy D)"},
+            {"id": "005", "nace_r2": "MIG_ING", "desc": "Turnover MIG intermediate goods"},
+            {"id": "006", "nace_r2": "MIG_CAG", "desc": "Turnover MIG capital goods"},
+            {"id": "007", "nace_r2": "MIG_DCOG", "desc": "Turnover MIG durable consumer goods"},
+            {"id": "008", "nace_r2": "MIG_NDCOG", "desc": "Turnover MIG non-durable consumer goods"},
+            {"id": "009", "nace_r2": "MIG_COG", "desc": "Turnover consumer goods industry"},
+            {"id": "010", "nace_r2": "MIG_NRG_X_D_E", "desc": "Turnover MIG energy excl sections D & E"},
+        ],
+    },
+
+    # Services turnover: accommodation & food (NACE I). Pin indic_bt to avoid explosion.
+    "STS_SETU_M": {
+        "category": 4,
+        "category_name": "Activity_indicators",
+        "base_filters": {
+            "geo": "DE",
+            "s_adj": "SCA",
+            "unit": "I21",
+            "indic_bt": "NETTUR",
+            "startPeriod": 2003,
+        },
+        "series_prefix": "DE_TURN",
+        "variables": [
+            {"id": "003", "nace_r2": "I", "desc": "Turnover accommodation & food services (I)"},
+        ],
+    },
 
     # ========================================================================
-    # Category 5: Trade
+    # Category 5: Trade (2 variables)
     # ========================================================================
     # TODO: ds-059366 (Comext) uses a separate API endpoint
     # (https://ec.europa.eu/eurostat/api/comext/dissemination).
-    # The eurostat Python package may not support DS-prefixed datasets.
-    # Needs investigation with sdmx package or direct API call.
+    # The eurostat Python package does not support DS-prefixed datasets.
+    # Requires sdmx package or direct API call.
+    #
+    # Required series:
+    #   DE_TRADE_001 → Total trade with World, Import, value, EUR, WD+SA
+    #   DE_TRADE_002 → Total trade with World, Export, value, EUR, WD+SA
+    #
+    # Discovery recipe:
+    # 1. Fetch datastructure from Comext SDMX endpoint
+    # 2. Identify dimension IDs (flow, partner, product, unit, adjustment, geo, freq)
+    # 3. Build series key from those dimensions
 
     # ========================================================================
     # Category 6: Sentiment (6 variables)
@@ -232,12 +340,12 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
         },
         "series_prefix": "DE_SENT",
         "variables": [
-            {"id": "ESI_001", "indic": "BS-ESI-I", "desc": "Economic Sentiment Indicator"},
-            {"id": "CONS_001", "indic": "BS-CSMCI-BAL", "desc": "Consumer Confidence Indicator"},
-            {"id": "RET_001", "indic": "BS-RCI-BAL", "desc": "Retail Confidence Indicator"},
-            {"id": "CONST_001", "indic": "BS-CCI-BAL", "desc": "Construction Confidence Indicator"},
-            {"id": "IND_001", "indic": "BS-ICI-BAL", "desc": "Industrial Confidence Indicator"},
-            {"id": "SERV_001", "indic": "BS-SCI-BAL", "desc": "Services Confidence Indicator"},
+            {"id": "001", "indic": "BS-ESI-I", "desc": "Economic Sentiment Indicator"},
+            {"id": "002", "indic": "BS-CSMCI-BAL", "desc": "Consumer Confidence Indicator"},
+            {"id": "003", "indic": "BS-RCI-BAL", "desc": "Retail Confidence Indicator"},
+            {"id": "004", "indic": "BS-CCI-BAL", "desc": "Construction Confidence Indicator"},
+            {"id": "005", "indic": "BS-ICI-BAL", "desc": "Industrial Confidence Indicator"},
+            {"id": "006", "indic": "BS-SCI-BAL", "desc": "Services Confidence Indicator"},
         ],
     },
 }
@@ -250,7 +358,7 @@ def generate_all_variable_configs() -> list[dict[str, Any]]:
     configurations compatible with existing fetch functions.
 
     Returns:
-        List of ~70 dictionaries, each containing:
+        List of ~90 dictionaries, each containing:
         - series_id: Full series identifier (e.g., 'DE_IND_PROD_001')
         - dataset_id: Eurostat dataset code (e.g., 'STS_INPR_M')
         - filters: Complete filter dictionary (base + variable-specific)
