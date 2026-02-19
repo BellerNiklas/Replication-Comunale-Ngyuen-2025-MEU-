@@ -42,10 +42,6 @@ BIS_BASE_URL: str = "https://stats.bis.org/api/v1/data"
 # Extend to all 19 EA members as needed.
 COUNTRIES: list[str] = ["DE"]
 
-# BIS UNIT_MEASURE code for the long-term interest rate in WS_LONG_CPI.
-# 628 = CPI index; 771 = long-term rate (sovereign bond yield).
-LT_RATE_UNIT_MEASURE: int = 771
-
 # ============================================================================
 # DATASET_CONFIGS
 #
@@ -83,27 +79,6 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
                 "id": "001",
                 "key_template": "M.N.B.{country}",
                 "desc": "Nominal Effective Exchange Rate – broad (index 2020=100)",
-            },
-        ],
-    },
-    # ========================================================================
-    # LONG-TERM INTEREST RATE – Category 7, Financial
-    # Source: BIS WS_LONG_CPI dataset
-    # CONFIRMED: M.{country} returns 200 for DE with UNIT_MEASURE in {628, 771}.
-    # Key format: FREQ.REF_AREA (only 2 dimensions)
-    # Filter post-fetch: keep only UNIT_MEASURE == 771 (long-term rate).
-    # ========================================================================
-    "LT_RATE": {
-        "dataset": "WS_LONG_CPI",
-        "category": 7,
-        "category_name": "Financial",
-        "series_prefix": "BIS_LT",
-        "unit_measure_filter": LT_RATE_UNIT_MEASURE,
-        "variables": [
-            {
-                "id": "001",
-                "key_template": "M.{country}",
-                "desc": "Long-term interest rate – sovereign bond yield, monthly (%)",
             },
         ],
     },

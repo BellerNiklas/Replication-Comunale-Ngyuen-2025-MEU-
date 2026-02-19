@@ -21,7 +21,7 @@ from template_project.config import BLD, SRC
 # Variable specs follow Table 1 of Comunale & Nguyen (2025) appendix.
 DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     # ========================================================================
-    # Category 1: Industrial Production (13 variables)
+    # Category 1: Industrial Production (12 variables)
     # ========================================================================
     "STS_INPR_M": {
         "category": 1,
@@ -44,12 +44,6 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
             {"id": "010", "nace_r2": "MIG_NDCOG", "desc": "IP MIG non-durable consumer goods"},
             {"id": "011", "nace_r2": "MIG_COG", "desc": "IP consumer goods industry"},
             {"id": "012", "nace_r2": "MIG_NRG_X_E", "desc": "IP MIG energy (excl section E)"},
-            # NOTE: Appendix wants B-F (incl construction) for IP_001 and B-E36 (excl
-            # construction) for IP_013, but neither code is available via the SDMX API
-            # for STS_INPR_M/DE. B-D is the broadest "industry excl construction"
-            # aggregate that works, so IP_001 and IP_013 are identical here.
-            # The paper drops highly correlated series, so duplication is acceptable.
-            {"id": "013", "nace_r2": "B-D", "desc": "IP total industry excl construction (B-D, duplicate of 001)"},
         ],
     },
 
@@ -71,7 +65,7 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     },
 
     # ========================================================================
-    # Category 2: Labor Market (27 variables)
+    # Category 2: Labor Market (25 variables)
     # ========================================================================
     # STS_INLB_M carries three indicators via indic_bt: WAGE, EMP, HW.
     # Each indicator is crossed with NACE sections and MIG aggregates.
