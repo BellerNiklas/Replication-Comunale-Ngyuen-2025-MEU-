@@ -312,20 +312,25 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
 
     # ========================================================================
     # Category 5: Trade (2 variables)
+    # Source: ei_eteu27_2020_m (EU and euro area international trade)
+    # Uses pre-aggregated monthly totals — no Comext API needed.
     # ========================================================================
-    # TODO: ds-059366 (Comext) uses a separate API endpoint
-    # (https://ec.europa.eu/eurostat/api/comext/dissemination).
-    # The eurostat Python package does not support DS-prefixed datasets.
-    # Requires sdmx package or direct API call.
-    #
-    # Required series:
-    #   DE_TRADE_001 → Total trade with World, Import, value, EUR, WD+SA
-    #   DE_TRADE_002 → Total trade with World, Export, value, EUR, WD+SA
-    #
-    # Discovery recipe:
-    # 1. Fetch datastructure from Comext SDMX endpoint
-    # 2. Identify dimension IDs (flow, partner, product, unit, adjustment, geo, freq)
-    # 3. Build series key from those dimensions
+    "ei_eteu27_2020_m": {
+        "category": 5,
+        "category_name": "Trade",
+        "base_filters": {
+            "geo": "DE",
+            "indic": "ET-T",
+            "partner": "WORLD",
+            "unit": "MIO-EUR-SA",
+            "startPeriod": 2003,
+        },
+        "series_prefix": "DE_TRADE",
+        "variables": [
+            {"id": "001", "stk_flow": "IMP", "desc": "Total imports (world, million EUR, SA)"},
+            {"id": "002", "stk_flow": "EXP", "desc": "Total exports (world, million EUR, SA)"},
+        ],
+    },
 
     # ========================================================================
     # Category 6: Sentiment (6 variables)
