@@ -1,0 +1,7 @@
+
+Fetching category 7: Financial
+  Fetching BIS_NEER_001_DE: Nominal Effective Exchange Rate – broad (index 2020=100)
+    OK: 277 rows
+  Saved: C:\Users\nikla\Projects\final-project-BellerNiklas\bld\data\raw\bis\category_7_Financial.csv (277 rows)
+
+All BIS series fetched successfully.

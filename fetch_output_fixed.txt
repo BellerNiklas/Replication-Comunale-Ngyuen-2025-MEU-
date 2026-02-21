@@ -1,0 +1,192 @@
+Fetching Eurostat data for Germany...
+Output directory: C:\Users\nikla\Projects\final-project-BellerNiklas\bld\data\raw\eurostat
+
+
+Fetching Category 1: Industrial_production (13 variables)
+  [1/13] DE_IND_PROD_001: Total Industry (NACE B-D)
+    SUCCESS: 277 rows
+  [2/13] DE_IND_PROD_002: Manufacturing (NACE C)
+    SUCCESS: 277 rows
+  [3/13] DE_IND_PROD_003: Mining and Quarrying (NACE B)
+    SUCCESS: 277 rows
+  [4/13] DE_IND_PROD_004: Energy (NACE D)
+    SUCCESS: 277 rows
+  [5/13] DE_IND_PROD_005: Food Products (NACE C10-C12)
+    SUCCESS: 277 rows
+  [6/13] DE_IND_PROD_006: Textiles (NACE C13-C15)
+    SUCCESS: 277 rows
+  [7/13] DE_IND_PROD_007: Wood and Paper (NACE C16-C18)
+    SUCCESS: 277 rows
+  [8/13] DE_IND_PROD_008: Chemicals (NACE C20)
+    SUCCESS: 277 rows
+  [9/13] DE_IND_PROD_009: Basic Metals (NACE C24)
+    SUCCESS: 277 rows
+  [10/13] DE_IND_PROD_010: Electronics (NACE C26)
+    SUCCESS: 277 rows
+  [11/13] DE_IND_PROD_011: Machinery (NACE C28)
+    SUCCESS: 277 rows
+  [12/13] DE_IND_PROD_012: Transport Equipment (NACE C29)
+    SUCCESS: 277 rows
+  [13/13] DE_IND_PROD_013: Capital Goods (MIG)
+    SUCCESS: 277 rows
+
+  Category 1: 13/13 variables succeeded (0 failed)
+    Saved: category_1_Industrial_production.csv (3,601 rows)
+
+Fetching Category 2: Labor_market_indicators (7 variables)
+  [1/7] DE_LAB_UNEMP_001: Unemployment Rate - Total
+    SUCCESS: 277 rows
+  [2/7] DE_LAB_UNEMP_002: Unemployment Rate - Youth (<25)
+    SUCCESS: 277 rows
+  [3/7] DE_LAB_UNEMP_003: Unemployment Rate - Prime Age (25-74)
+    SUCCESS: 277 rows
+  [4/7] DE_LAB_UNEMP_004: Unemployment Rate - Male
+    SUCCESS: 277 rows
+  [5/7] DE_LAB_UNEMP_005: Unemployment Rate - Female
+    SUCCESS: 277 rows
+  [6/7] DE_LAB_COST_001: Labor Cost - Industry (NACE B-E36)
+    SUCCESS: 831 rows
+  [7/7] DE_LAB_COST_002: Labor Cost - Manufacturing (NACE C)
+    SUCCESS: 831 rows
+
+  Category 2: 7/7 variables succeeded (0 failed)
+    Saved: category_2_Labor_market_indicators.csv (3,047 rows)
+
+Fetching Category 3: Prices (22 variables)
+  [1/22] DE_PRICE_PPI_001: PPI - Total Industry (NACE B-D)
+    SUCCESS: 278 rows
+  [2/22] DE_PRICE_PPI_002: PPI - Manufacturing (NACE C)
+    SUCCESS: 278 rows
+  [3/22] DE_PRICE_PPI_003: PPI - Mining (NACE B)
+    SUCCESS: 278 rows
+  [4/22] DE_PRICE_PPI_004: PPI - Capital Goods (MIG)
+    SUCCESS: 278 rows
+  [5/22] DE_PRICE_PPI_005: PPI - Intermediate Goods (MIG)
+    SUCCESS: 278 rows
+  [6/22] DE_PRICE_PPI_006: PPI - Consumer Goods (MIG)
+    SUCCESS: 278 rows
+  [7/22] DE_PRICE_PPI_007: PPI - Energy (MIG)
+    SUCCESS: 278 rows
+  [8/22] DE_PRICE_IMP_001: Import Price - Total Industry
+    SUCCESS: 278 rows
+  [9/22] DE_PRICE_IMP_002: Import Price - Capital Goods (MIG)
+    SUCCESS: 278 rows
+  [10/22] DE_PRICE_IMP_003: Import Price - Intermediate Goods (MIG)
+    SUCCESS: 278 rows
+  [11/22] DE_PRICE_IMP_004: Import Price - Consumer Goods (MIG)
+    SUCCESS: 278 rows
+  [12/22] DE_PRICE_HICP_001: HICP - Overall Index (CP00)
+    SUCCESS: 277 rows
+  [13/22] DE_PRICE_HICP_002: HICP - Energy (NRG)
+    SUCCESS: 277 rows
+  [14/22] DE_PRICE_HICP_003: HICP - Food (FOOD)
+    SUCCESS: 277 rows
+  [15/22] DE_PRICE_HICP_004: HICP - Food and Beverages (CP01)
+    SUCCESS: 277 rows
+  [16/22] DE_PRICE_HICP_005: HICP - Alcohol and Tobacco (CP02)
+    SUCCESS: 277 rows
+  [17/22] DE_PRICE_HICP_006: HICP - Clothing (CP03)
+    SUCCESS: 277 rows
+  [18/22] DE_PRICE_HICP_007: HICP - Housing (CP04)
+    SUCCESS: 277 rows
+  [19/22] DE_PRICE_HICP_008: HICP - Transport (CP07)
+    SUCCESS: 277 rows
+  [20/22] DE_PRICE_HICP_009: HICP - Services (SERV)
+    SUCCESS: 277 rows
+  [21/22] DE_PRICE_HICP_010: HICP - Core excl. Energy/Food
+    SUCCESS: 277 rows
+  [22/22] DE_PRICE_HICP_011: HICP - Industrial Goods (IGD)
+    SUCCESS: 277 rows
+
+  Category 3: 22/22 variables succeeded (0 failed)
+    Saved: category_3_Prices.csv (6,105 rows)
+
+Fetching Category 4: Activity_indicators (6 variables)
+  [1/6] DE_ACT_TURN_001: Turnover - Retail Trade (NACE G47)
+    SUCCESS: 554 rows
+  [2/6] DE_ACT_TURN_002: Turnover - Food Retail
+    SUCCESS: 554 rows
+  [3/6] DE_ACT_TURN_003: Turnover - Non-Food Retail
+    FAILED: No data fetched for DE_ACT_TURN_003
+  [4/6] DE_ACT_BUILD_001: Building Permits - Total Construction (NACE F)
+    SUCCESS: 6672 rows
+  [5/6] DE_ACT_BUILD_002: Building Permits - Buildings (NACE F41)
+    SUCCESS: 6672 rows
+  [6/6] DE_ACT_CAR_001: Car Registrations - Total Vehicles
+    SUCCESS: 14127 rows
+
+  Category 4: 5/6 variables succeeded (1 failed)
+    Saved: category_4_Activity_indicators.csv (28,579 rows)
+
+Fetching Category 6: Sentiment (6 variables)
+  [1/6] DE_SENT_ESI_001: Economic Sentiment Indicator
+    SUCCESS: 278 rows
+  [2/6] DE_SENT_CONS_001: Consumer Confidence Indicator
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-CSMCI-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-CSMCI-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-CSMCI-BAL.
+    FAILED: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for url: https://ec.europa
+  [3/6] DE_SENT_RET_001: Retail Confidence Indicator
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-RCI-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-RCI-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-RCI-BAL.
+    FAILED: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for url: https://ec.europa
+  [4/6] DE_SENT_CONST_001: Construction Confidence Indicator
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-CONG-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-CONG-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-CONG-BAL.
+    FAILED: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for url: https://ec.europa
+  [5/6] DE_SENT_IND_001: Industrial Confidence Indicator
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-ICI-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-ICI-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-ICI-BAL.
+    FAILED: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for url: https://ec.europa
+  [6/6] DE_SENT_SERV_001: Services Confidence Indicator
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-SERV-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-SERV-BAL.
+faultcode: 150
+faultstring: INVALID_QUERY_DIMENSION_VALUE: Query is invalid as per its structure's definition. The following values for dimension are not allowed: INDIC=BS-SERV-BAL.
+    FAILED: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for url: https://ec.europa
+
+  Category 6: 1/6 variables succeeded (5 failed)
+    Saved: category_6_Sentiment.csv (278 rows)
+
+======================================================================
+FINAL SUMMARY
+======================================================================
+
+Overall: 48/54 variables fetched successfully
+Failed: 6 variables
+
+Failed variables by category:
+
+  Category 4 (Activity_indicators):
+    - DE_ACT_TURN_003: No data fetched for DE_ACT_TURN_003...
+
+  Category 6 (Sentiment):
+    - DE_SENT_CONS_001: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for ur...
+    - DE_SENT_RET_001: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for ur...
+    - DE_SENT_CONST_001: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for ur...
+    - DE_SENT_IND_001: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for ur...
+    - DE_SENT_SERV_001: Failed to fetch EI_BSCO_M after 3 attempts: 400 Client Error: Bad Request for ur...
+
+Output files:
+  category_1: category_1_Industrial_production.csv
+  category_2: category_2_Labor_market_indicators.csv
+  category_3: category_3_Prices.csv
+  category_4: category_4_Activity_indicators.csv
+  category_6: category_6_Sentiment.csv

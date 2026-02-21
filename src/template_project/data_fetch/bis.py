@@ -84,23 +84,6 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     },
 }
 
-# ============================================================================
-# TEST CONFIG – single confirmed series for smoke test
-# ============================================================================
-
-TEST_CONFIG: dict[str, Any] = {
-    "dataset": "WS_EER",
-    "key": "M.N.B.DE",
-    "desc": "NEER – Germany, nominal broad (index 2020=100)",
-    "unit_measure_filter": None,
-}
-
-
-# ============================================================================
-# generate_all_variable_configs
-# ============================================================================
-
-
 def generate_all_variable_configs() -> list[dict[str, Any]]:
     """Expand DATASET_CONFIGS into one entry per (dataset, variable, country).
 
@@ -266,224 +249,38 @@ def validate_series_data(data: pd.DataFrame, series_id: str) -> None:
         raise ValueError(msg)
 
 
-# ============================================================================
-# fetch_category_variables
-# ============================================================================
-
-
-def fetch_category_variables(
-    category_num: int,
-    all_configs: list[dict[str, Any]],
-) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
-    """Fetch all BIS variables belonging to a given category.
+def fetch_one(spec: dict[str, Any]) -> pd.DataFrame:
+    """Fetch single BIS series from spec dict.
 
     Args:
-        category_num: Integer category to fetch.
-        all_configs: Full list from generate_all_variable_configs().
+        spec: Must contain 'dataset', 'key', 'series_id',
+              'variable_name', 'category', 'category_name', 'country_iso2',
+              and optionally 'unit_measure_filter'
 
     Returns:
-        Tuple of (series_data, errors):
-          series_data – dict mapping series_id to transformed DataFrame.
-          errors      – dict mapping series_id to error message string.
+        Standardized long DataFrame with columns:
+        date | value | series_id | country_iso2 | variable_name |
+        category | category_name
+
+    Raises:
+        ValueError: If spec is missing required keys or data validation fails.
+        RuntimeError: If API request fails.
+
     """
-    cat_configs = [c for c in all_configs if c["category"] == category_num]
-    series_data: dict[str, pd.DataFrame] = {}
-    errors: dict[str, str] = {}
-
-    for cfg in cat_configs:
-        series_id = cfg["series_id"]
-        print(f"  Fetching {series_id}: {cfg['variable_name']}")
-        try:
-            raw = fetch_bis_series(cfg["dataset"], cfg["key"])
-            transformed = transform_bis_data(
-                raw,
-                series_id,
-                {
-                    "country_iso2": cfg["country_iso2"],
-                    "variable_name": cfg["variable_name"],
-                    "category": cfg["category"],
-                    "category_name": cfg["category_name"],
-                },
-                unit_measure_filter=cfg.get("unit_measure_filter"),
-            )
-            validate_series_data(transformed, series_id)
-            series_data[series_id] = transformed
-            print(f"    OK: {len(transformed)} rows")
-        except Exception as e:  # noqa: BLE001
-            msg = str(e)
-            errors[series_id] = msg
-            print(f"    FAILED: {msg}")
-        sleep(0.5)  # polite rate-limiting
-
-    return series_data, errors
+    raw = fetch_bis_series(spec["dataset"], spec["key"])
+    metadata = {
+        "variable_name": spec["variable_name"],
+        "country_iso2": spec.get("country_iso2", ""),
+        "category": spec["category"],
+        "category_name": spec["category_name"],
+    }
+    transformed = transform_bis_data(
+        raw,
+        spec["series_id"],
+        metadata,
+        unit_measure_filter=spec.get("unit_measure_filter"),
+    )
+    validate_series_data(transformed, spec["series_id"])
+    return transformed
 
 
-# ============================================================================
-# concatenate_category_data
-# ============================================================================
-
-
-def concatenate_category_data(
-    series_data: dict[str, pd.DataFrame],
-) -> pd.DataFrame:
-    """Concatenate per-series DataFrames into a single long DataFrame.
-
-    Args:
-        series_data: Dict mapping series_id to transformed DataFrame.
-
-    Returns:
-        Single long-format DataFrame sorted by series_id then date.
-    """
-    if not series_data:
-        return pd.DataFrame()
-    combined = pd.concat(list(series_data.values()), ignore_index=True)
-    return combined.sort_values(["series_id", "date"]).reset_index(drop=True)
-
-
-# ============================================================================
-# save_category_csv
-# ============================================================================
-
-
-def save_category_csv(
-    data: pd.DataFrame,
-    category_num: int,
-    category_name: str,
-    output_dir: Path,
-) -> Path:
-    """Save a category-level DataFrame to CSV.
-
-    Args:
-        data: Long-format DataFrame for the category.
-        category_num: Integer category number (used in filename).
-        category_name: String name (used in filename).
-        output_dir: Directory to write the file.
-
-    Returns:
-        Path to the written CSV file.
-    """
-    output_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"category_{category_num}_{category_name}.csv"
-    path = output_dir / filename
-    data.to_csv(path, index=False)
-    return path
-
-
-# ============================================================================
-# test_fetch
-# ============================================================================
-
-
-def test_fetch() -> bool:
-    """Run a minimal smoke test against the BIS API.
-
-    Fetches NEER (broad nominal) for Germany – a single confirmed series.
-
-    Returns:
-        True if the test passes, False otherwise.
-    """
-    print("Running BIS API smoke test...")
-    print(f"  Dataset: {TEST_CONFIG['dataset']}")
-    print(f"  Series: {TEST_CONFIG['desc']}")
-    print(f"  Key:    {TEST_CONFIG['key']}")
-    try:
-        raw = fetch_bis_series(TEST_CONFIG["dataset"], TEST_CONFIG["key"])
-        print(f"  Raw columns: {list(raw.columns)}")
-        transformed = transform_bis_data(
-            raw,
-            "BIS_NEER_001_DE_TEST",
-            {
-                "country_iso2": "DE",
-                "variable_name": TEST_CONFIG["desc"],
-                "category": 7,
-                "category_name": "Financial",
-            },
-            unit_measure_filter=TEST_CONFIG.get("unit_measure_filter"),
-        )
-        validate_series_data(transformed, "BIS_NEER_001_DE_TEST")
-        print(f"  Rows: {len(transformed)}")
-        print(f"  Date range: {transformed['date'].min()} – {transformed['date'].max()}")
-        print(f"  Value range: {transformed['value'].min():.2f} – {transformed['value'].max():.2f}")
-        print("  SMOKE TEST PASSED")
-        return True  # noqa: TRY300
-    except Exception as e:  # noqa: BLE001
-        print(f"  SMOKE TEST FAILED: {e}")
-        return False
-
-
-# ============================================================================
-# fetch_all_bis_variables
-# ============================================================================
-
-
-def fetch_all_bis_variables(
-    output_dir: Path,
-    *,
-    test_mode: bool = False,
-) -> dict[str, Path]:
-    """Fetch all BIS variables and save category-level CSV files.
-
-    Args:
-        output_dir: Root directory for output files (bld/data/raw/bis/).
-        test_mode: If True, run only the smoke test and return.
-
-    Returns:
-        Dict mapping category filenames to their output Paths.
-    """
-    if test_mode:
-        success = test_fetch()
-        if not success:
-            print("Aborting: smoke test failed.")
-        return {}
-
-    all_configs = generate_all_variable_configs()
-    categories = sorted({c["category"] for c in all_configs})
-
-    output_paths: dict[str, Path] = {}
-    all_errors: dict[str, str] = {}
-
-    for cat_num in categories:
-        cat_name = next(
-            c["category_name"] for c in all_configs if c["category"] == cat_num
-        )
-        print(f"\nFetching category {cat_num}: {cat_name}")
-        series_data, errors = fetch_category_variables(cat_num, all_configs)
-        all_errors.update(errors)
-
-        if series_data:
-            combined = concatenate_category_data(series_data)
-            path = save_category_csv(combined, cat_num, cat_name, output_dir)
-            output_paths[f"category_{cat_num}_{cat_name}"] = path
-            print(f"  Saved: {path} ({len(combined)} rows)")
-        else:
-            print(f"  No data saved for category {cat_num}.")
-
-    if all_errors:
-        print(f"\nSummary: {len(all_errors)} series failed:")
-        for sid, msg in all_errors.items():
-            print(f"  {sid}: {msg}")
-    else:
-        print("\nAll BIS series fetched successfully.")
-
-    return output_paths
-
-
-# ============================================================================
-# main
-# ============================================================================
-
-
-def main() -> None:
-    """Entry point for running the BIS fetcher as a script.
-
-    Usage:
-        pixi run python -m template_project.data_fetch.bis          # full fetch
-        pixi run python -m template_project.data_fetch.bis --test   # smoke test
-    """
-    output_dir = BLD / "data" / "raw" / "bis"
-    test_mode = "--test" in sys.argv
-    fetch_all_bis_variables(output_dir, test_mode=test_mode)
-
-
-if __name__ == "__main__":
-    main()

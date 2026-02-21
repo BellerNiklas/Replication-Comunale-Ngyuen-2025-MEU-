@@ -553,254 +553,32 @@ def validate_series_data(data: pd.DataFrame, series_id: str) -> None:
         raise ValueError(msg)
 
 
-def save_series_to_csv(data: pd.DataFrame, output_path: Path) -> None:
-    """Save series data to CSV file.
+def fetch_one(spec: dict[str, Any]) -> pd.DataFrame:
+    """Fetch single Eurostat series from spec dict.
 
     Args:
-        data: DataFrame to save.
-        output_path: Path where CSV will be saved.
-
-    """
-    # Create parent directories if needed
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Save to CSV
-    data.to_csv(output_path, index=False)
-
-
-def fetch_category_variables(
-    category_num: int,
-    all_configs: list[dict[str, Any]],
-) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
-    """Fetch all variables for a specific category.
-
-    Args:
-        category_num: Category number to fetch (1-6).
-        all_configs: Full list of variable configurations.
+        spec: Must contain 'dataset_id', 'filters', 'series_id',
+              'description', 'category', 'category_name'
 
     Returns:
-        Tuple of (successful_data, failed_series):
-        - successful_data: Dict mapping series_id to transformed DataFrame
-        - failed_series: Dict mapping series_id to error message
-
-    """
-    # Filter configs for this category
-    category_configs = [c for c in all_configs if c["category"] == category_num]
-
-    successful_data: dict[str, pd.DataFrame] = {}
-    failed_series: dict[str, str] = {}
-
-    # Fetch each variable in category
-    for i, var_config in enumerate(category_configs, 1):
-        series_id = var_config["series_id"]
-        dataset_id = var_config["dataset_id"]
-        filters = var_config["filters"]
-        description = var_config["description"]
-        category_name = var_config["category_name"]
-        country_iso2 = filters.get("geo", "DE")
-
-        print(f"  [{i}/{len(category_configs)}] {series_id}: {description}")
-
-        try:
-            # Fetch from Eurostat
-            raw_data = fetch_eurostat_series(dataset_id, filters)
-
-            metadata = {
-                "variable_name": description,
-                "country_iso2": country_iso2,
-                "category": category_num,
-                "category_name": category_name,
-            }
-
-            # Transform to long format
-            transformed_data = transform_eurostat_data(raw_data, series_id, metadata)
-
-            # Validate
-            validate_series_data(transformed_data, series_id)
-
-            successful_data[series_id] = transformed_data
-            print(f"    SUCCESS: {len(transformed_data)} rows")
-
-        except (ValueError, RuntimeError) as e:
-            error_msg = str(e)
-            print(f"    FAILED: {error_msg[:100]}")
-            failed_series[series_id] = error_msg
-
-    return successful_data, failed_series
-
-
-def concatenate_category_data(
-    category_dfs: dict[str, pd.DataFrame],
-    category_num: int,
-    category_name: str,
-) -> pd.DataFrame:
-    """Concatenate all DataFrames for a category into single DataFrame.
-
-    Args:
-        category_dfs: Dict mapping series_id to DataFrame.
-        category_num: Category number for validation.
-        category_name: Category name for validation.
-
-    Returns:
-        Concatenated DataFrame with columns:
-        - date, value, series_id, country_iso2, variable_name,
-          category, category_name
-
-        Sorted by date (ascending), then series_id (ascending).
+        Standardized long DataFrame with columns:
+        date | value | series_id | country_iso2 | variable_name |
+        category | category_name
 
     Raises:
-        ValueError: If category_dfs is empty.
+        ValueError: If spec is missing required keys or data validation fails.
+        RuntimeError: If API request fails.
 
     """
-    if not category_dfs:
-        msg = f"No successful data to concatenate for category {category_num}"
-        raise ValueError(msg)
-
-    # Concatenate all DataFrames
-    concatenated = pd.concat(category_dfs.values(), ignore_index=True)
-
-    # Sort by date, then series_id
-    concatenated = concatenated.sort_values(["date", "series_id"]).reset_index(drop=True)
-
-    return concatenated
-
-
-def save_category_csv(
-    data: pd.DataFrame,
-    category_num: int,
-    category_name: str,
-    output_dir: Path,
-) -> Path:
-    """Save category data to CSV file.
-
-    Args:
-        data: DataFrame with all category variables.
-        category_num: Category number for filename.
-        category_name: Category name for filename.
-        output_dir: Directory where CSV will be saved.
-
-    Returns:
-        Path to saved CSV file.
-
-    """
-    # Create output directory if needed
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Build filename
-    filename = f"category_{category_num}_{category_name}.csv"
-    output_path = output_dir / filename
-
-    # Save to CSV
-    data.to_csv(output_path, index=False)
-
-    return output_path
+    raw = fetch_eurostat_series(spec["dataset_id"], spec["filters"])
+    metadata = {
+        "variable_name": spec["description"],
+        "country_iso2": spec["filters"].get("geo", "DE"),
+        "category": spec["category"],
+        "category_name": spec["category_name"],
+    }
+    transformed = transform_eurostat_data(raw, spec["series_id"], metadata)
+    validate_series_data(transformed, spec["series_id"])
+    return transformed
 
 
-def fetch_germany_variables(
-    output_dir: Path,
-) -> dict[str, Path]:
-    """Fetch all Germany variables defined in configuration.
-
-    Args:
-        output_dir: Directory where CSV files will be saved.
-
-    Returns:
-        Dictionary mapping 'category_N' to file path.
-
-    """
-    # Create output directory if it doesn't exist
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Generate all variable configs
-    all_configs = generate_all_variable_configs()
-
-    results: dict[str, Path] = {}
-    summary_stats: dict[int, dict[str, Any]] = {}
-
-    # Process each category sequentially
-    for category_num in range(1, 7):  # Categories 1-6
-        # Get category name from first config in category
-        category_configs = [c for c in all_configs if c["category"] == category_num]
-        if not category_configs:
-            continue
-
-        category_name = category_configs[0]["category_name"]
-
-        print(f"\nFetching Category {category_num}: {category_name} ({len(category_configs)} variables)")
-
-        # Fetch all variables in category
-        successful_data, failed_series = fetch_category_variables(
-            category_num, all_configs
-        )
-
-        # Track statistics
-        total = len(category_configs)
-        success_count = len(successful_data)
-        fail_count = len(failed_series)
-
-        summary_stats[category_num] = {
-            "total": total,
-            "success": success_count,
-            "failed": fail_count,
-            "failed_series": failed_series,
-            "category_name": category_name,
-        }
-
-        if successful_data:
-            # Concatenate and save
-            category_df = concatenate_category_data(
-                successful_data, category_num, category_name
-            )
-            output_path = save_category_csv(
-                category_df, category_num, category_name, output_dir
-            )
-            results[f"category_{category_num}"] = output_path
-
-            print(f"\n  Category {category_num}: {success_count}/{total} "
-                  f"variables succeeded ({fail_count} failed)")
-            print(f"    Saved: {output_path.name} ({len(category_df):,} rows)")
-        else:
-            print(f"\n  Category {category_num}: All {total} variables failed!")
-
-    # Print final summary
-    print("\n" + "="*70)
-    print("FINAL SUMMARY")
-    print("="*70)
-
-    total_vars = sum(s["total"] for s in summary_stats.values())
-    total_success = sum(s["success"] for s in summary_stats.values())
-    total_failed = sum(s["failed"] for s in summary_stats.values())
-
-    print(f"\nOverall: {total_success}/{total_vars} variables fetched successfully")
-    print(f"Failed: {total_failed} variables")
-
-    if total_failed > 0:
-        print("\nFailed variables by category:")
-        for cat_num, stats in summary_stats.items():
-            if stats["failed"] > 0:
-                print(f"\n  Category {cat_num} ({stats['category_name']}):")
-                for series_id, error in stats["failed_series"].items():
-                    print(f"    - {series_id}: {error[:80]}...")
-
-    return results
-
-
-def main() -> None:
-    """Fetch Eurostat data for Germany."""
-    output_dir = BLD / "data" / "raw" / "eurostat"
-
-    print("Fetching Eurostat data for Germany...")
-    print(f"Output directory: {output_dir}")
-    print()
-
-    results = fetch_germany_variables(output_dir)
-
-    if results:
-        print()
-        print("Output files:")
-        for series_id, path in results.items():
-            print(f"  {series_id}: {path.name}")
-
-
-if __name__ == "__main__":
-    main()

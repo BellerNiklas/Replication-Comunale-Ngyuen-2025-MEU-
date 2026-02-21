@@ -473,17 +473,6 @@ DATASET_CONFIGS: dict[str, dict[str, Any]] = {
     },
 }
 
-# ============================================================================
-# Minimal single-series config used by test_fetch() to verify API access.
-# ============================================================================
-TEST_CONFIG: dict[str, str] = {
-    "flow": "EXR",
-    "key": "M.USD.EUR.SP00.A",
-    "series_id": "EA_FX_001",
-    "desc": "USD/EUR exchange rate (test series)",
-}
-
-
 def generate_all_variable_configs() -> list[dict[str, Any]]:
     """Expand DATASET_CONFIGS into a flat list of per-variable config dicts.
 
@@ -635,232 +624,32 @@ def validate_series_data(data: pd.DataFrame, series_id: str) -> None:
         raise ValueError(msg)
 
 
-def fetch_category_variables(
-    category_num: int,
-    all_configs: list[dict[str, Any]],
-) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
-    """Fetch all variables belonging to a given category number.
+def fetch_one(spec: dict[str, Any]) -> pd.DataFrame:
+    """Fetch single ECB series from spec dict.
 
     Args:
-        category_num: Target category (e.g. 7 for financial, 8 for EA-level).
-        all_configs:  Full flat config list from generate_all_variable_configs().
+        spec: Must contain 'flow', 'key', 'series_id',
+              'description', 'category', 'category_name', 'country_iso2'
 
     Returns:
-        Tuple (successful_data, failed_series):
-        - successful_data: dict mapping series_id → transformed DataFrame
-        - failed_series:   dict mapping series_id → error message
-
-    """
-    category_configs = [c for c in all_configs if c["category"] == category_num]
-
-    successful_data: dict[str, pd.DataFrame] = {}
-    failed_series: dict[str, str] = {}
-
-    for i, cfg in enumerate(category_configs, 1):
-        series_id = cfg["series_id"]
-        print(f"  [{i}/{len(category_configs)}] {series_id}: {cfg['description']}")
-
-        try:
-            raw = fetch_ecb_series(cfg["flow"], cfg["key"])
-            metadata = {
-                "country_iso2": cfg["country_iso2"],
-                "variable_name": cfg["description"],
-                "category": cfg["category"],
-                "category_name": cfg["category_name"],
-            }
-            transformed = transform_ecb_data(raw, series_id, metadata)
-            validate_series_data(transformed, series_id)
-            successful_data[series_id] = transformed
-            print(f"    SUCCESS: {len(transformed)} rows")
-
-        except (ValueError, RuntimeError) as e:
-            error_msg = str(e)
-            print(f"    FAILED: {error_msg[:100]}")
-            failed_series[series_id] = error_msg
-
-    return successful_data, failed_series
-
-
-def concatenate_category_data(
-    category_dfs: dict[str, pd.DataFrame],
-    category_num: int,
-    category_name: str,
-) -> pd.DataFrame:
-    """Concatenate all DataFrames for a category into a single DataFrame.
-
-    Args:
-        category_dfs:  Dict mapping series_id → DataFrame.
-        category_num:  Category number (used in error message only).
-        category_name: Category name (used in error message only).
-
-    Returns:
-        Concatenated DataFrame sorted by date then series_id.
+        Standardized long DataFrame with columns:
+        date | value | series_id | country_iso2 | variable_name |
+        category | category_name
 
     Raises:
-        ValueError: If category_dfs is empty.
+        ValueError: If spec is missing required keys or data validation fails.
+        RuntimeError: If API request fails.
 
     """
-    if not category_dfs:
-        msg = f"No successful data for category {category_num} ({category_name})"
-        raise ValueError(msg)
-
-    concatenated = pd.concat(category_dfs.values(), ignore_index=True)
-    return concatenated.sort_values(["date", "series_id"]).reset_index(drop=True)
-
-
-def save_category_csv(
-    data: pd.DataFrame,
-    category_num: int,
-    category_name: str,
-    output_dir: Path,
-) -> Path:
-    """Save category data to a CSV file following project naming convention.
-
-    Args:
-        data:          DataFrame to save.
-        category_num:  Category number used in the filename.
-        category_name: Category name used in the filename.
-        output_dir:    Directory where the CSV will be written.
-
-    Returns:
-        Path to the saved CSV file.
-
-    """
-    output_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"category_{category_num}_{category_name}.csv"
-    output_path = output_dir / filename
-    data.to_csv(output_path, index=False)
-    return output_path
+    raw = fetch_ecb_series(spec["flow"], spec["key"])
+    metadata = {
+        "variable_name": spec["description"],
+        "country_iso2": spec.get("country_iso2", "U2"),
+        "category": spec["category"],
+        "category_name": spec["category_name"],
+    }
+    transformed = transform_ecb_data(raw, spec["series_id"], metadata)
+    validate_series_data(transformed, spec["series_id"])
+    return transformed
 
 
-def test_fetch() -> bool:
-    """Fetch a single confirmed series to verify ECB API connectivity.
-
-    Attempts to retrieve the USD/EUR exchange rate (EXR.M.USD.EUR.SP00.A),
-    which is a stable, always-available ECB SDW series.
-
-    Returns:
-        True if the test series fetched successfully, False otherwise.
-
-    """
-    cfg = TEST_CONFIG
-    print(f"TEST: fetching {cfg['flow']}/{cfg['key']} ({cfg['desc']})")
-    try:
-        raw = fetch_ecb_series(cfg["flow"], cfg["key"])
-        metadata = {
-            "country_iso2": "U2",
-            "variable_name": cfg["desc"],
-            "category": 8,
-            "category_name": "EA_Financial",
-        }
-        df = transform_ecb_data(raw, cfg["series_id"], metadata)
-        validate_series_data(df, cfg["series_id"])
-        print(f"  SUCCESS: {len(df)} rows, date range {df['date'].min()} – {df['date'].max()}")
-        print(f"  Sample value ({df['date'].iloc[-1]}): {df['value'].iloc[-1]:.4f}")
-        return True  # noqa: TRY300
-    except (ValueError, RuntimeError) as e:
-        print(f"  FAILED: {e}")
-        return False
-
-
-def fetch_all_ecb_variables(
-    output_dir: Path,
-    *,
-    test_mode: bool = False,
-) -> dict[str, Path]:
-    """Fetch all ECB variables and save category CSV files.
-
-    Args:
-        output_dir: Directory where category CSV files will be saved.
-        test_mode:  If True, only run test_fetch() and skip the full fetch.
-
-    Returns:
-        Dict mapping 'category_{N}' keys to saved CSV file paths.
-
-    """
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if test_mode:
-        success = test_fetch()
-        if not success:
-            print("Test fetch failed – check API connectivity before running full mode.")
-        return {}
-
-    all_configs = generate_all_variable_configs()
-    results: dict[str, Path] = {}
-    summary_stats: dict[int, dict[str, Any]] = {}
-
-    category_nums = sorted({c["category"] for c in all_configs})
-    category_names = {c["category"]: c["category_name"] for c in all_configs}
-
-    for category_num in category_nums:
-        cat_name = category_names[category_num]
-        cat_configs = [c for c in all_configs if c["category"] == category_num]
-        print(
-            f"\nFetching Category {category_num}: {cat_name} "
-            f"({len(cat_configs)} variables)"
-        )
-
-        successful_data, failed_series = fetch_category_variables(
-            category_num, all_configs
-        )
-
-        total = len(cat_configs)
-        success_count = len(successful_data)
-        fail_count = len(failed_series)
-        summary_stats[category_num] = {
-            "total": total,
-            "success": success_count,
-            "failed": fail_count,
-            "failed_series": failed_series,
-            "category_name": cat_name,
-        }
-
-        if successful_data:
-            cat_df = concatenate_category_data(successful_data, category_num, cat_name)
-            output_path = save_category_csv(cat_df, category_num, cat_name, output_dir)
-            results[f"category_{category_num}"] = output_path
-            print(
-                f"\n  Category {category_num}: {success_count}/{total} succeeded "
-                f"({fail_count} failed)"
-            )
-            print(f"    Saved: {output_path.name} ({len(cat_df):,} rows)")
-        else:
-            print(f"\n  Category {category_num}: all {total} variables failed!")
-
-    # Final summary
-    print("\n" + "=" * 70)
-    print("ECB FETCH SUMMARY")
-    print("=" * 70)
-    total_vars = sum(s["total"] for s in summary_stats.values())
-    total_success = sum(s["success"] for s in summary_stats.values())
-    total_failed = sum(s["failed"] for s in summary_stats.values())
-    print(f"\nOverall: {total_success}/{total_vars} variables fetched successfully")
-    if total_failed > 0:
-        print(f"\nFailed ({total_failed}):")
-        for cat_num, stats in summary_stats.items():
-            for sid, err in stats["failed_series"].items():
-                print(f"  [{cat_num}] {sid}: {err[:80]}")
-
-    return results
-
-
-def main() -> None:
-    """Fetch ECB data and save to bld/data/raw/ecb/.
-
-    Pass --test to run only the single-series connectivity test.
-    """
-    import sys  # noqa: PLC0415
-
-    output_dir = BLD / "data" / "raw" / "ecb"
-    test_mode = "--test" in sys.argv
-
-    print("ECB Statistical Data Warehouse fetch")
-    print(f"Output directory: {output_dir}")
-    print(f"Mode: {'TEST' if test_mode else 'FULL'}\n")
-
-    fetch_all_ecb_variables(output_dir, test_mode=test_mode)
-
-
-if __name__ == "__main__":
-    main()

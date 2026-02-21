@@ -1,0 +1,36 @@
+Fetching OECD data...
+Countries: ['DEU']
+Output directory: C:\Users\nikla\Projects\final-project-BellerNiklas\bld\data\raw\oecd
+
+
+Fetching Category 6: Sentiment (6 variables)
+  [1/6] DE_OECD_SENT_001: BTS Construction confidence indicator
+    SUCCESS: 277 rows
+  [2/6] DE_OECD_SENT_002: BTS Retail trade confidence indicator
+    SUCCESS: 277 rows
+  [3/6] DE_OECD_SENT_003: BTS Manufacturing confidence indicator
+    SUCCESS: 277 rows
+  [4/6] DE_OECD_SENT_004: BTS Services confidence indicator
+    SUCCESS: 277 rows
+  [5/6] DE_OECD_SENT_005: Consumer confidence indicator
+    SUCCESS: 277 rows
+  [6/6] DE_OECD_SENT_006: CLI component: CS confidence indicator (normalised)
+    SUCCESS: 277 rows
+
+  Category 6: 6/6 succeeded (0 failed)
+    Saved: category_6_Sentiment.csv (1,662 rows)
+
+Fetching Category 7: Financial (2 variables)
+  [1/2] DE_OECD_FIN_001: Long-term interest rate
+    SUCCESS: 277 rows
+  [2/2] DE_OECD_FIN_002: Share prices (all shares/broad, index 2015=100)
+    SUCCESS: 277 rows
+
+  Category 7: 2/2 succeeded (0 failed)
+    Saved: category_7_Financial.csv (554 rows)
+
+======================================================================
+OECD FETCH SUMMARY
+======================================================================
+
+Overall: 8/8 variables fetched successfully
