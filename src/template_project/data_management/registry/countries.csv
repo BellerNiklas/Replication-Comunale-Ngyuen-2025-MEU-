@@ -1,0 +1,21 @@
+country_iso2,country_iso3,country_name,source_eurostat,source_ecb,source_oecd,source_bis,ea_member
+AT,AUT,Austria,AT,AT,AUT,AT,TRUE
+BE,BEL,Belgium,BE,BE,BEL,BE,TRUE
+CY,CYP,Cyprus,CY,CY,CYP,CY,TRUE
+DE,DEU,Germany,DE,DE,DEU,DE,TRUE
+EE,EST,Estonia,EE,EE,EST,EE,TRUE
+ES,ESP,Spain,ES,ES,ESP,ES,TRUE
+FI,FIN,Finland,FI,FI,FIN,FI,TRUE
+FR,FRA,France,FR,FR,FRA,FR,TRUE
+GR,GRC,Greece,EL,GR,GRC,GR,TRUE
+IE,IRL,Ireland,IE,IE,IRL,IE,TRUE
+IT,ITA,Italy,IT,IT,ITA,IT,TRUE
+LT,LTU,Lithuania,LT,LT,LTU,LT,TRUE
+LU,LUX,Luxembourg,LU,LU,LUX,LU,TRUE
+LV,LVA,Latvia,LV,LV,LVA,LV,TRUE
+MT,MLT,Malta,MT,MT,MLT,MT,TRUE
+NL,NLD,Netherlands,NL,NL,NLD,NL,TRUE
+PT,PRT,Portugal,PT,PT,PRT,PT,TRUE
+SI,SVN,Slovenia,SI,SI,SVN,SI,TRUE
+SK,SVK,Slovakia,SK,SK,SVK,SK,TRUE
+U2,U2,Euro Area,U2,U2,EA19,EA,FALSE
