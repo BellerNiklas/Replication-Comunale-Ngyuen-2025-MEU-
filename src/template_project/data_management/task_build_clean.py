@@ -1,4 +1,4 @@
-"""Build clean macro panel from raw API snapshot."""
+"""Build clean macro panel from per-source raw snapshots."""
 
 from pathlib import Path
 
@@ -8,19 +8,33 @@ from template_project.config import BLD
 
 
 def task_build_clean(
-    depends_on: Path = BLD / "data" / "raw" / "raw_api_snapshot.parquet",
+    depends_on: dict = {
+        "eurostat": BLD / "data" / "raw" / "eurostat_snapshot.parquet",
+        "ecb": BLD / "data" / "raw" / "ecb_snapshot.parquet",
+        "oecd": BLD / "data" / "raw" / "oecd_snapshot.parquet",
+        "bis": BLD / "data" / "raw" / "bis_snapshot.parquet",
+    },
     produces: Path = BLD / "data" / "clean" / "macro_panel.parquet",
 ) -> None:
-    """Build clean macro panel from raw snapshot (short and boring task).
+    """Build clean macro panel from per-source snapshots (short and boring task).
 
     Task only handles I/O. Real logic in _clean_macro_panel() helper.
     """
-    print(f"Loading raw snapshot from {depends_on}...")
-    raw = pd.read_parquet(depends_on)
-    print(f"Loaded {len(raw)} rows")
+    print("Loading raw snapshots from all sources...")
+
+    # Read all source files
+    dfs = []
+    for source, path in depends_on.items():
+        df = pd.read_parquet(path)
+        print(f"  {source}: {len(df)} rows, {df.series_id.nunique()} series")
+        dfs.append(df)
+
+    # Combine all sources
+    raw_combined = pd.concat(dfs, ignore_index=True)
+    print(f"Combined: {len(raw_combined)} rows from {len(dfs)} sources")
 
     print("\nCleaning and standardizing data...")
-    cleaned = _clean_macro_panel(raw)
+    cleaned = _clean_macro_panel(raw_combined)
     print(f"After cleaning: {len(cleaned)} rows")
 
     print(f"\nWriting to {produces}...")
