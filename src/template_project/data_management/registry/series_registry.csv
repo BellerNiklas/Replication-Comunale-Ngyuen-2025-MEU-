@@ -1,0 +1,149 @@
+series_id,source,category,category_name,country_iso2,variable_name,dataset,key,filters_json,unit_measure_filter,frequency,start_period
+DE_IP_001,eurostat,1,Industrial_production,DE,IP total industry excl construction (B-D),STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""B-D""}",,,2003-01
+DE_IP_003,eurostat,1,Industrial_production,DE,IP mining and quarrying (B),STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""B""}",,,2003-01
+DE_IP_004,eurostat,1,Industrial_production,DE,IP manufacturing (C),STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""C""}",,,2003-01
+DE_IP_005,eurostat,1,Industrial_production,DE,IP electricity/gas/steam/aircon (D),STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""D""}",,,2003-01
+DE_IP_007,eurostat,1,Industrial_production,DE,IP MIG intermediate goods,STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_ING""}",,,2003-01
+DE_IP_008,eurostat,1,Industrial_production,DE,IP MIG capital goods,STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_CAG""}",,,2003-01
+DE_IP_009,eurostat,1,Industrial_production,DE,IP MIG durable consumer goods,STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_DCOG""}",,,2003-01
+DE_IP_010,eurostat,1,Industrial_production,DE,IP MIG non-durable consumer goods,STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_NDCOG""}",,,2003-01
+DE_IP_011,eurostat,1,Industrial_production,DE,IP consumer goods industry,STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_COG""}",,,2003-01
+DE_IP_012,eurostat,1,Industrial_production,DE,IP MIG energy (excl section E),STS_INPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_NRG_X_E""}",,,2003-01
+DE_IP_002,eurostat,1,Industrial_production,DE,Construction production index (F),STS_COPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""F""}",,,2003-01
+DE_IP_006,eurostat,1,Industrial_production,DE,Construction: all buildings (F41),STS_COPR_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""F41""}",,,2003-01
+DE_LAB_WAGE_001,eurostat,2,Labor_market_indicators,DE,Wages MIG intermediate goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""WAGE"", ""nace_r2"": ""MIG_ING""}",,,2003-01
+DE_LAB_WAGE_002,eurostat,2,Labor_market_indicators,DE,Wages MIG capital goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""WAGE"", ""nace_r2"": ""MIG_CAG""}",,,2003-01
+DE_LAB_WAGE_003,eurostat,2,Labor_market_indicators,DE,Wages MIG durable consumer goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""WAGE"", ""nace_r2"": ""MIG_DCOG""}",,,2003-01
+DE_LAB_WAGE_004,eurostat,2,Labor_market_indicators,DE,Wages MIG non-durable consumer goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""WAGE"", ""nace_r2"": ""MIG_NDCOG""}",,,2003-01
+DE_LAB_WAGE_005,eurostat,2,Labor_market_indicators,DE,Wages MIG energy,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""WAGE"", ""nace_r2"": ""MIG_NRG""}",,,2003-01
+DE_LAB_EMP_001,eurostat,2,Labor_market_indicators,DE,Employment mining and quarrying,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""B""}",,,2003-01
+DE_LAB_EMP_002,eurostat,2,Labor_market_indicators,DE,Employment manufacturing,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""C""}",,,2003-01
+DE_LAB_EMP_003,eurostat,2,Labor_market_indicators,DE,Employment electricity/gas,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""D""}",,,2003-01
+DE_LAB_EMP_004,eurostat,2,Labor_market_indicators,DE,Employment total industry excl construction,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""B-E36""}",,,2003-01
+DE_LAB_EMP_005,eurostat,2,Labor_market_indicators,DE,Employment MIG intermediate goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""MIG_ING""}",,,2003-01
+DE_LAB_EMP_006,eurostat,2,Labor_market_indicators,DE,Employment MIG capital goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""MIG_CAG""}",,,2003-01
+DE_LAB_EMP_007,eurostat,2,Labor_market_indicators,DE,Employment MIG durable consumer goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""MIG_DCOG""}",,,2003-01
+DE_LAB_EMP_008,eurostat,2,Labor_market_indicators,DE,Employment MIG non-durable consumer goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""MIG_NDCOG""}",,,2003-01
+DE_LAB_EMP_010,eurostat,2,Labor_market_indicators,DE,Employment MIG energy,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""MIG_NRG""}",,,2003-01
+DE_LAB_HW_001,eurostat,2,Labor_market_indicators,DE,Hours worked mining and quarrying,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""B""}",,,2003-01
+DE_LAB_HW_002,eurostat,2,Labor_market_indicators,DE,Hours worked manufacturing,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""C""}",,,2003-01
+DE_LAB_HW_003,eurostat,2,Labor_market_indicators,DE,Hours worked electricity/gas,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""D""}",,,2003-01
+DE_LAB_HW_004,eurostat,2,Labor_market_indicators,DE,Hours worked total industry excl construction,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""B-E36""}",,,2003-01
+DE_LAB_HW_005,eurostat,2,Labor_market_indicators,DE,Hours worked MIG intermediate goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""MIG_ING""}",,,2003-01
+DE_LAB_HW_006,eurostat,2,Labor_market_indicators,DE,Hours worked MIG capital goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""MIG_CAG""}",,,2003-01
+DE_LAB_HW_007,eurostat,2,Labor_market_indicators,DE,Hours worked MIG durable consumer goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""MIG_DCOG""}",,,2003-01
+DE_LAB_HW_008,eurostat,2,Labor_market_indicators,DE,Hours worked MIG non-durable consumer goods,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""MIG_NDCOG""}",,,2003-01
+DE_LAB_HW_010,eurostat,2,Labor_market_indicators,DE,Hours worked MIG energy,STS_INLB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""HW"", ""nace_r2"": ""MIG_NRG""}",,,2003-01
+DE_LAB_EMP_011,eurostat,2,Labor_market_indicators,DE,Employment accommodation & food services (I),STS_SELB_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""indic_bt"": ""EMP"", ""nace_r2"": ""I""}",,,2003-01
+DE_UNEMP_001,eurostat,2,Labor_market_indicators,DE,Unemployment rate total,UNE_RT_M,,"{""geo"": ""DE"", ""s_adj"": ""SA"", ""unit"": ""PC_ACT"", ""age"": ""TOTAL"", ""sex"": ""T"", ""startPeriod"": 2003}",,,2003-01
+DE_PPI_001,eurostat,3,Prices,DE,PPI manufacturing,STS_INPP_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""C""}",,,2003-01
+DE_PPI_002,eurostat,3,Prices,DE,PPI total industry excl construction,STS_INPP_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""B-E36""}",,,2003-01
+DE_PPI_003,eurostat,3,Prices,DE,PPI MIG intermediate goods,STS_INPP_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_ING""}",,,2003-01
+DE_PPI_004,eurostat,3,Prices,DE,PPI MIG capital goods,STS_INPP_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_CAG""}",,,2003-01
+DE_PPI_005,eurostat,3,Prices,DE,PPI MIG durable consumer goods,STS_INPP_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_DCOG""}",,,2003-01
+DE_PPI_006,eurostat,3,Prices,DE,PPI MIG non-durable consumer goods,STS_INPP_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_NDCOG""}",,,2003-01
+DE_PPI_007,eurostat,3,Prices,DE,PPI consumer goods industry,STS_INPP_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_COG""}",,,2003-01
+DE_PPI_008,eurostat,3,Prices,DE,PPI MIG energy,STS_INPP_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_NRG""}",,,2003-01
+DE_IMPPR_001,eurostat,3,Prices,DE,Import prices manufactured products,STS_INPI_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""indic_bt"": ""PRC_IMP"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_C""}",,,2003-01
+DE_IMPPR_002,eurostat,3,Prices,DE,Import prices MIG intermediate goods,STS_INPI_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""indic_bt"": ""PRC_IMP"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_MIG_ING""}",,,2003-01
+DE_IMPPR_003,eurostat,3,Prices,DE,Import prices MIG capital goods,STS_INPI_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""indic_bt"": ""PRC_IMP"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_MIG_CAG""}",,,2003-01
+DE_IMPPR_004,eurostat,3,Prices,DE,Import prices MIG durable consumer goods,STS_INPI_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""indic_bt"": ""PRC_IMP"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_MIG_DCOG""}",,,2003-01
+DE_IMPPR_005,eurostat,3,Prices,DE,Import prices MIG non-durable consumer goods,STS_INPI_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""indic_bt"": ""PRC_IMP"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_MIG_NDCOG""}",,,2003-01
+DE_IMPPR_006,eurostat,3,Prices,DE,Import prices consumer goods industry,STS_INPI_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""indic_bt"": ""PRC_IMP"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_MIG_COG""}",,,2003-01
+DE_IMPPR_007,eurostat,3,Prices,DE,Import prices MIG energy (excl section E),STS_INPI_M,,"{""geo"": ""DE"", ""s_adj"": ""NSA"", ""unit"": ""I21"", ""indic_bt"": ""PRC_IMP"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_MIG_NRG_X_E""}",,,2003-01
+DE_HICP_001,eurostat,3,Prices,DE,HICP overall index,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""CP00""}",,,2003-01
+DE_HICP_002,eurostat,3,Prices,DE,HICP energy,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""NRG""}",,,2003-01
+DE_HICP_003,eurostat,3,Prices,DE,HICP industrial goods,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""IGD""}",,,2003-01
+DE_HICP_004,eurostat,3,Prices,DE,HICP goods,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""GD""}",,,2003-01
+DE_HICP_005,eurostat,3,Prices,DE,HICP food incl alcohol & tobacco,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""FOOD""}",,,2003-01
+DE_HICP_006,eurostat,3,Prices,DE,HICP services,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""SERV""}",,,2003-01
+DE_HICP_007,eurostat,3,Prices,DE,HICP transport services,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""CP073""}",,,2003-01
+DE_HICP_008,eurostat,3,Prices,DE,HICP excl housing/water/electricity/gas/other fuels,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""TOT_X_HOUS""}",,,2003-01
+DE_HICP_009,eurostat,3,Prices,DE,HICP excl energy & food,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""TOT_X_NRG_FOOD""}",,,2003-01
+DE_HICP_010,eurostat,3,Prices,DE,HICP excl education/health/social protection,PRC_HICP_MIDX,,"{""geo"": ""DE"", ""unit"": ""I15"", ""startPeriod"": 2003, ""coicop"": ""TOT_X_EDUC_HLTH_SPR""}",,,2003-01
+DE_BPERM_001,eurostat,4,Activity_indicators,DE,Building permits all buildings (floor area),STS_COBP_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""BPRM_SQM"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_F41001_41002""}",,,2003-01
+DE_BPERM_002,eurostat,4,Activity_indicators,DE,Building permits residential (floor area),STS_COBP_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""BPRM_SQM"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_F41001""}",,,2003-01
+DE_BPERM_003,eurostat,4,Activity_indicators,DE,Building permits non-residential (floor area),STS_COBP_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""BPRM_SQM"", ""startPeriod"": 2003, ""cpa2_1"": ""CPA_F41002""}",,,2003-01
+DE_RET_001,eurostat,4,Activity_indicators,DE,Retail trade incl fuel,STS_TRTU_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""VOL_SLS"", ""startPeriod"": 2003, ""nace_r2"": ""G47""}",,,2003-01
+DE_RET_002,eurostat,4,Activity_indicators,DE,Retail food,STS_TRTU_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""VOL_SLS"", ""startPeriod"": 2003, ""nace_r2"": ""G47_FOOD""}",,,2003-01
+DE_RET_003,eurostat,4,Activity_indicators,DE,Retail non-food excl fuel,STS_TRTU_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""VOL_SLS"", ""startPeriod"": 2003, ""nace_r2"": ""G47_NFOOD_X_G473""}",,,2003-01
+DE_RET_004,eurostat,4,Activity_indicators,DE,Retail automotive fuel,STS_TRTU_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""VOL_SLS"", ""startPeriod"": 2003, ""nace_r2"": ""G473""}",,,2003-01
+DE_TURN_001,eurostat,4,Activity_indicators,DE,Turnover mining and quarrying,STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""B""}",,,2003-01
+DE_TURN_002,eurostat,4,Activity_indicators,DE,Turnover manufacturing,STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""C""}",,,2003-01
+DE_TURN_004,eurostat,4,Activity_indicators,DE,"Turnover total industry proxy (B_C, excl Energy D)",STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""B_C""}",,,2003-01
+DE_TURN_005,eurostat,4,Activity_indicators,DE,Turnover MIG intermediate goods,STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_ING""}",,,2003-01
+DE_TURN_006,eurostat,4,Activity_indicators,DE,Turnover MIG capital goods,STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_CAG""}",,,2003-01
+DE_TURN_007,eurostat,4,Activity_indicators,DE,Turnover MIG durable consumer goods,STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_DCOG""}",,,2003-01
+DE_TURN_008,eurostat,4,Activity_indicators,DE,Turnover MIG non-durable consumer goods,STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_NDCOG""}",,,2003-01
+DE_TURN_009,eurostat,4,Activity_indicators,DE,Turnover consumer goods industry,STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_COG""}",,,2003-01
+DE_TURN_010,eurostat,4,Activity_indicators,DE,Turnover MIG energy excl sections D & E,STS_INTV_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""MIG_NRG_X_D_E""}",,,2003-01
+DE_TURN_003,eurostat,4,Activity_indicators,DE,Turnover accommodation & food services (I),STS_SETU_M,,"{""geo"": ""DE"", ""s_adj"": ""SCA"", ""unit"": ""I21"", ""indic_bt"": ""NETTUR"", ""startPeriod"": 2003, ""nace_r2"": ""I""}",,,2003-01
+DE_TRADE_001,eurostat,5,Trade,DE,"Total imports (world, million EUR, SA)",ei_eteu27_2020_m,,"{""geo"": ""DE"", ""indic"": ""ET-T"", ""partner"": ""WORLD"", ""unit"": ""MIO-EUR-SA"", ""startPeriod"": 2003, ""stk_flow"": ""IMP""}",,,2003-01
+DE_TRADE_002,eurostat,5,Trade,DE,"Total exports (world, million EUR, SA)",ei_eteu27_2020_m,,"{""geo"": ""DE"", ""indic"": ""ET-T"", ""partner"": ""WORLD"", ""unit"": ""MIO-EUR-SA"", ""startPeriod"": 2003, ""stk_flow"": ""EXP""}",,,2003-01
+DE_SENT_001,eurostat,6,Sentiment,DE,Economic Sentiment Indicator,EI_BSSI_M_R2,,"{""geo"": ""DE"", ""s_adj"": ""SA"", ""startPeriod"": 2003, ""indic"": ""BS-ESI-I""}",,,2003-01
+DE_SENT_002,eurostat,6,Sentiment,DE,Consumer Confidence Indicator,EI_BSSI_M_R2,,"{""geo"": ""DE"", ""s_adj"": ""SA"", ""startPeriod"": 2003, ""indic"": ""BS-CSMCI-BAL""}",,,2003-01
+DE_SENT_003,eurostat,6,Sentiment,DE,Retail Confidence Indicator,EI_BSSI_M_R2,,"{""geo"": ""DE"", ""s_adj"": ""SA"", ""startPeriod"": 2003, ""indic"": ""BS-RCI-BAL""}",,,2003-01
+DE_SENT_004,eurostat,6,Sentiment,DE,Construction Confidence Indicator,EI_BSSI_M_R2,,"{""geo"": ""DE"", ""s_adj"": ""SA"", ""startPeriod"": 2003, ""indic"": ""BS-CCI-BAL""}",,,2003-01
+DE_SENT_005,eurostat,6,Sentiment,DE,Industrial Confidence Indicator,EI_BSSI_M_R2,,"{""geo"": ""DE"", ""s_adj"": ""SA"", ""startPeriod"": 2003, ""indic"": ""BS-ICI-BAL""}",,,2003-01
+DE_SENT_006,eurostat,6,Sentiment,DE,Services Confidence Indicator,EI_BSSI_M_R2,,"{""geo"": ""DE"", ""s_adj"": ""SA"", ""startPeriod"": 2003, ""indic"": ""BS-SCI-BAL""}",,,2003-01
+EA_FX_001,ecb,8,EA_Financial,U2,USD/EUR exchange rate,EXR,M.USD.EUR.SP00.A,,,M,2003-01
+EA_FX_002,ecb,8,EA_Financial,U2,GBP/EUR exchange rate,EXR,M.GBP.EUR.SP00.A,,,M,2003-01
+EA_FX_003,ecb,8,EA_Financial,U2,JPY/EUR exchange rate,EXR,M.JPY.EUR.SP00.A,,,M,2003-01
+EA_FX_004,ecb,8,EA_Financial,U2,CNY/EUR exchange rate,EXR,M.CNY.EUR.SP00.A,,,M,2003-01
+EA_FX_005,ecb,8,EA_Financial,U2,CHF/EUR exchange rate,EXR,M.CHF.EUR.SP00.A,,,M,2003-01
+EA_BOND_001,ecb,8,EA_Financial,U2,EA 2Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_2Y.YLD,,,M,2003-01
+EA_BOND_002,ecb,8,EA_Financial,U2,EA 3Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_3Y.YLD,,,M,2003-01
+EA_BOND_003,ecb,8,EA_Financial,U2,EA 5Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_5Y.YLD,,,M,2003-01
+EA_BOND_004,ecb,8,EA_Financial,U2,EA 10Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_10Y.YLD,,,M,2003-01
+EA_BOND_005,ecb,8,EA_Financial,U2,EA real 10Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.R_U2_10Y.YLDA,,,M,2003-01
+EA_MMR_001,ecb,8,EA_Financial,U2,EURIBOR 1-month (hist. close avg.),FM,M.U2.EUR.RT.MM.EURIBOR1MD_.HSTA,,,M,2003-01
+EA_MMR_002,ecb,8,EA_Financial,U2,EURIBOR 3-month (hist. close avg.),FM,M.U2.EUR.RT.MM.EURIBOR3MD_.HSTA,,,M,2003-01
+EA_MMR_003,ecb,8,EA_Financial,U2,EURIBOR 6-month (hist. close avg.),FM,M.U2.EUR.RT.MM.EURIBOR6MD_.HSTA,,,M,2003-01
+EA_MMR_004,ecb,8,EA_Financial,U2,EURIBOR 1-year (hist. close avg.),FM,M.U2.EUR.RT.MM.EURIBOR1YD_.HSTA,,,M,2003-01
+EA_MMR_005,ecb,8,EA_Financial,U2,Real EURIBOR 3-month (hist. close avg.),FM,M.U2.EUR.4F.MM.R_EURIBOR3MD_.HSTA,,,M,2003-01
+EA_MMR_006,ecb,8,EA_Financial,U2,EONIA (hist. close avg.; discontinued 2021-12),FM,M.U2.EUR.4F.MM.EONIA.HSTA,,,M,2003-01
+EA_EQI_001,ecb,8,EA_Financial,U2,DJ Euro Stoxx 50,FM,M.U2.EUR.DS.EI.DJES50I.HSTA,,,M,2003-01
+EA_EQI_002,ecb,8,EA_Financial,U2,DJ Euro Stoxx Price Index,FM,M.U2.EUR.DS.EI.DJEURST.HSTA,,,M,2003-01
+EA_EQI_003,ecb,8,EA_Financial,U2,DJ Euro Stoxx Basic Materials,FM,M.U2.EUR.DS.EI.S1ESBME.HSTA,,,M,2003-01
+EA_EQI_004,ecb,8,EA_Financial,U2,DJ Euro Stoxx Consumer Services,FM,M.U2.EUR.DS.EI.S1ESCSE.HSTA,,,M,2003-01
+EA_EQI_005,ecb,8,EA_Financial,U2,DJ Euro Stoxx Financials,FM,M.U2.EUR.DS.EI.S1ESFNE.HSTA,,,M,2003-01
+EA_EQI_006,ecb,8,EA_Financial,U2,DJ Euro Stoxx Technology,FM,M.U2.EUR.DS.EI.S1ESG1E.HSTA,,,M,2003-01
+EA_EQI_007,ecb,8,EA_Financial,U2,DJ Euro Stoxx Healthcare,FM,M.U2.EUR.DS.EI.S1ESH1E.HSTA,,,M,2003-01
+EA_EQI_008,ecb,8,EA_Financial,U2,DJ Euro Stoxx Industrials,FM,M.U2.EUR.DS.EI.S1ESIDE.HSTA,,,M,2003-01
+EA_EQI_009,ecb,8,EA_Financial,U2,DJ Euro Stoxx Telecommunications,FM,M.U2.EUR.DS.EI.S1EST1E.HSTA,,,M,2003-01
+EA_EQI_010,ecb,8,EA_Financial,U2,DJ Euro Stoxx Utilities,FM,M.U2.EUR.DS.EI.S1ESU1E.HSTA,,,M,2003-01
+DE_FIN_LOAN_001,ecb,7,Financial,DE,MFI Loans – To domestic MFIs (S.12),BSI,M.DE.N.A.A20.A.1.U6.1000.Z01.E,,,M,2003-01
+DE_FIN_LOAN_002,ecb,7,Financial,DE,MFI Loans – To households & NPISHs (S.14+S.15),BSI,M.DE.N.A.A20.A.1.U6.2250.Z01.E,,,M,2003-01
+DE_FIN_LOAN_003,ecb,7,Financial,DE,MFI Loans – To non-financial corporations (S.11),BSI,M.DE.N.A.A20.A.1.U6.2240.Z01.E,,,M,2003-01
+DE_FIN_DEP_001,ecb,7,Financial,DE,MFI Deposit liabilities – From domestic MFIs (S.12),BSI,M.DE.N.A.L20.A.1.U6.1000.Z01.E,,,M,2003-01
+DE_FIN_DEP_002,ecb,7,Financial,DE,MFI Deposit liabilities – From NFCs (S.11),BSI,M.DE.N.A.L20.A.1.U6.2240.Z01.E,,,M,2003-01
+DE_FIN_DEP_003,ecb,7,Financial,DE,MFI Deposit liabilities – From households (S.14+S.15),BSI,M.DE.N.A.L20.A.1.U6.2250.Z01.E,,,M,2003-01
+DE_FIN_DSH_001,ecb,7,Financial,DE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.DE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01
+DE_FIN_DSH_002,ecb,7,Financial,DE,MFI Debt securities held – MFIs (S.12),BSI,M.DE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01
+DE_FIN_DSH_003,ecb,7,Financial,DE,MFI Debt securities held – General government (S.13),BSI,M.DE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01
+EA_MON_001,ecb,8,EA_Financial,U2,M1 – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.M10.X.I.U2.2300.Z01.E,,,M,2003-01
+EA_MON_002,ecb,8,EA_Financial,U2,M3 – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.M30.X.I.U2.2300.Z01.E,,,M,2003-01
+EA_MON_003,ecb,8,EA_Financial,U2,Currency in circulation – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.L10.X.I.U2.2300.Z01.E,,,M,2003-01
+DE_FIN_MIR_LEN_001,ecb,7,Financial,DE,"MIR – Lending for house purchase, total maturity (new business)",MIR,M.DE.B.A2C.A.R.A.2250.EUR.N,,,M,2003-01
+DE_FIN_MIR_LEN_002,ecb,7,Financial,DE,"MIR – Other lending, households excl. revolving (new business)",MIR,M.DE.B.A2D.A.R.A.2250.EUR.N,,,M,2003-01
+DE_FIN_MIR_LEN_003,ecb,7,Financial,DE,"MIR – Cost-of-borrowing loans, up to 1 year, NFC+HH (new business)",MIR,M.DE.B.A2J.FM.R.A.2230.EUR.N,,,M,2003-01
+DE_FIN_MIR_LEN_004,ecb,7,Financial,DE,"MIR – Cost-of-borrowing loans, over 1 year, NFC+HH (new business)",MIR,M.DE.B.A2J.KM.R.A.2230.EUR.N,,,M,2003-01
+DE_FIN_MIR_DEP_001,ecb,7,Financial,DE,"MIR – Deposit rate, total new business (S.11+S.14+S.15)",MIR,M.DE.B.L22.A.R.A.2230.EUR.N,,,M,2003-01
+DE_FIN_MIR_DEP_002,ecb,7,Financial,DE,"MIR – Deposit rate, up to 1 year (new business)",MIR,M.DE.B.L22.F.R.A.2230.EUR.N,,,M,2003-01
+DE_FIN_MIR_DEP_003,ecb,7,Financial,DE,"MIR – Deposit rate, over 1Y up to 2Y (new business)",MIR,M.DE.B.L22.G.R.A.2230.EUR.N,,,M,2003-01
+DE_FIN_MIR_DEP_004,ecb,7,Financial,DE,"MIR – Deposit rate, over 2 years (new business)",MIR,M.DE.B.L22.H.R.A.2230.EUR.N,,,M,2003-01
+DE_FIN_MIR_DEP_005,ecb,7,Financial,DE,"MIR – Deposit rate, over 1 year (cost-of-borrowing, new business)",MIR,M.DE.B.L22.K.R.A.2230.EUR.N,,,M,2003-01
+DE_FIN_MIR_DEP_006,ecb,7,Financial,DE,"MIR – Deposit rate, up to 2 years aggregate (new business)",MIR,M.DE.B.L22.L.R.A.2230.EUR.N,,,M,2003-01
+DE_ACT_CARS_001,ecb,4,Activity_indicators,DE,"Car registrations – New passenger cars (SA+WDA, absolute; 2003–2022)",STS,M.DE.Y.CREG.PC0000.3.ABS,,,M,2003-01
+DE_ACT_CARS_002,ecb,4,Activity_indicators,DE,"Car registrations – New commercial vehicles (SA+WDA, absolute; 2003–2022)",STS,M.DE.Y.CREG.CV0000.3.ABS,,,M,2003-01
+DE_ACT_CARS_003,ecb,4,Activity_indicators,DE,"Car registrations – New heavy commercial vehicles (SA+WDA, absolute; 2003–2022)",STS,M.DE.Y.CREG.CVH000.3.ABS,,,M,2003-01
+DE_ACT_CARS_004,ecb,4,Activity_indicators,DE,"Car registrations – New light commercial vehicles (SA+WDA, absolute; 2003–2022)",STS,M.DE.Y.CREG.CVL000.3.ABS,,,M,2003-01
+DE_OECD_SENT_001,oecd,6,Sentiment,DE,BTS Construction confidence indicator,"OECD.SDD.STES,DSD_STES@DF_BTS,4.0",DEU.M.BCICP.PB.F.Y._Z._Z.N,,,M,2003-01
+DE_OECD_SENT_002,oecd,6,Sentiment,DE,BTS Retail trade confidence indicator,"OECD.SDD.STES,DSD_STES@DF_BTS,4.0",DEU.M.BCICP.PB.G47.Y._Z._Z.N,,,M,2003-01
+DE_OECD_SENT_003,oecd,6,Sentiment,DE,BTS Manufacturing confidence indicator,"OECD.SDD.STES,DSD_STES@DF_BTS,4.0",DEU.M.BCICP.PB.C.Y._Z._Z.N,,,M,2003-01
+DE_OECD_SENT_004,oecd,6,Sentiment,DE,BTS Services confidence indicator,"OECD.SDD.STES,DSD_STES@DF_BTS,4.0",DEU.M.BCICP.PB.GTU.Y._Z._Z.N,,,M,2003-01
+DE_OECD_SENT_005,oecd,6,Sentiment,DE,Consumer confidence indicator,"OECD.SDD.STES,DSD_STES@DF_CS,4.0",DEU.M.CCICP.PB._Z.Y._Z._Z.N,,,M,2003-01
+DE_OECD_SENT_006,oecd,6,Sentiment,DE,CLI component: CS confidence indicator (normalised),"OECD.SDD.STES,DSD_STES@DF_CLI,4.1",DEU.M.LOCOCI.IX._Z.NOR.IX._Z.H,,,M,2003-01
+DE_OECD_FIN_001,oecd,7,Financial,DE,Long-term interest rate,"OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0",DEU.M.IRLT.PA._Z._Z._Z._Z.N,,,M,2003-01
+DE_OECD_FIN_002,oecd,7,Financial,DE,"Share prices (all shares/broad, index 2015=100)","OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0",DEU.M.SHARE.IX._Z._Z._Z._Z.N,,,M,2003-01
+BIS_NEER_001_DE,bis,7,Financial,DE,Nominal Effective Exchange Rate – broad (index 2020=100),WS_EER,M.N.B.DE,,None,M,2003-01
