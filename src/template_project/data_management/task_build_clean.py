@@ -1,39 +1,26 @@
-"""Fetch all series and build unified macro panel (Germany only).
-
-This task replaces the 4 separate fetcher tasks with a single unified task.
-Follows EPP: short task (I/O only), logic in pure helper functions.
-"""
+"""Build clean macro panel from raw API snapshot."""
 
 from pathlib import Path
 
 import pandas as pd
 
 from template_project.config import BLD
-from template_project.data_fetch.fetch import fetch_many
-from template_project.data_management.registry.registry_io import load_registry
 
 
-def task_fetch_and_build_macro_panel(
+def task_build_clean(
+    depends_on: Path = BLD / "data" / "raw" / "raw_api_snapshot.parquet",
     produces: Path = BLD / "data" / "clean" / "macro_panel.parquet",
 ) -> None:
-    """Fetch all series from registry and build unified panel (short and boring).
+    """Build clean macro panel from raw snapshot (short and boring task).
 
-    Task only handles I/O. Real logic in pure helper functions.
-
-    Produces:
-        Unified macro panel in Parquet format with all 148 series.
+    Task only handles I/O. Real logic in _clean_macro_panel() helper.
     """
-    print("Loading series registry...")
-    registry = load_registry()
-    all_series_ids = registry.series_id.tolist()
-    print(f"Found {len(all_series_ids)} series in registry")
-
-    print("\nFetching data from all sources...")
-    raw_combined = fetch_many(all_series_ids, registry=registry)
-    print(f"\nFetched total: {len(raw_combined)} rows")
+    print(f"Loading raw snapshot from {depends_on}...")
+    raw = pd.read_parquet(depends_on)
+    print(f"Loaded {len(raw)} rows")
 
     print("\nCleaning and standardizing data...")
-    cleaned = _clean_macro_panel(raw_combined)
+    cleaned = _clean_macro_panel(raw)
     print(f"After cleaning: {len(cleaned)} rows")
 
     print(f"\nWriting to {produces}...")
