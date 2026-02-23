@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from template_project.data_management.task_build_clean import (
+from template_project.data_management.task_fetch_all import (
     _clean_macro_panel,
     _parse_dates,
 )
@@ -24,6 +24,7 @@ def test_clean_macro_panel_typical():
             "Industrial_production",
             "Industrial_production",
         ],
+        "source": ["eurostat", "eurostat", "eurostat"],
     })
 
     result = _clean_macro_panel(raw)
@@ -37,6 +38,7 @@ def test_clean_macro_panel_typical():
         "variable_name",
         "category",
         "category_name",
+        "source",
     ]
 
     # Check data types
@@ -47,6 +49,7 @@ def test_clean_macro_panel_typical():
     assert result["variable_name"].dtype == object
     assert result["category"].dtype == "Int64"  # Nullable integer
     assert result["category_name"].dtype == object
+    assert result["source"].dtype == object
 
     # Check sorting
     assert list(result["series_id"]) == ["DE_IP_001", "DE_IP_001", "DE_IP_002"]
@@ -66,6 +69,7 @@ def test_clean_macro_panel_removes_nan_values():
             "Industrial_production",
             "Industrial_production",
         ],
+        "source": ["eurostat", "eurostat", "eurostat"],
     })
 
     result = _clean_macro_panel(raw)
@@ -89,6 +93,7 @@ def test_clean_macro_panel_removes_duplicates():
             "Industrial_production",
             "Industrial_production",
         ],
+        "source": ["eurostat", "eurostat", "eurostat"],
     })
 
     result = _clean_macro_panel(raw)

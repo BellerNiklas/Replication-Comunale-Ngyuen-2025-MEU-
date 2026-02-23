@@ -35,27 +35,28 @@ for fmt, produces in {
             shutil.copy(build_pdf, produces)
 
 
-@pytask.task(id="presentation")
-def task_compile_presentation(
-    pres_md: Path = DOCUMENTS / "presentation.md",
-    # table: Path = DOCUMENTS / "tables" / "estimation_results.md",
-    # figure: Path = DOCUMENTS / "public" / "smoking_by_marital_status.png",
-    produces: Path = ROOT / "presentation.pdf",
-) -> None:
-    """Compile the presentation from Slidev Markdown to PDF."""
-    if sys.platform == "win32":
-        shell = True
-    else:
-        shell = False
-    subprocess.run(
-        (
-            "npx",
-            "slidev",
-            "export",
-            pres_md.absolute(),
-            "--output",
-            produces.absolute(),
-        ),
-        check=True,
-        shell=shell,
-    )
+# Temporarily disabled - slidev installation issue
+# @pytask.task(id="presentation")
+# def task_compile_presentation(
+#     pres_md: Path = DOCUMENTS / "presentation.md",
+#     # table: Path = DOCUMENTS / "tables" / "estimation_results.md",
+#     # figure: Path = DOCUMENTS / "public" / "smoking_by_marital_status.png",
+#     produces: Path = ROOT / "presentation.pdf",
+# ) -> None:
+#     """Compile the presentation from Slidev Markdown to PDF."""
+#     if sys.platform == "win32":
+#         shell = True
+#     else:
+#         shell = False
+#     subprocess.run(
+#         (
+#             "npx",
+#             "slidev",
+#             "export",
+#             pres_md.absolute(),
+#             "--output",
+#             produces.absolute(),
+#         ),
+#         check=True,
+#         shell=shell,
+#     )
