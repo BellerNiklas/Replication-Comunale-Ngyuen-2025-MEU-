@@ -188,13 +188,16 @@ def _fetch_probe_bis(spec: dict[str, Any], probe_start: str) -> pd.DataFrame:
 
 
 def _probe_start_period() -> str:
-    """Compute probe start period (12 months ago from today).
+    """Return fixed probe start period to catch discontinued series.
+
+    Uses 2020-01 instead of a rolling window because some series
+    (e.g., car registrations) were discontinued in 2021/2022.
+    A rolling "last 12 months" window would miss these entirely.
 
     Returns:
-        String in YYYY-MM format (e.g., "2025-02").
+        String in YYYY-MM format.
     """
-    twelve_months_ago = datetime.now() - timedelta(days=365)
-    return twelve_months_ago.strftime("%Y-%m")
+    return "2020-01"
 
 
 def _extract_template_id(series_id: str, country_iso2: str) -> str:
@@ -241,5 +244,7 @@ def _is_data_absence_error(error: Exception) -> bool:
         "no data",
         "404",
         "not found",
+        "400 client error",
+        "bad request",
     ]
     return any(pattern in msg for pattern in absence_patterns)

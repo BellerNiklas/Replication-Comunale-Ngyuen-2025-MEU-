@@ -157,6 +157,13 @@ def test_is_data_absence_404():
     assert _is_data_absence_error(RuntimeError("HTTP 404 Not Found"))
 
 
+def test_is_data_absence_400_bad_request():
+    """Test '400 Client Error: Bad Request' classified as absence."""
+    assert _is_data_absence_error(
+        RuntimeError("400 Client Error: Bad Request for url: https://ec.europa.eu/eurostat/api/...")
+    )
+
+
 def test_is_not_absence_timeout():
     """Test timeout is NOT classified as absence."""
     assert not _is_data_absence_error(RuntimeError("Connection timed out"))
@@ -175,15 +182,10 @@ def test_is_not_absence_rate_limit():
 # --- _probe_start_period ---
 
 
-def test_probe_start_period_format():
-    """Test probe start period is in YYYY-MM format."""
+def test_probe_start_period_fixed():
+    """Test probe start period is fixed at 2020-01 for discontinued series."""
     result = _probe_start_period()
-    assert len(result) == 7
-    assert result[4] == "-"
-    year = int(result[:4])
-    month = int(result[5:])
-    assert 2020 <= year <= 2030
-    assert 1 <= month <= 12
+    assert result == "2020-01"
 
 
 # --- probe_one ---
@@ -293,9 +295,9 @@ def test_probe_one_eurostat_calls_correct_adapter(
 
     mock_adapters.fetch_eurostat_raw.assert_called_once()
     call_args = mock_adapters.fetch_eurostat_raw.call_args
-    # Verify filters have overridden startPeriod (recent year, not 2003)
+    # Verify filters have overridden startPeriod (2020, not 2003)
     filters = call_args[0][1]
-    assert filters["startPeriod"] >= 2024
+    assert filters["startPeriod"] == 2020
 
 
 @patch("template_project.data_fetch.probe.standardize")
@@ -311,8 +313,8 @@ def test_probe_one_ecb_calls_correct_adapter(mock_adapters, mock_std, mock_regis
 
     mock_adapters.fetch_ecb_raw.assert_called_once()
     call_args = mock_adapters.fetch_ecb_raw.call_args
-    # start_period should be recent (not 2003-01)
-    assert call_args.kwargs["start_period"][:4] >= "2024"
+    # start_period should be 2020-01 (not 2003-01)
+    assert call_args.kwargs["start_period"] == "2020-01"
 
 
 @patch("template_project.data_fetch.probe.standardize")

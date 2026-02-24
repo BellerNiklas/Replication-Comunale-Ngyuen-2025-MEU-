@@ -66,8 +66,10 @@ def _probe_source_country(
         ).to_parquet(output_path, index=False)
         return
 
-    print(f"[Probe/{source}/{country}] Probing {len(series_ids)} series...")
-    results = probe_many(series_ids, registry=registry, delay=1.0)
+    # OECD has stricter rate limits (429 errors with default 1s delay)
+    delay = 5.0 if source == "oecd" else 1.0
+    print(f"[Probe/{source}/{country}] Probing {len(series_ids)} series (delay={delay}s)...")
+    results = probe_many(series_ids, registry=registry, delay=delay)
 
     # Summarize
     statuses = {}
