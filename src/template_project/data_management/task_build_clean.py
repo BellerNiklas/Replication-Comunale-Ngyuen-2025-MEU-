@@ -1,37 +1,51 @@
-"""Build clean macro panel from per-source raw snapshots."""
+"""Build clean macro panel from per-country raw snapshots."""
 
 from pathlib import Path
 
 import pandas as pd
 
-from template_project.config import BLD
+from template_project.config import BLD, MEU_COUNTRIES
+
+
+def _build_raw_depends() -> dict[str, Path]:
+    """Build dependency dict for all 77 per-country raw snapshot files."""
+    deps = {}
+    for country in MEU_COUNTRIES:
+        for source in ("eurostat", "ecb", "oecd", "bis"):
+            deps[f"{source}_{country}"] = (
+                BLD / "data" / "raw" / source / f"{country}_snapshot.parquet"
+            )
+    # ECB U2 (EA aggregates)
+    deps["ecb_U2"] = BLD / "data" / "raw" / "ecb" / "U2_snapshot.parquet"
+    return deps
 
 
 def task_build_clean(
-    depends_on: dict = {
-        "eurostat": BLD / "data" / "raw" / "eurostat_snapshot.parquet",
-        "ecb": BLD / "data" / "raw" / "ecb_snapshot.parquet",
-        "oecd": BLD / "data" / "raw" / "oecd_snapshot.parquet",
-        "bis": BLD / "data" / "raw" / "bis_snapshot.parquet",
-    },
+    depends_on: dict = _build_raw_depends(),
     produces: Path = BLD / "data" / "clean" / "macro_panel.parquet",
 ) -> None:
-    """Build clean macro panel from per-source snapshots (short and boring task).
+    """Build clean macro panel from per-country snapshots (short and boring task).
 
     Task only handles I/O. Real logic in _clean_macro_panel() helper.
     """
-    print("Loading raw snapshots from all sources...")
+    print("Loading raw snapshots from all per-country files...")
 
-    # Read all source files
+    # Every fetch task always writes a file (empty or with data),
+    # so no existence checks needed — a missing file is a real error.
     dfs = []
-    for source, path in depends_on.items():
+    for label, path in depends_on.items():
         df = pd.read_parquet(path)
-        print(f"  {source}: {len(df)} rows, {df.series_id.nunique()} series")
-        dfs.append(df)
+        if not df.empty:
+            dfs.append(df)
 
-    # Combine all sources
+    if not dfs:
+        msg = "No raw data found — cannot build clean panel"
+        raise ValueError(msg)
+
     raw_combined = pd.concat(dfs, ignore_index=True)
-    print(f"Combined: {len(raw_combined)} rows from {len(dfs)} sources")
+    n_series = raw_combined["series_id"].nunique()
+    n_countries = raw_combined["country_iso2"].nunique()
+    print(f"Combined: {len(raw_combined)} rows, {n_series} series, {n_countries} countries")
 
     print("\nCleaning and standardizing data...")
     cleaned = _clean_macro_panel(raw_combined)

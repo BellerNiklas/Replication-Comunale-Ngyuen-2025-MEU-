@@ -8,17 +8,26 @@ from pathlib import Path
 
 import pandas as pd
 
-from template_project.config import BLD, SRC
+from template_project.config import BLD, MEU_COUNTRIES, SRC
+
+
+def _build_meta_depends() -> dict[str, Path]:
+    """Build dependency dict for registry + all 77 per-country snapshot files."""
+    deps = {
+        "registry": SRC / "data_management" / "registry" / "series_registry.csv",
+        "availability": BLD / "meta" / "series_availability.parquet",
+    }
+    for country in MEU_COUNTRIES:
+        for source in ("eurostat", "ecb", "oecd", "bis"):
+            deps[f"{source}_{country}"] = (
+                BLD / "data" / "raw" / source / f"{country}_snapshot.parquet"
+            )
+    deps["ecb_U2"] = BLD / "data" / "raw" / "ecb" / "U2_snapshot.parquet"
+    return deps
 
 
 def task_log_fetch_metadata(
-    depends_on: dict = {
-        "registry": SRC / "data_management" / "registry" / "series_registry.csv",
-        "eurostat": BLD / "data" / "raw" / "eurostat_snapshot.parquet",
-        "ecb": BLD / "data" / "raw" / "ecb_snapshot.parquet",
-        "oecd": BLD / "data" / "raw" / "oecd_snapshot.parquet",
-        "bis": BLD / "data" / "raw" / "bis_snapshot.parquet",
-    },
+    depends_on: dict = _build_meta_depends(),
     produces: Path = BLD / "meta" / "raw_snapshot_meta.json",
 ) -> None:
     """Log metadata about raw fetch for replication package (short and boring task).
@@ -28,26 +37,59 @@ def task_log_fetch_metadata(
     """
     print("Computing fetch metadata...")
 
-    # Compute metadata
+    # Availability summary
+    availability = pd.read_parquet(depends_on["availability"])
+    avail_summary = availability["status"].value_counts().to_dict()
+
     metadata = {
         "fetch_timestamp": datetime.utcnow().isoformat() + "Z",
         "git_commit": _get_git_hash(),
         "git_branch": _get_git_branch(),
         "registry_checksum": _file_sha256(depends_on["registry"]),
         "registry_rows": len(pd.read_csv(depends_on["registry"])),
+        "availability_summary": avail_summary,
         "sources": {},
     }
 
-    # Per-source statistics
-    for source in ["eurostat", "ecb", "oecd", "bis"]:
-        print(f"  Processing {source}...")
-        df = pd.read_parquet(depends_on[source])
+    # Per-source statistics (aggregated from per-country files)
+    for source in ("eurostat", "ecb", "oecd", "bis"):
+        countries = [*MEU_COUNTRIES]
+        if source == "ecb":
+            countries.append("U2")
+
+        source_rows = 0
+        source_series = set()
+        country_stats = {}
+
+        for country in countries:
+            key = f"{source}_{country}"
+            path = depends_on[key]
+            if path.exists():
+                df = pd.read_parquet(path)
+                rows = len(df)
+                series_count = df["series_id"].nunique() if rows > 0 else 0
+                source_rows += rows
+                source_series.update(df["series_id"].unique() if rows > 0 else [])
+                country_stats[country] = {
+                    "series_count": series_count,
+                    "rows": rows,
+                    "file_size_bytes": path.stat().st_size,
+                    "checksum": _file_sha256(path),
+                }
+            else:
+                country_stats[country] = {
+                    "series_count": 0,
+                    "rows": 0,
+                    "file_size_bytes": 0,
+                    "checksum": "",
+                }
+
         metadata["sources"][source] = {
-            "rows": len(df),
-            "series_count": df["series_id"].nunique(),
-            "file_size_bytes": depends_on[source].stat().st_size,
-            "checksum": _file_sha256(depends_on[source]),
+            "total_rows": source_rows,
+            "total_series": len(source_series),
+            "countries": country_stats,
         }
+        print(f"  {source}: {source_rows} rows, {len(source_series)} series")
 
     # Write JSON
     produces.parent.mkdir(parents=True, exist_ok=True)
@@ -55,7 +97,6 @@ def task_log_fetch_metadata(
     print(f"\nLogged fetch metadata to {produces}")
     print(f"  Timestamp: {metadata['fetch_timestamp']}")
     print(f"  Git commit: {metadata['git_commit'][:12]}...")
-    print(f"  Sources: {list(metadata['sources'].keys())}")
 
 
 def _get_git_hash() -> str:
