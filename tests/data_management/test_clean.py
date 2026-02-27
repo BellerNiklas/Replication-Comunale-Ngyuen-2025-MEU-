@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from template_project.data_management.task_build_clean import (
+from meu_replication.data_management.task_build_clean import (
     _clean_macro_panel,
     _parse_dates,
 )

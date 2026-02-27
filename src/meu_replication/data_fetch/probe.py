@@ -24,7 +24,7 @@ from typing import Any
 
 import pandas as pd
 
-from template_project.data_fetch import adapters, standardize
+from meu_replication.data_fetch import adapters, standardize
 
 # Minimum rows to classify as "ok" (vs "ok_short")
 _OK_THRESHOLD = 10

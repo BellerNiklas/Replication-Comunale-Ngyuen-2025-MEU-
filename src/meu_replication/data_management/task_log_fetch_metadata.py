@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from template_project.config import BLD, MEU_COUNTRIES, SRC
+from meu_replication.config import BLD, MEU_COUNTRIES, SRC
 
 
 def _build_meta_depends() -> dict[str, Path]:

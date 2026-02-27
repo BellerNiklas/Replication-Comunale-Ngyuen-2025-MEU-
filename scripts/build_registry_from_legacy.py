@@ -13,15 +13,15 @@ from pathlib import Path
 
 import pandas as pd
 
-# Add src to path so we can import from template_project
+# Add src to path so we can import from meu_replication
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from template_project.data_fetch.bis import generate_all_variable_configs as bis_configs
-from template_project.data_fetch.ecb import generate_all_variable_configs as ecb_configs
-from template_project.data_fetch.eurostat import (
+from meu_replication.data_fetch.bis import generate_all_variable_configs as bis_configs
+from meu_replication.data_fetch.ecb import generate_all_variable_configs as ecb_configs
+from meu_replication.data_fetch.eurostat import (
     generate_all_variable_configs as eurostat_configs,
 )
-from template_project.data_fetch.oecd import generate_all_variable_configs as oecd_configs
+from meu_replication.data_fetch.oecd import generate_all_variable_configs as oecd_configs
 
 
 def main():
@@ -114,7 +114,7 @@ def main():
     print(registry.groupby("source").size())
 
     # Write to CSV
-    output_path = Path(__file__).parent.parent / "src" / "template_project" / "data_management" / "registry" / "series_registry.csv"
+    output_path = Path(__file__).parent.parent / "src" / "meu_replication" / "data_management" / "registry" / "series_registry.csv"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     registry.to_csv(output_path, index=False)
 

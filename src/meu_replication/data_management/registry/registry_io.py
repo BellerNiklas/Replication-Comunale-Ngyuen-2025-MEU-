@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from template_project.config import SRC
+from meu_replication.config import SRC
 
 REGISTRY_PATH = SRC / "data_management" / "registry" / "series_registry.csv"
 

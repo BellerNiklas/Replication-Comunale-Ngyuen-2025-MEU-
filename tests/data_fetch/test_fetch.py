@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from template_project.data_fetch.fetch import fetch_many, fetch_one
+from meu_replication.data_fetch.fetch import fetch_many, fetch_one
 
 
 @pytest.fixture()
@@ -76,8 +76,8 @@ def mock_standardized_df():
     )
 
 
-@patch("template_project.data_fetch.fetch.adapters")
-@patch("template_project.data_fetch.fetch.standardize")
+@patch("meu_replication.data_fetch.fetch.adapters")
+@patch("meu_replication.data_fetch.fetch.standardize")
 def test_fetch_one_eurostat(mock_std, mock_adapters, mock_registry, mock_standardized_df):
     """Test fetch_one dispatches correctly for Eurostat."""
     # Setup mocks
@@ -98,8 +98,8 @@ def test_fetch_one_eurostat(mock_std, mock_adapters, mock_registry, mock_standar
     assert len(result) == 2
 
 
-@patch("template_project.data_fetch.fetch.adapters")
-@patch("template_project.data_fetch.fetch.standardize")
+@patch("meu_replication.data_fetch.fetch.adapters")
+@patch("meu_replication.data_fetch.fetch.standardize")
 def test_fetch_one_ecb(mock_std, mock_adapters, mock_registry, mock_standardized_df):
     """Test fetch_one dispatches correctly for ECB."""
     # Setup mocks
@@ -118,8 +118,8 @@ def test_fetch_one_ecb(mock_std, mock_adapters, mock_registry, mock_standardized
     assert isinstance(result, pd.DataFrame)
 
 
-@patch("template_project.data_fetch.fetch.adapters")
-@patch("template_project.data_fetch.fetch.standardize")
+@patch("meu_replication.data_fetch.fetch.adapters")
+@patch("meu_replication.data_fetch.fetch.standardize")
 def test_fetch_one_bis(mock_std, mock_adapters, mock_registry, mock_standardized_df):
     """Test fetch_one dispatches correctly for BIS."""
     # Setup mocks
@@ -144,7 +144,7 @@ def test_fetch_one_not_found_raises(mock_registry):
         fetch_one("NONEXISTENT", registry=mock_registry)
 
 
-@patch("template_project.data_fetch.fetch.fetch_one")
+@patch("meu_replication.data_fetch.fetch.fetch_one")
 def test_fetch_many_concatenates(mock_fetch_one, mock_registry):
     """Test fetch_many concatenates results from multiple series."""
     # Setup mock to return different DataFrames for each series
@@ -184,7 +184,7 @@ def test_fetch_many_concatenates(mock_fetch_one, mock_registry):
     assert "EA_FX_001" in result["series_id"].values
 
 
-@patch("template_project.data_fetch.fetch.fetch_one")
+@patch("meu_replication.data_fetch.fetch.fetch_one")
 def test_fetch_many_continues_on_error(mock_fetch_one, mock_registry, capsys):
     """Test fetch_many continues when some series fail."""
     # First series succeeds, second fails
@@ -216,7 +216,7 @@ def test_fetch_many_continues_on_error(mock_fetch_one, mock_registry, capsys):
     assert "EA_FX_001" in captured.out
 
 
-@patch("template_project.data_fetch.fetch.fetch_one")
+@patch("meu_replication.data_fetch.fetch.fetch_one")
 def test_fetch_many_all_fail_raises(mock_fetch_one, mock_registry):
     """Test fetch_many raises when all series fail."""
     mock_fetch_one.side_effect = RuntimeError("API error")

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from template_project.config import BLD, MEU_COUNTRIES
+from meu_replication.config import BLD, MEU_COUNTRIES
 
 
 def _build_raw_depends() -> dict[str, Path]:

@@ -22,8 +22,8 @@ from pathlib import Path
 import pandas as pd
 import pytask
 
-from template_project.config import BLD, MEU_COUNTRIES, SRC
-from template_project.data_management.registry.registry_io import load_registry
+from meu_replication.config import BLD, MEU_COUNTRIES, SRC
+from meu_replication.data_management.registry.registry_io import load_registry
 
 # -- Shared dependencies for all probe tasks --
 
@@ -45,7 +45,7 @@ def _probe_source_country(
     Short and boring: load registry, filter, probe, write.
     Real logic lives in probe.probe_many().
     """
-    from template_project.data_fetch.probe import probe_many
+    from meu_replication.data_fetch.probe import probe_many
 
     registry = load_registry()
 
@@ -134,7 +134,7 @@ def task_derive_oecd_availability(
     Short and boring: read bulk data, check which series have data,
     write availability records in same format as probe results.
     """
-    from template_project.data_management.registry.registry_io import load_registry
+    from meu_replication.data_management.registry.registry_io import load_registry
 
     registry = load_registry()
     oecd_series = registry[registry.source == "oecd"]

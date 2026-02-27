@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from template_project.data_fetch.standardize import (
+from meu_replication.data_fetch.standardize import (
     standardize_from_bis,
     standardize_from_ecb_like,
     standardize_from_eurostat,

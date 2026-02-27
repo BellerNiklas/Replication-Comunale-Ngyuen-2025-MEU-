@@ -16,7 +16,7 @@ This is a **Reproducible Research Project Template** designed for economics. It 
 
 ## Directory Structure
 
-*   `src/template_project/`: The main Python package containing the research logic.
+*   `src/meu_replication/`: The main Python package containing the research logic.
     *   `data/`: Raw data files (or scripts to download them).
     *   `data_management/`: Scripts to clean and prepare data.
     *   `analysis/`: Models and statistical analysis.

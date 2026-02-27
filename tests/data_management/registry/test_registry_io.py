@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from template_project.data_management.registry.registry_io import (
+from meu_replication.data_management.registry.registry_io import (
     load_registry,
     validate_registry,
 )

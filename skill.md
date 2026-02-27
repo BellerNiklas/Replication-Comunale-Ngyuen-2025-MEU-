@@ -42,7 +42,7 @@ _build/                 # Document outputs (safe to delete, NOT committed)
 ```python
 # CORRECT: Portable paths
 from pathlib import Path
-from template_project.config import BLD, SRC
+from meu_replication.config import BLD, SRC
 
 output_path = BLD / "data" / "cleaned.csv"
 
@@ -97,7 +97,7 @@ pytask auto-discovers:
 
 ```python
 from pathlib import Path
-from template_project.config import BLD
+from meu_replication.config import BLD
 
 # CORRECT: Explicit dependencies and products
 def task_clean_data(
@@ -134,7 +134,7 @@ def task_fit_models(
     ...
 
 # Option 2: Loop with @task(id=...) for distinct tasks
-from template_project.config import COUNTRIES
+from meu_replication.config import COUNTRIES
 
 for country in COUNTRIES:
     @pytask.task(id=country)
@@ -209,7 +209,7 @@ Test **behavior**, not implementation:
 ```python
 import pytest
 import pandas as pd
-from template_project.data_management.clean import clean_dates
+from meu_replication.data_management.clean import clean_dates
 
 def test_clean_dates_typical():
     """Test typical YYYY-MM input."""
@@ -394,7 +394,7 @@ data = pd.read_csv("C:/Users/...")
 
 ✅ **Relative paths from config**
 ```python
-from template_project.config import BLD
+from meu_replication.config import BLD
 data = pd.read_csv(BLD / "data" / "file.csv")
 ```
 

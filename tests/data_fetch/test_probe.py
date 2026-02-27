@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from template_project.data_fetch.probe import (
+from meu_replication.data_fetch.probe import (
     _extract_template_id,
     _is_data_absence_error,
     _probe_start_period,
@@ -191,7 +191,7 @@ def test_probe_start_period_fixed():
 # --- probe_one ---
 
 
-@patch("template_project.data_fetch.probe._fetch_probe")
+@patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_ok(mock_fetch, mock_registry):
     """Test probe returns 'ok' when ≥10 rows returned."""
     mock_fetch.return_value = _mock_standardized_df(12)
@@ -206,7 +206,7 @@ def test_probe_one_ok(mock_fetch, mock_registry):
     assert result["error_kind"] == ""
 
 
-@patch("template_project.data_fetch.probe._fetch_probe")
+@patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_ok_short(mock_fetch, mock_registry):
     """Test probe returns 'ok_short' when 1-9 rows returned."""
     mock_fetch.return_value = _mock_standardized_df(5)
@@ -217,7 +217,7 @@ def test_probe_one_ok_short(mock_fetch, mock_registry):
     assert result["rows_fetched"] == 5
 
 
-@patch("template_project.data_fetch.probe._fetch_probe")
+@patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_missing_empty_df(mock_fetch, mock_registry):
     """Test probe returns 'missing' when empty DataFrame returned."""
     mock_fetch.return_value = pd.DataFrame()
@@ -229,7 +229,7 @@ def test_probe_one_missing_empty_df(mock_fetch, mock_registry):
     assert result["error_kind"] == "empty_result"
 
 
-@patch("template_project.data_fetch.probe._fetch_probe")
+@patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_missing_no_data_error(mock_fetch, mock_registry):
     """Test probe returns 'missing' for 'No data returned' error."""
     mock_fetch.side_effect = RuntimeError("No data returned from Eurostat")
@@ -241,7 +241,7 @@ def test_probe_one_missing_no_data_error(mock_fetch, mock_registry):
     assert result["error_kind"] == "RuntimeError"
 
 
-@patch("template_project.data_fetch.probe._fetch_probe")
+@patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_error_timeout(mock_fetch, mock_registry):
     """Test probe returns 'error' for timeout."""
     mock_fetch.side_effect = RuntimeError("Connection timed out after 60s")
@@ -254,7 +254,7 @@ def test_probe_one_error_timeout(mock_fetch, mock_registry):
     assert "timed out" in result["error_message"]
 
 
-@patch("template_project.data_fetch.probe._fetch_probe")
+@patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_ecb_country(mock_fetch, mock_registry):
     """Test probe works for ECB country-level series."""
     mock_fetch.return_value = _mock_standardized_df(10)
@@ -265,7 +265,7 @@ def test_probe_one_ecb_country(mock_fetch, mock_registry):
     assert result["template_id"] == "FIN_LOAN_001"
 
 
-@patch("template_project.data_fetch.probe._fetch_probe")
+@patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_u2_ea_series(mock_fetch, mock_registry):
     """Test probe works for U2 EA-aggregate series."""
     mock_fetch.return_value = _mock_standardized_df(12)
@@ -280,8 +280,8 @@ def test_probe_one_u2_ea_series(mock_fetch, mock_registry):
 # --- Dispatch to correct adapter ---
 
 
-@patch("template_project.data_fetch.probe.standardize")
-@patch("template_project.data_fetch.probe.adapters")
+@patch("meu_replication.data_fetch.probe.standardize")
+@patch("meu_replication.data_fetch.probe.adapters")
 def test_probe_one_eurostat_calls_correct_adapter(
     mock_adapters, mock_std, mock_registry
 ):
@@ -300,8 +300,8 @@ def test_probe_one_eurostat_calls_correct_adapter(
     assert filters["startPeriod"] == 2020
 
 
-@patch("template_project.data_fetch.probe.standardize")
-@patch("template_project.data_fetch.probe.adapters")
+@patch("meu_replication.data_fetch.probe.standardize")
+@patch("meu_replication.data_fetch.probe.adapters")
 def test_probe_one_ecb_calls_correct_adapter(mock_adapters, mock_std, mock_registry):
     """Test ECB probe calls fetch_ecb_raw with recent start_period."""
     mock_adapters.fetch_ecb_raw.return_value = pd.DataFrame(
@@ -325,8 +325,8 @@ def test_probe_one_oecd_returns_error_status(mock_registry):
     assert "bulk fetch" in result["error_message"].lower()
 
 
-@patch("template_project.data_fetch.probe.standardize")
-@patch("template_project.data_fetch.probe.adapters")
+@patch("meu_replication.data_fetch.probe.standardize")
+@patch("meu_replication.data_fetch.probe.adapters")
 def test_probe_one_bis_calls_correct_adapter(mock_adapters, mock_std, mock_registry):
     """Test BIS probe calls fetch_bis_raw."""
     mock_adapters.fetch_bis_raw.return_value = pd.DataFrame(
@@ -342,7 +342,7 @@ def test_probe_one_bis_calls_correct_adapter(mock_adapters, mock_std, mock_regis
 # --- Error message truncation ---
 
 
-@patch("template_project.data_fetch.probe._fetch_probe")
+@patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_truncates_long_error(mock_fetch, mock_registry):
     """Test that error messages are truncated to 200 chars."""
     long_msg = "A" * 500

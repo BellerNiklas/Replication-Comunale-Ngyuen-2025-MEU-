@@ -3,8 +3,8 @@
 # ======================================================================================
 
 [project]
-name = "template_project"
-description = "Template for reproducible research projects in economics"
+name = "meu_replication"
+description = "Replication of Comunale & Nguyen (2025): MacroEconomic Uncertainty for the Euro Area"
 requires-python = "==3.14"
 dynamic = [ "version" ]
 keywords = [
@@ -21,10 +21,10 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 authors = [
-  { name = "JANE DOE", email = "janedoe@example-university.com" },
+  { name = "Niklas Beller", email = "s82nbell@uni-bonn.de" },
 ]
 maintainers = [
-  { name = "JANE DOE", email = "janedoe@example-university.com" },
+  { name = "Niklas Beller", email = "s82nbell@uni-bonn.de" },
 ]
 
 [project.readme]
@@ -35,10 +35,8 @@ content-type = "text/markdown"
 text = "MIT"
 
 [project.urls]
-Changelog = "https://github.com/OpenSourceEconomics/econ-project-templates"
-Documentation = "https://github.com/OpenSourceEconomics/econ-project-templates"
-Github = "https://github.com/OpenSourceEconomics/econ-project-templates"
-Tracker = "https://github.com/OpenSourceEconomics/econ-project-templates/issues"
+Github = "https://github.com/iame-uni-bonn/final-project-BellerNiklas"
+Tracker = "https://github.com/iame-uni-bonn/final-project-BellerNiklas/issues"
 
 # ======================================================================================
 # Build system configuration
@@ -49,7 +47,7 @@ requires = [ "hatchling", "hatch_vcs" ]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.hooks.vcs]
-version-file = "src/template_project/_version.py"
+version-file = "src/meu_replication/_version.py"
 
 [tool.hatch.build.targets.sdist]
 exclude = [ "tests" ]
@@ -96,7 +94,7 @@ statsmodels = "*"
 ty = "*"
 
 [tool.pixi.pypi-dependencies]
-template_project = { path = ".", editable = true }
+meu_replication = { path = ".", editable = true }
 pdbp = "*"
 tabulate = "*"
 eurostat = "*"
@@ -124,7 +122,7 @@ docs = { features = [ "docs" ], solve-group = "default" }
 # ======================================================================================
 
 [tool.pytask.ini_options]
-paths = [ "./src/template_project", "./documents" ]
+paths = [ "./src/meu_replication", "./documents" ]
 pdbcls = "pdbp:Pdb"
 
 # ======================================================================================

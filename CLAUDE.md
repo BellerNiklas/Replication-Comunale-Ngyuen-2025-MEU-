@@ -48,16 +48,16 @@ The project follows a task-based pipeline where each `task_*.py` file defines
 computational steps:
 
 1. **Data Management**
-   (`src/template_project/data_management/task_data_management_template.py`)
+   (`src/meu_replication/data_management/task_data_management_template.py`)
 
    - Loads raw CSV data, cleans it, saves as pickle to `bld/data/`
 
-1. **Analysis** (`src/template_project/analysis/task_analysis_template.py`)
+1. **Analysis** (`src/meu_replication/analysis/task_analysis_template.py`)
 
    - Fits logit models and generates predictions
    - Iterates over `TEMPLATE_GROUPS` defined in `config.py`
 
-1. **Final Outputs** (`src/template_project/final/task_final_template.py`)
+1. **Final Outputs** (`src/meu_replication/final/task_final_template.py`)
 
    - Creates publication-ready figures (PNG via Plotly + Kaleido)
    - Generates results tables (Markdown format)
@@ -69,14 +69,14 @@ computational steps:
 
 ### Key Configuration
 
-- `src/template_project/config.py`: Central path definitions (`SRC`, `ROOT`, `BLD`,
+- `src/meu_replication/config.py`: Central path definitions (`SRC`, `ROOT`, `BLD`,
   `DOCUMENTS`) and `TEMPLATE_GROUPS` for iterative task generation
 - `pyproject.toml`: All tool configurations (Pixi, pytask, Ruff, pytest)
 - `myst.yml`: Jupyter Book 2.0 configuration for PDF export (in project root)
 
 ### Directory Conventions
 
-- `src/template_project/`: Source code (hand-written)
+- `src/meu_replication/`: Source code (hand-written)
 - `bld/`: Computational outputs (data, models, predictions, figures, tables)
 - `_build/`: Document build outputs (HTML site, PDF exports)
 - `documents/`: Academic paper and presentation sources (MyST Markdown and Slidev)

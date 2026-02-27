@@ -1,6 +1,7 @@
 # Data files
 *.parquet
 *.pkl
+*.txt
 
 # Distribution / packaging
 *.egg

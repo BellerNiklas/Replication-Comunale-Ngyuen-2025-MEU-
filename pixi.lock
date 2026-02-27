@@ -9497,6 +9497,12 @@ packages:
   - pkg:pypi/mdurl?source=hash-mapping
   size: 14465
   timestamp: 1733255681319
+- pypi: ./
+  name: meu-replication
+  version: 0.1.dev28+g85b5c67af.d20260227
+  sha256: 9d8f29399175b4d60f94588aa250f810f5a5d83a59d82fbf0d987d94ba7ca896
+  requires_python: ==3.14
+  editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/mistune-3.2.0-pyhcf101f3_0.conda
   sha256: d3fb4beb5e0a52b6cc33852c558e077e1bfe44df1159eb98332d69a264b14bae
   md5: b11e360fc4de2b0035fc8aaa74f17fd6
@@ -12293,12 +12299,6 @@ packages:
   purls: []
   size: 155869
   timestamp: 1767886839029
-- pypi: ./
-  name: template-project
-  version: 0.1.dev27+g0a92957ce.d20260225
-  sha256: 90709da2fea04f0d7aab9134ea01a0bbc23083421c0882e1e565c968afc62a0d
-  requires_python: ==3.14
-  editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/terminado-0.18.1-pyh6dadd2b_1.conda
   sha256: b375e8df0d5710717c31e7c8e93c025c37fa3504aea325c7a55509f64e5d4340
   md5: e43ca10d61e55d0a8ec5d8c62474ec9e

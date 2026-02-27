@@ -30,7 +30,7 @@ from pathlib import Path
 import pandas as pd
 import pytask
 
-from template_project.config import BLD, MEU_COUNTRIES, SRC
+from meu_replication.config import BLD, MEU_COUNTRIES, SRC
 
 # Standardized column schema for empty DataFrames
 _EMPTY_COLUMNS = [
@@ -65,8 +65,8 @@ def _fetch_source_country(
     Short and boring: load registry, filter to available series, fetch, write.
     Real logic lives in fetch.fetch_many().
     """
-    from template_project.data_fetch.fetch import fetch_many
-    from template_project.data_management.registry.registry_io import load_registry
+    from meu_replication.data_fetch.fetch import fetch_many
+    from meu_replication.data_management.registry.registry_io import load_registry
 
     registry = load_registry()
     availability = pd.read_parquet(BLD / "meta" / "series_availability.parquet")
@@ -157,9 +157,9 @@ def task_fetch_oecd_bulk(
     standardise, write. Uses SDMX '+' syntax to combine all countries
     and indicator variants per dataset.
     """
-    from template_project.data_fetch.adapters import fetch_oecd_bulk
-    from template_project.data_fetch.standardize import standardize_oecd_bulk
-    from template_project.data_management.registry.registry_io import load_registry
+    from meu_replication.data_fetch.adapters import fetch_oecd_bulk
+    from meu_replication.data_fetch.standardize import standardize_oecd_bulk
+    from meu_replication.data_management.registry.registry_io import load_registry
 
     registry = load_registry()
     countries = pd.read_csv(SRC / "data_management" / "registry" / "countries.csv")
