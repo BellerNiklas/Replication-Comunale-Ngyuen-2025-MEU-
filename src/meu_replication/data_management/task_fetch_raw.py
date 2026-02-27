@@ -127,11 +127,7 @@ for _country in _ECB_COUNTRIES:
     def task_fetch_ecb(
         country: str = _country,
         depends_on: dict = _FETCH_DEPENDS,
-        produces: Path = BLD
-        / "data"
-        / "raw"
-        / "ecb"
-        / f"{_country}_snapshot.parquet",
+        produces: Path = BLD / "data" / "raw" / "ecb" / f"{_country}_snapshot.parquet",
     ) -> None:
         """Fetch ECB data for one country (or U2 for EA aggregates)."""
         _fetch_source_country("ecb", country, produces)
@@ -164,18 +160,12 @@ def task_fetch_oecd_bulk(
     registry = load_registry()
     countries = pd.read_csv(SRC / "data_management" / "registry" / "countries.csv")
 
-    print("[Fetch/oecd/bulk] Making 4 bulk API calls...")
     raw = fetch_oecd_bulk(registry, countries)
-    print(f"[Fetch/oecd/bulk] Raw: {len(raw)} rows")
-
-    print("[Fetch/oecd/bulk] Standardising...")
     df = standardize_oecd_bulk(raw, registry, countries)
 
     produces.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(produces, index=False)
-    n_series = df["series_id"].nunique()
-    n_countries = df["country_iso2"].nunique()
-    print(f"[Fetch/oecd/bulk] Wrote {len(df)} rows, {n_series} series, {n_countries} countries")
+    print(f"[Fetch/oecd/bulk] Wrote {len(df)} rows, {df['series_id'].nunique()} series")
 
 
 def _build_oecd_split_produces() -> dict[str, Path]:
@@ -220,11 +210,7 @@ for _country in MEU_COUNTRIES:
     def task_fetch_bis(
         country: str = _country,
         depends_on: dict = _FETCH_DEPENDS,
-        produces: Path = BLD
-        / "data"
-        / "raw"
-        / "bis"
-        / f"{_country}_snapshot.parquet",
+        produces: Path = BLD / "data" / "raw" / "bis" / f"{_country}_snapshot.parquet",
     ) -> None:
         """Fetch BIS data for one country."""
         _fetch_source_country("bis", country, produces)

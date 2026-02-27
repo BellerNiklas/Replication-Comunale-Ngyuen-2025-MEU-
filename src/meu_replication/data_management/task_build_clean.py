@@ -20,41 +20,39 @@ def _build_raw_depends() -> dict[str, Path]:
     return deps
 
 
+def _load_raw_snapshots(depends_on: dict[str, Path]) -> pd.DataFrame:
+    """Load and concatenate all non-empty raw snapshot files.
+
+    Args:
+        depends_on: Dict mapping label -> Path for raw parquet files.
+
+    Returns:
+        Combined raw DataFrame.
+
+    Raises:
+        ValueError: If no raw data found.
+    """
+    dfs = [
+        df for path in depends_on.values() if not (df := pd.read_parquet(path)).empty
+    ]
+    if not dfs:
+        msg = "No raw data found — cannot build clean panel"
+        raise ValueError(msg)
+    return pd.concat(dfs, ignore_index=True)
+
+
 def task_build_clean(
     depends_on: dict = _build_raw_depends(),
     produces: Path = BLD / "data" / "clean" / "macro_panel.parquet",
 ) -> None:
-    """Build clean macro panel from per-country snapshots (short and boring task).
+    """Build clean macro panel from per-country snapshots."""
+    raw = _load_raw_snapshots(depends_on)
+    cleaned = _clean_macro_panel(raw)
 
-    Task only handles I/O. Real logic in _clean_macro_panel() helper.
-    """
-    print("Loading raw snapshots from all per-country files...")
-
-    # Every fetch task always writes a file (empty or with data),
-    # so no existence checks needed — a missing file is a real error.
-    dfs = []
-    for label, path in depends_on.items():
-        df = pd.read_parquet(path)
-        if not df.empty:
-            dfs.append(df)
-
-    if not dfs:
-        msg = "No raw data found — cannot build clean panel"
-        raise ValueError(msg)
-
-    raw_combined = pd.concat(dfs, ignore_index=True)
-    n_series = raw_combined["series_id"].nunique()
-    n_countries = raw_combined["country_iso2"].nunique()
-    print(f"Combined: {len(raw_combined)} rows, {n_series} series, {n_countries} countries")
-
-    print("\nCleaning and standardizing data...")
-    cleaned = _clean_macro_panel(raw_combined)
-    print(f"After cleaning: {len(cleaned)} rows")
-
-    print(f"\nWriting to {produces}...")
     produces.parent.mkdir(parents=True, exist_ok=True)
     cleaned.to_parquet(produces, index=False)
-    print(f"Successfully wrote {len(cleaned)} rows to {produces.name}")
+    n_series = cleaned["series_id"].nunique()
+    print(f"Wrote {len(cleaned)} rows ({n_series} series) to {produces.name}")
 
 
 def _clean_macro_panel(df: pd.DataFrame) -> pd.DataFrame:
