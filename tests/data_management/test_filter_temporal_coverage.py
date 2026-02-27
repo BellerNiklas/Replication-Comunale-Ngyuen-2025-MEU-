@@ -7,6 +7,7 @@ from meu_replication.data_management.task_filter_temporal_coverage import (
     filter_by_temporal_coverage,
     generate_comparative_report,
     generate_filter_report,
+    run_all_filter_variants,
 )
 
 # Small 3-month sample period for compact tests
@@ -396,3 +397,46 @@ def test_comparative_report_car_registration_note():
 
     assert "CARS_002" in report
     assert "2021-12" in report
+
+
+# ---------------------------------------------------------------------------
+# Tests for run_all_filter_variants
+# ---------------------------------------------------------------------------
+
+
+def test_run_all_filter_variants_returns_panels_and_report():
+    """run_all_filter_variants returns dict with panels and report."""
+    panel = _make_panel(
+        {
+            "A": ["2020-01", "2020-02", "2020-03"],
+            "B": ["2020-01", "2020-03"],
+        }
+    )
+    variants = [
+        {
+            "label": "strict",
+            "key": "panel_strict",
+            "start": SAMPLE_START,
+            "end": SAMPLE_END,
+            "allowed_missing": 0,
+        },
+        {
+            "label": "relaxed",
+            "key": "panel_relaxed",
+            "start": SAMPLE_START,
+            "end": SAMPLE_END,
+            "allowed_missing": 1,
+        },
+    ]
+
+    results = run_all_filter_variants(panel, variants)
+
+    assert "panels" in results
+    assert "report" in results
+    assert set(results["panels"]) == {"panel_strict", "panel_relaxed"}
+    # Strict keeps only A, relaxed keeps both
+    assert set(results["panels"]["panel_strict"]["series_id"].unique()) == {"A"}
+    assert set(results["panels"]["panel_relaxed"]["series_id"].unique()) == {"A", "B"}
+    assert isinstance(results["report"], str)
+    assert "strict" in results["report"]
+    assert "relaxed" in results["report"]

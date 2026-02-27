@@ -26,17 +26,17 @@ def _build_meta_depends() -> dict[str, Path]:
     return deps
 
 
-def task_log_fetch_metadata(
-    depends_on: dict = _build_meta_depends(),
-    produces: Path = BLD / "meta" / "raw_snapshot_meta.json",
-) -> None:
-    """Log metadata about raw fetch for replication package (short and boring task).
+def _build_fetch_metadata(depends_on: dict[str, Path]) -> dict:
+    """Build fetch metadata dict from dependency files.
 
-    Task only handles I/O and metadata computation.
-    Metadata enables academic reproducibility and audit trails.
+    Pure function (except git subprocess calls which are read-only).
+
+    Args:
+        depends_on: Dict mapping label -> Path for all dependency files.
+
+    Returns:
+        Metadata dict ready for JSON serialization.
     """
-    print("Computing fetch metadata...")
-
     # Availability summary
     availability = pd.read_parquet(depends_on["availability"])
     avail_summary = availability["status"].value_counts().to_dict()
@@ -89,14 +89,23 @@ def task_log_fetch_metadata(
             "total_series": len(source_series),
             "countries": country_stats,
         }
-        print(f"  {source}: {source_rows} rows, {len(source_series)} series")
 
-    # Write JSON
+    return metadata
+
+
+def task_log_fetch_metadata(
+    depends_on: dict = _build_meta_depends(),
+    produces: Path = BLD / "meta" / "raw_snapshot_meta.json",
+) -> None:
+    """Log metadata about raw fetch for replication package.
+
+    Short and boring task: delegates to _build_fetch_metadata(), writes JSON.
+    """
+    metadata = _build_fetch_metadata(depends_on)
+
     produces.parent.mkdir(parents=True, exist_ok=True)
     produces.write_text(json.dumps(metadata, indent=2))
-    print(f"\nLogged fetch metadata to {produces}")
-    print(f"  Timestamp: {metadata['fetch_timestamp']}")
-    print(f"  Git commit: {metadata['git_commit'][:12]}...")
+    print(f"Logged fetch metadata to {produces}")
 
 
 def _get_git_hash() -> str:

@@ -33,6 +33,45 @@ def _build_expected_months(sample_start: str, sample_end: str) -> set[str]:
     return {p.strftime("%Y-%m") for p in periods}
 
 
+def _compute_allowed_missing(sample_start: str, sample_end: str) -> int:
+    """Compute allowed missing months for the 98% coverage threshold."""
+    n_months = len(_build_expected_months(sample_start, sample_end))
+    return math.floor(_COVERAGE_THRESHOLD * n_months)
+
+
+# Module-level variant configuration (computed once at import time)
+_FILTER_VARIANTS = [
+    {
+        "label": "2022_strict",
+        "key": "panel_2022_strict",
+        "start": SAMPLE_START,
+        "end": SAMPLE_END,
+        "allowed_missing": 0,
+    },
+    {
+        "label": "2022_cov98",
+        "key": "panel_2022_cov98",
+        "start": SAMPLE_START,
+        "end": SAMPLE_END,
+        "allowed_missing": _compute_allowed_missing(SAMPLE_START, SAMPLE_END),
+    },
+    {
+        "label": "2021_strict",
+        "key": "panel_2021_strict",
+        "start": SAMPLE_START,
+        "end": SAMPLE_END_ALT,
+        "allowed_missing": 0,
+    },
+    {
+        "label": "2021_cov98",
+        "key": "panel_2021_cov98",
+        "start": SAMPLE_START,
+        "end": SAMPLE_END_ALT,
+        "allowed_missing": _compute_allowed_missing(SAMPLE_START, SAMPLE_END_ALT),
+    },
+]
+
+
 def filter_by_temporal_coverage(
     df: pd.DataFrame,
     sample_start: str,
@@ -319,65 +358,28 @@ def generate_comparative_report(
     return "\n".join(lines)
 
 
-def _compute_allowed_missing(sample_start: str, sample_end: str) -> int:
-    """Compute allowed missing months for the 98% coverage threshold."""
-    n_months = len(_build_expected_months(sample_start, sample_end))
-    return math.floor(_COVERAGE_THRESHOLD * n_months)
+def run_all_filter_variants(
+    panel: pd.DataFrame,
+    filter_variants: list[dict],
+) -> dict:
+    """Run all filter variants and produce panels + comparative report.
 
+    Pure function: no I/O, no side effects.
 
-def task_filter_temporal_coverage(
-    depends_on: Path = BLD / "data" / "clean" / "macro_panel.parquet",
-    produces: dict[str, Path] = {
-        "panel_2022_strict": BLD / "data" / "clean" / "panel_2003_2022_strict.parquet",
-        "panel_2022_cov98": BLD / "data" / "clean" / "panel_2003_2022_cov98.parquet",
-        "panel_2021_strict": BLD / "data" / "clean" / "panel_2003_2021_strict.parquet",
-        "panel_2021_cov98": BLD / "data" / "clean" / "panel_2003_2021_cov98.parquet",
-        "report": BLD / "documents" / "temporal_filter_report.md",
-    },
-) -> None:
-    """Filter macro panel to series with sufficient temporal coverage.
+    Args:
+        panel: Clean macro panel DataFrame.
+        filter_variants: List of dicts with keys:
+            label, key, start, end, allowed_missing.
 
-    Produces 4 filtered panels (2 windows x 2 thresholds) and one
-    comparative report. Task only handles I/O; real logic in
-    filter_by_temporal_coverage() and generate_comparative_report().
+    Returns:
+        Dict with:
+        - "panels": dict mapping key -> filtered DataFrame
+        - "report": comparative report markdown string
     """
-    panel = pd.read_parquet(depends_on)
     n_total = panel["series_id"].nunique()
     country_totals = panel.groupby("country_iso2")["series_id"].nunique().to_dict()
 
-    print(f"Input: {len(panel)} rows, {n_total} series")
-
-    filter_variants = [
-        {
-            "label": "2022_strict",
-            "key": "panel_2022_strict",
-            "start": SAMPLE_START,
-            "end": SAMPLE_END,
-            "allowed_missing": 0,
-        },
-        {
-            "label": "2022_cov98",
-            "key": "panel_2022_cov98",
-            "start": SAMPLE_START,
-            "end": SAMPLE_END,
-            "allowed_missing": _compute_allowed_missing(SAMPLE_START, SAMPLE_END),
-        },
-        {
-            "label": "2021_strict",
-            "key": "panel_2021_strict",
-            "start": SAMPLE_START,
-            "end": SAMPLE_END_ALT,
-            "allowed_missing": 0,
-        },
-        {
-            "label": "2021_cov98",
-            "key": "panel_2021_cov98",
-            "start": SAMPLE_START,
-            "end": SAMPLE_END_ALT,
-            "allowed_missing": _compute_allowed_missing(SAMPLE_START, SAMPLE_END_ALT),
-        },
-    ]
-
+    panels = {}
     variant_results = []
 
     for variant in filter_variants:
@@ -391,15 +393,7 @@ def task_filter_temporal_coverage(
         n_kept = filtered["series_id"].nunique() if not filtered.empty else 0
         n_dropped = drop_info["series_id"].nunique() if not drop_info.empty else 0
 
-        print(
-            f"  {variant['label']}: kept {n_kept}, "
-            f"dropped {n_dropped} ({len(filtered)} rows)"
-        )
-
-        # Write panel
-        out_path = produces[variant["key"]]
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        filtered.to_parquet(out_path, index=False)
+        panels[variant["key"]] = filtered
 
         variant_results.append(
             {
@@ -417,6 +411,35 @@ def task_filter_temporal_coverage(
 
     report = generate_comparative_report(variant_results)
 
+    return {"panels": panels, "report": report}
+
+
+def task_filter_temporal_coverage(
+    depends_on: Path = BLD / "data" / "clean" / "macro_panel.parquet",
+    produces: dict[str, Path] = {
+        "panel_2022_strict": BLD / "data" / "clean" / "panel_2003_2022_strict.parquet",
+        "panel_2022_cov98": BLD / "data" / "clean" / "panel_2003_2022_cov98.parquet",
+        "panel_2021_strict": BLD / "data" / "clean" / "panel_2003_2021_strict.parquet",
+        "panel_2021_cov98": BLD / "data" / "clean" / "panel_2003_2021_cov98.parquet",
+        "report": BLD / "documents" / "temporal_filter_report.md",
+    },
+) -> None:
+    """Filter macro panel to series with sufficient temporal coverage.
+
+    Produces 4 filtered panels (2 windows x 2 thresholds) and one
+    comparative report. Task only handles I/O; real logic in
+    run_all_filter_variants().
+    """
+    panel = pd.read_parquet(depends_on)
+    print(f"Input: {len(panel)} rows, {panel['series_id'].nunique()} series")
+
+    results = run_all_filter_variants(panel, _FILTER_VARIANTS)
+
+    for key, filtered in results["panels"].items():
+        out_path = produces[key]
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        filtered.to_parquet(out_path, index=False)
+
     produces["report"].parent.mkdir(parents=True, exist_ok=True)
-    produces["report"].write_text(report, encoding="utf-8")
-    print(f"Wrote comparative report to {produces['report']}")
+    produces["report"].write_text(results["report"], encoding="utf-8")
+    print(f"Wrote {len(results['panels'])} panels + comparative report")
