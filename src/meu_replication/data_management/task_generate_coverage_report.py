@@ -9,7 +9,7 @@ from meu_replication.config import BLD, MEU_COUNTRIES
 
 def task_generate_coverage_report(
     depends_on: dict = {
-        "panel": BLD / "data" / "clean" / "macro_panel_filtered.parquet",
+        "panel": BLD / "data" / "clean" / "panel_2003_2022_strict.parquet",
         "availability": BLD / "meta" / "series_availability.parquet",
     },
     produces: Path = BLD / "documents" / "coverage_report.md",
@@ -54,22 +54,26 @@ def _generate_coverage_markdown(
     ]
 
     # Availability summary
-    lines.extend([
-        "## Probe Availability Summary",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Probe Availability Summary",
+            "",
+        ]
+    )
     for status, count in availability["status"].value_counts().items():
         pct = 100 * count / len(availability)
         lines.append(f"- **{status}**: {count} ({pct:.1f}%)")
     lines.append("")
 
     # Per-country table
-    lines.extend([
-        "## Coverage by Country",
-        "",
-        "| Country | Available | Fetched | Observations | Date Range |",
-        "|---------|-----------|---------|--------------|------------|",
-    ])
+    lines.extend(
+        [
+            "## Coverage by Country",
+            "",
+            "| Country | Available | Fetched | Observations | Date Range |",
+            "|---------|-----------|---------|--------------|------------|",
+        ]
+    )
 
     countries_order = sorted(MEU_COUNTRIES) + ["U2"]
     for country in countries_order:
@@ -96,12 +100,14 @@ def _generate_coverage_markdown(
     lines.append("")
 
     # Per-category table
-    lines.extend([
-        "## Coverage by Category",
-        "",
-        "| Category | Series | Observations |",
-        "|----------|--------|--------------|",
-    ])
+    lines.extend(
+        [
+            "## Coverage by Category",
+            "",
+            "| Category | Series | Observations |",
+            "|----------|--------|--------------|",
+        ]
+    )
 
     for cat_name in sorted(panel.category_name.unique()):
         cat_data = panel[panel.category_name == cat_name]
@@ -111,12 +117,14 @@ def _generate_coverage_markdown(
     lines.append("")
 
     # Per-country variable count (Figure A1 equivalent)
-    lines.extend([
-        "## Variables per Country (cf. Comunale & Nguyen 2025, Figure A1)",
-        "",
-        "| Country | Variables |",
-        "|---------|-----------|",
-    ])
+    lines.extend(
+        [
+            "## Variables per Country (cf. Comunale & Nguyen 2025, Figure A1)",
+            "",
+            "| Country | Variables |",
+            "|---------|-----------|",
+        ]
+    )
 
     country_series_counts = (
         panel[panel.country_iso2 != "U2"]
