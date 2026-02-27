@@ -149,6 +149,90 @@ def standardize_from_bis(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.DataFram
     ).dropna(subset=["value"]).reset_index(drop=True)
 
 
+def standardize_oecd_bulk(
+    raw: pd.DataFrame,
+    registry: pd.DataFrame,
+    countries: pd.DataFrame,
+) -> pd.DataFrame:
+    """Transform bulk OECD response to canonical long format (pure function).
+
+    Reconstructs SDMX keys from dimension columns and matches each row
+    to its registry series_id. Follows EPP: constructs new DataFrame.
+
+    Args:
+        raw: Concatenated bulk OECD CSV with 'dataset' column added.
+        registry: Full series registry DataFrame.
+        countries: Countries DataFrame for ISO3-to-ISO2 mapping.
+
+    Returns:
+        Canonical long DataFrame with standard schema.
+    """
+    oecd_reg = registry[registry.source == "oecd"]
+
+    # SDMX dimension columns in key order (verified from OECD API response)
+    _KEY_DIMS = [
+        "REF_AREA", "FREQ", "MEASURE", "UNIT_MEASURE",
+        "ACTIVITY", "ADJUSTMENT", "TRANSFORMATION", "TIME_HORIZ", "METHODOLOGY",
+    ]
+
+    # Build lookup: (dataset, key) -> registry spec dict
+    key_lookup = {
+        (row["dataset"], row["key"]): row.to_dict()
+        for _, row in oecd_reg.iterrows()
+    }
+
+    # Reconstruct SDMX key per row and match to registry
+    keys = raw[_KEY_DIMS].apply(
+        lambda row: ".".join(str(v) for v in row), axis=1
+    )
+    datasets = raw["dataset"]
+
+    series_ids = []
+    country_iso2s = []
+    variable_names = []
+    categories = []
+    category_names = []
+
+    for key, dataset in zip(keys, datasets):
+        spec = key_lookup.get((dataset, key))
+        if spec is not None:
+            series_ids.append(spec["series_id"])
+            country_iso2s.append(spec["country_iso2"])
+            variable_names.append(spec["variable_name"])
+            categories.append(spec["category"])
+            category_names.append(spec["category_name"])
+        else:
+            series_ids.append(None)
+            country_iso2s.append(None)
+            variable_names.append(None)
+            categories.append(None)
+            category_names.append(None)
+
+    time_col = _find_column(raw, ["TIME_PERIOD", "time_period", "TIME"])
+    value_col = _find_column(raw, ["OBS_VALUE", "obs_value", "VALUE"])
+
+    # Construct new DataFrame (EPP: start empty, touch each column once)
+    result = pd.DataFrame(
+        {
+            "date": raw[time_col].astype(str),
+            "value": pd.to_numeric(raw[value_col], errors="coerce"),
+            "series_id": series_ids,
+            "country_iso2": country_iso2s,
+            "variable_name": variable_names,
+            "category": categories,
+            "category_name": category_names,
+            "source": "oecd",
+        }
+    )
+
+    # Drop rows with no registry match and no value
+    return (
+        result
+        .dropna(subset=["series_id", "value"])
+        .reset_index(drop=True)
+    )
+
+
 def validate_long(df: pd.DataFrame, series_id: str) -> None:
     """Validate standardized long DataFrame (pure function - no side effects).
 

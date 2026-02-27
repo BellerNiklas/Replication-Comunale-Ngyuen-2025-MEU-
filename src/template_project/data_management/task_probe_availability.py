@@ -1,17 +1,20 @@
-"""Probe series availability via pytask DAG (77 tasks + 1 combine).
+"""Probe series availability via pytask DAG.
 
 Each task probes all series for one (country, source) pair using lightweight
-fetches (last 12 months). Results are written as parquet files to
+fetches (from 2020-01). Results are written as parquet files to
 bld/meta/availability/ and combined into a single availability manifest.
+
+OECD availability is derived from the bulk fetch (no per-series probing
+needed), avoiding rate-limit issues entirely.
 
 Task structure:
     - 19 Eurostat tasks (one per EA country)
     - 20 ECB tasks (19 EA countries + U2 for EA-aggregate series)
-    - 19 OECD tasks (one per EA country)
+    - 1 OECD availability task (derived from bulk fetch, no API calls)
     - 19 BIS tasks (one per EA country)
-    - 1 combine task (merges all 77 probe results)
+    - 1 combine task (merges all probe/availability results)
 
-Total: 78 tasks. Each probe task is independent → parallelizable.
+Total: 60 tasks.
 """
 
 from pathlib import Path
@@ -111,18 +114,61 @@ for _country in _ECB_COUNTRIES:
         _probe_source_country("ecb", country, produces)
 
 
-# -- OECD: 19 tasks --
+# -- OECD: 1 task (derived from bulk fetch, no API calls) --
 
-for _country in MEU_COUNTRIES:
 
-    @pytask.task(id=f"oecd_{_country}")
-    def task_probe_oecd(
-        country: str = _country,
-        depends_on: dict = _PROBE_DEPENDS,
-        produces: Path = BLD / "meta" / "availability" / f"oecd_{_country}.parquet",
-    ) -> None:
-        """Probe OECD availability for one country."""
-        _probe_source_country("oecd", country, produces)
+def _build_oecd_avail_produces() -> dict[str, Path]:
+    """Build produces dict for all 19 OECD availability files."""
+    return {
+        country: BLD / "meta" / "availability" / f"oecd_{country}.parquet"
+        for country in MEU_COUNTRIES
+    }
+
+
+def task_derive_oecd_availability(
+    depends_on: Path = BLD / "data" / "raw" / "oecd" / "bulk_snapshot.parquet",
+    produces: dict = _build_oecd_avail_produces(),
+) -> None:
+    """Derive OECD availability from bulk fetch results (no API calls).
+
+    Short and boring: read bulk data, check which series have data,
+    write availability records in same format as probe results.
+    """
+    from template_project.data_management.registry.registry_io import load_registry
+
+    registry = load_registry()
+    oecd_series = registry[registry.source == "oecd"]
+
+    bulk = pd.read_parquet(depends_on)
+    fetched_ids = set(bulk["series_id"].unique()) if not bulk.empty else set()
+
+    for country, path in produces.items():
+        country_series = oecd_series[oecd_series.country_iso2 == country]
+        results = []
+        for _, row in country_series.iterrows():
+            sid = row["series_id"]
+            if sid in fetched_ids:
+                n_rows = len(bulk[bulk.series_id == sid])
+                status = "ok" if n_rows >= 10 else "ok_short"
+            else:
+                n_rows = 0
+                status = "missing"
+            results.append({
+                "series_id": sid,
+                "template_id": sid.replace(f"{country}_", "", 1),
+                "country_iso2": country,
+                "status": status,
+                "rows_fetched": n_rows,
+                "error_kind": "",
+                "error_message": "",
+            })
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(results).to_parquet(path, index=False)
+        statuses = {}
+        for r in results:
+            statuses[r["status"]] = statuses.get(r["status"], 0) + 1
+        print(f"[Avail/oecd/{country}] {statuses}")
 
 
 # -- BIS: 19 tasks --

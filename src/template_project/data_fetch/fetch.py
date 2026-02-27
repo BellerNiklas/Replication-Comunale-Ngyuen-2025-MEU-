@@ -51,12 +51,11 @@ def fetch_one(series_id: str, *, registry: pd.DataFrame | None = None) -> pd.Dat
             df = standardize.standardize_from_ecb_like(raw, spec)
 
         elif source == "oecd":
-            raw = adapters.fetch_oecd_raw(
-                spec["dataset"],
-                spec["key"],
-                start_period=spec.get("start_period", "2003-01"),
+            msg = (
+                f"OECD series {series_id} should use bulk fetch "
+                "(task_fetch_oecd_bulk), not per-series fetch_one()."
             )
-            df = standardize.standardize_from_ecb_like(raw, spec)
+            raise ValueError(msg)
 
         elif source == "bis":
             raw = adapters.fetch_bis_raw(

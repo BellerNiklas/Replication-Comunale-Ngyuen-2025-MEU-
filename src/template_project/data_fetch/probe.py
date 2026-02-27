@@ -136,7 +136,8 @@ def _fetch_probe(spec: dict[str, Any], probe_start: str) -> pd.DataFrame:
     if source == "ecb":
         return _fetch_probe_ecb(spec, probe_start)
     if source == "oecd":
-        return _fetch_probe_oecd(spec, probe_start)
+        msg = "OECD probing is handled via bulk fetch — use task_derive_oecd_availability"
+        raise ValueError(msg)
     if source == "bis":
         return _fetch_probe_bis(spec, probe_start)
 
@@ -160,16 +161,6 @@ def _fetch_probe_eurostat(spec: dict[str, Any], probe_start: str) -> pd.DataFram
 def _fetch_probe_ecb(spec: dict[str, Any], probe_start: str) -> pd.DataFrame:
     """Probe ECB series with restricted date range."""
     raw = adapters.fetch_ecb_raw(
-        spec["dataset"],
-        spec["key"],
-        start_period=probe_start,
-    )
-    return standardize.standardize_from_ecb_like(raw, spec)
-
-
-def _fetch_probe_oecd(spec: dict[str, Any], probe_start: str) -> pd.DataFrame:
-    """Probe OECD series with restricted date range."""
-    raw = adapters.fetch_oecd_raw(
         spec["dataset"],
         spec["key"],
         start_period=probe_start,

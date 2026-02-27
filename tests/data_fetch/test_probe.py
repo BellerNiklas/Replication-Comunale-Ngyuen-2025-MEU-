@@ -317,18 +317,12 @@ def test_probe_one_ecb_calls_correct_adapter(mock_adapters, mock_std, mock_regis
     assert call_args.kwargs["start_period"] == "2020-01"
 
 
-@patch("template_project.data_fetch.probe.standardize")
-@patch("template_project.data_fetch.probe.adapters")
-def test_probe_one_oecd_calls_correct_adapter(mock_adapters, mock_std, mock_registry):
-    """Test OECD probe calls fetch_oecd_raw."""
-    mock_adapters.fetch_oecd_raw.return_value = pd.DataFrame(
-        {"TIME_PERIOD": ["2025-01"], "OBS_VALUE": [100.0]}
-    )
-    mock_std.standardize_from_ecb_like.return_value = _mock_standardized_df(1)
+def test_probe_one_oecd_returns_error_status(mock_registry):
+    """Test OECD probe returns error status (OECD uses bulk fetch, not per-series probing)."""
+    result = probe_one("DE_OECD_SENT_001", registry=mock_registry)
 
-    probe_one("DE_OECD_SENT_001", registry=mock_registry)
-
-    mock_adapters.fetch_oecd_raw.assert_called_once()
+    assert result["status"] == "error"
+    assert "bulk fetch" in result["error_message"].lower()
 
 
 @patch("template_project.data_fetch.probe.standardize")
