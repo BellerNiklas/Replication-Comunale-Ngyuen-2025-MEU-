@@ -38,6 +38,10 @@ MEU_COUNTRIES: tuple[str, ...] = (
     "SK",
 )
 
+# Replication sample period (Comunale & Nguyen 2025: 2003-01 to 2022-12)
+SAMPLE_START: str = "2003-01"
+SAMPLE_END: str = "2022-12"
+
 
 def load_countries():
     """Load canonical country table.

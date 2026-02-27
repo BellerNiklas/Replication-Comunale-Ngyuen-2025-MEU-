@@ -9,7 +9,7 @@ from meu_replication.config import BLD, MEU_COUNTRIES
 
 def task_generate_coverage_report(
     depends_on: dict = {
-        "panel": BLD / "data" / "clean" / "macro_panel.parquet",
+        "panel": BLD / "data" / "clean" / "macro_panel_filtered.parquet",
         "availability": BLD / "meta" / "series_availability.parquet",
     },
     produces: Path = BLD / "documents" / "coverage_report.md",
