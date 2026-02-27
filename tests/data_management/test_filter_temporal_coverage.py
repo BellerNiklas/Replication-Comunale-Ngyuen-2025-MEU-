@@ -5,8 +5,6 @@ import pandas as pd
 from meu_replication.data_management.task_filter_temporal_coverage import (
     _build_expected_months,
     filter_by_temporal_coverage,
-    generate_comparative_report,
-    generate_filter_report,
     run_all_filter_variants,
 )
 
@@ -195,7 +193,7 @@ def test_filter_with_allowed_missing_keeps_near_complete():
 
 
 def test_filter_with_allowed_missing_still_drops_beyond_threshold():
-    """Series missing 3 months dropped when allowed_missing=2."""
+    """Series missing 2 months dropped when allowed_missing=1."""
     panel = _make_panel(
         {
             "A": ["2020-01", "2020-02", "2020-03"],  # Full
@@ -203,7 +201,6 @@ def test_filter_with_allowed_missing_still_drops_beyond_threshold():
         }
     )
 
-    # allowed_missing=1 should still drop B (missing 2 > 1)
     filtered, drop_info = filter_by_temporal_coverage(
         panel, SAMPLE_START, SAMPLE_END, allowed_missing=1
     )
@@ -234,178 +231,12 @@ def test_filter_allowed_missing_zero_matches_strict():
 
 
 # ---------------------------------------------------------------------------
-# Tests for generate_filter_report
-# ---------------------------------------------------------------------------
-
-
-def _empty_drop_info():
-    """Create an empty drop_info DataFrame with correct schema."""
-    return pd.DataFrame(
-        columns=[
-            "series_id",
-            "country_iso2",
-            "variable_name",
-            "category_name",
-            "n_months",
-            "n_missing",
-        ]
-    )
-
-
-def test_report_contains_summary_counts():
-    """Report includes total, kept, and dropped counts."""
-    report = generate_filter_report(
-        n_total=100,
-        n_kept=90,
-        n_dropped=10,
-        country_totals={"DE": 100},
-        drop_info=_empty_drop_info(),
-        sample_start="2003-01",
-        sample_end="2022-12",
-        expected_months=240,
-    )
-
-    assert "100" in report
-    assert "90" in report
-    assert "10" in report
-    assert "2003-01" in report
-    assert "2022-12" in report
-
-
-def test_report_contains_country_table():
-    """Report shows per-country survival rows."""
-    drop_info = pd.DataFrame(
-        {
-            "series_id": ["DE_001"],
-            "country_iso2": ["DE"],
-            "variable_name": ["test"],
-            "category_name": ["test_cat"],
-            "n_months": [200],
-            "n_missing": [40],
-        }
-    )
-
-    report = generate_filter_report(
-        n_total=10,
-        n_kept=9,
-        n_dropped=1,
-        country_totals={"DE": 10},
-        drop_info=drop_info,
-        sample_start="2003-01",
-        sample_end="2022-12",
-        expected_months=240,
-    )
-
-    assert "| DE |" in report
-    assert "90.0" in report  # 9/10 = 90%
-
-
-def test_report_empty_drops():
-    """Report renders correctly when no series are dropped."""
-    report = generate_filter_report(
-        n_total=50,
-        n_kept=50,
-        n_dropped=0,
-        country_totals={"DE": 50},
-        drop_info=_empty_drop_info(),
-        sample_start="2020-01",
-        sample_end="2020-03",
-        expected_months=3,
-    )
-
-    assert "Dropped" in report
-    assert "0" in report
-
-
-def test_report_contains_variant_label():
-    """Report includes variant label when provided."""
-    report = generate_filter_report(
-        n_total=50,
-        n_kept=50,
-        n_dropped=0,
-        country_totals={"DE": 50},
-        drop_info=_empty_drop_info(),
-        sample_start="2020-01",
-        sample_end="2020-03",
-        expected_months=3,
-        variant_label="2022 Strict",
-    )
-
-    assert "2022 Strict" in report
-
-
-def test_report_contains_allowed_missing():
-    """Report includes allowed missing count."""
-    n_allowed = 4
-    report = generate_filter_report(
-        n_total=50,
-        n_kept=50,
-        n_dropped=0,
-        country_totals={"DE": 50},
-        drop_info=_empty_drop_info(),
-        sample_start="2020-01",
-        sample_end="2020-03",
-        expected_months=3,
-        allowed_missing=n_allowed,
-    )
-
-    assert f"{n_allowed} months" in report
-
-
-# ---------------------------------------------------------------------------
-# Tests for generate_comparative_report
-# ---------------------------------------------------------------------------
-
-
-def _make_variant_result(label, start, end, n_kept, n_dropped, allowed_missing=0):
-    """Build a minimal variant result dict for testing."""
-    return {
-        "label": label,
-        "start": start,
-        "end": end,
-        "allowed_missing": allowed_missing,
-        "n_total": n_kept + n_dropped,
-        "n_kept": n_kept,
-        "n_dropped": n_dropped,
-        "country_totals": {"DE": n_kept + n_dropped},
-        "drop_info": _empty_drop_info(),
-    }
-
-
-def test_comparative_report_contains_all_variants():
-    """Comparative report shows all 4 variant labels."""
-    variants = [
-        _make_variant_result("2022_strict", "2003-01", "2022-12", 90, 10),
-        _make_variant_result("2022_cov98", "2003-01", "2022-12", 95, 5, 4),
-        _make_variant_result("2021_strict", "2003-01", "2021-12", 92, 8),
-        _make_variant_result("2021_cov98", "2003-01", "2021-12", 97, 3, 4),
-    ]
-
-    report = generate_comparative_report(variants)
-
-    for v in variants:
-        assert v["label"] in report
-
-
-def test_comparative_report_car_registration_note():
-    """Comparative report includes note about CARS_002-004."""
-    variants = [
-        _make_variant_result("2022_strict", "2003-01", "2022-12", 90, 10),
-    ]
-
-    report = generate_comparative_report(variants)
-
-    assert "CARS_002" in report
-    assert "2021-12" in report
-
-
-# ---------------------------------------------------------------------------
 # Tests for run_all_filter_variants
 # ---------------------------------------------------------------------------
 
 
-def test_run_all_filter_variants_returns_panels_and_report():
-    """run_all_filter_variants returns dict with panels and report."""
+def test_run_all_filter_variants_returns_panels():
+    """run_all_filter_variants returns dict of filtered DataFrames."""
     panel = _make_panel(
         {
             "A": ["2020-01", "2020-02", "2020-03"],
@@ -429,14 +260,9 @@ def test_run_all_filter_variants_returns_panels_and_report():
         },
     ]
 
-    results = run_all_filter_variants(panel, variants)
+    panels = run_all_filter_variants(panel, variants)
 
-    assert "panels" in results
-    assert "report" in results
-    assert set(results["panels"]) == {"panel_strict", "panel_relaxed"}
+    assert set(panels) == {"panel_strict", "panel_relaxed"}
     # Strict keeps only A, relaxed keeps both
-    assert set(results["panels"]["panel_strict"]["series_id"].unique()) == {"A"}
-    assert set(results["panels"]["panel_relaxed"]["series_id"].unique()) == {"A", "B"}
-    assert isinstance(results["report"], str)
-    assert "strict" in results["report"]
-    assert "relaxed" in results["report"]
+    assert set(panels["panel_strict"]["series_id"].unique()) == {"A"}
+    assert set(panels["panel_relaxed"]["series_id"].unique()) == {"A", "B"}

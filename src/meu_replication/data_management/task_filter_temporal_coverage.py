@@ -12,15 +12,11 @@ from meu_replication.config import (
     SAMPLE_START,
 )
 
-# Variant definitions: 2 windows x 2 thresholds
 _COVERAGE_THRESHOLD = 0.02  # 98% coverage
 
 
 def _build_expected_months(sample_start: str, sample_end: str) -> set[str]:
     """Build canonical set of YYYY-MM strings for the full sample period.
-
-    Uses pd.period_range to generate every month from start to end inclusive,
-    then converts to the same YYYY-MM string format used in the clean panel.
 
     Args:
         sample_start: First month of sample period ("YYYY-MM").
@@ -167,202 +163,11 @@ def filter_by_temporal_coverage(
     return filtered_panel, drop_info
 
 
-def generate_filter_report(
-    n_total: int,
-    n_kept: int,
-    n_dropped: int,
-    country_totals: dict[str, int],
-    drop_info: pd.DataFrame,
-    sample_start: str,
-    sample_end: str,
-    expected_months: int,
-    allowed_missing: int = 0,
-    variant_label: str = "",
-) -> str:
-    """Generate markdown report summarizing the temporal coverage filter.
-
-    Pure function: no side effects.
-
-    Args:
-        n_total: Total number of series before filtering.
-        n_kept: Number of series kept (full coverage).
-        n_dropped: Number of series dropped (incomplete coverage).
-        country_totals: Dict mapping country_iso2 -> total series count
-            (before filtering).
-        drop_info: DataFrame with dropped series details.
-        sample_start: First month of sample period.
-        sample_end: Last month of sample period.
-        expected_months: Number of months in the sample period.
-        allowed_missing: Maximum missing months tolerated.
-        variant_label: Human-readable label for this variant.
-
-    Returns:
-        Markdown string with summary, per-country table, and dropped detail.
-    """
-    lines = [
-        "# Temporal Coverage Filter Report",
-        "",
-        "## Summary",
-        "",
-    ]
-
-    if variant_label:
-        lines.append(f"- **Variant**: {variant_label}")
-
-    lines.extend(
-        [
-            f"- **Sample period**: {sample_start} to {sample_end}"
-            f" ({expected_months} months)",
-            f"- **Allowed missing**: {allowed_missing} months",
-            f"- **Total series**: {n_total}",
-            f"- **Kept**: {n_kept}",
-            f"- **Dropped** (incomplete): {n_dropped}",
-            "",
-        ]
-    )
-
-    # Per-country survival table
-    lines.extend(
-        [
-            "## Per-Country Survival",
-            "",
-            "| Country | Total | Kept | Dropped | Survival % |",
-            "|---------|-------|------|---------|------------|",
-        ]
-    )
-
-    dropped_per_country = (
-        drop_info.groupby("country_iso2")["series_id"].count().to_dict()
-        if not drop_info.empty
-        else {}
-    )
-
-    for country in sorted(country_totals):
-        total = country_totals[country]
-        dropped = dropped_per_country.get(country, 0)
-        kept = total - dropped
-        pct = 100 * kept / total if total > 0 else 0
-        lines.append(f"| {country} | {total} | {kept} | {dropped} | {pct:.1f} |")
-
-    lines.append("")
-
-    # Dropped series detail
-    lines.extend(
-        [
-            "## Dropped Series Detail",
-            "",
-            "| Country | Series ID | Variable | Category | Months Present | Missing |",
-            "|---------|-----------|----------|----------|---------------|---------|",
-        ]
-    )
-
-    if not drop_info.empty:
-        for _, row in drop_info.iterrows():
-            lines.append(
-                f"| {row['country_iso2']} "
-                f"| {row['series_id']} "
-                f"| {row['variable_name']} "
-                f"| {row['category_name']} "
-                f"| {row['n_months']} "
-                f"| {row['n_missing']} |"
-            )
-    else:
-        lines.append("| (none) | — | — | — | — | — |")
-
-    lines.append("")
-
-    return "\n".join(lines)
-
-
-def generate_comparative_report(
-    variants: list[dict],
-) -> str:
-    """Generate comparative markdown report across all filter variants.
-
-    Pure function: no side effects.
-
-    Args:
-        variants: List of dicts, each with keys: label, start, end,
-            allowed_missing, n_total, n_kept, n_dropped, country_totals,
-            drop_info.
-
-    Returns:
-        Markdown string with overview table and per-country comparison.
-    """
-    lines = [
-        "# Temporal Coverage Filter Report",
-        "",
-        "## Overview",
-        "",
-        "| Variant | Window | Allowed Missing | Total | Kept | Dropped |",
-        "|---------|--------|-----------------|-------|------|---------|",
-    ]
-
-    lines.extend(
-        f"| {v['label']} "
-        f"| {v['start']}-{v['end']} "
-        f"| {v['allowed_missing']} "
-        f"| {v['n_total']} "
-        f"| {v['n_kept']} "
-        f"| {v['n_dropped']} |"
-        for v in variants
-    )
-
-    lines.append("")
-
-    # Per-country comparison table
-    all_countries = sorted({c for v in variants for c in v["country_totals"]})
-    variant_labels = [v["label"] for v in variants]
-
-    lines.extend(
-        [
-            "## Per-Country Comparison (Kept Series)",
-            "",
-            "| Country | " + " | ".join(variant_labels) + " |",
-            "|---------|"
-            + "|".join("-" * (len(lbl) + 2) for lbl in variant_labels)
-            + "|",
-        ]
-    )
-
-    for country in all_countries:
-        cells = []
-        for v in variants:
-            total = v["country_totals"].get(country, 0)
-            dropped_map = (
-                v["drop_info"].groupby("country_iso2")["series_id"].count().to_dict()
-                if not v["drop_info"].empty
-                else {}
-            )
-            dropped = dropped_map.get(country, 0)
-            kept = total - dropped
-            cells.append(str(kept))
-        lines.append(f"| {country} | " + " | ".join(cells) + " |")
-
-    lines.append("")
-
-    # Note about car registrations
-    lines.extend(
-        [
-            "## Notes",
-            "",
-            "- Commercial vehicle registrations (CARS_002, CARS_003, CARS_004) "
-            "end 2021-12 across all countries.",
-            "  They appear only in the 2021-window panels.",
-            "- Passenger car registrations (CARS_001) have full coverage "
-            "through 2022-12.",
-            "",
-        ]
-    )
-
-    return "\n".join(lines)
-
-
 def run_all_filter_variants(
     panel: pd.DataFrame,
     filter_variants: list[dict],
-) -> dict:
-    """Run all filter variants and produce panels + comparative report.
+) -> dict[str, pd.DataFrame]:
+    """Run all filter variants and return filtered panels.
 
     Pure function: no I/O, no side effects.
 
@@ -372,46 +177,20 @@ def run_all_filter_variants(
             label, key, start, end, allowed_missing.
 
     Returns:
-        Dict with:
-        - "panels": dict mapping key -> filtered DataFrame
-        - "report": comparative report markdown string
+        Dict mapping key -> filtered DataFrame.
     """
-    n_total = panel["series_id"].nunique()
-    country_totals = panel.groupby("country_iso2")["series_id"].nunique().to_dict()
-
     panels = {}
-    variant_results = []
 
     for variant in filter_variants:
-        filtered, drop_info = filter_by_temporal_coverage(
+        filtered, _ = filter_by_temporal_coverage(
             panel,
             variant["start"],
             variant["end"],
             variant["allowed_missing"],
         )
-
-        n_kept = filtered["series_id"].nunique() if not filtered.empty else 0
-        n_dropped = drop_info["series_id"].nunique() if not drop_info.empty else 0
-
         panels[variant["key"]] = filtered
 
-        variant_results.append(
-            {
-                "label": variant["label"],
-                "start": variant["start"],
-                "end": variant["end"],
-                "allowed_missing": variant["allowed_missing"],
-                "n_total": n_total,
-                "n_kept": n_kept,
-                "n_dropped": n_dropped,
-                "country_totals": country_totals,
-                "drop_info": drop_info,
-            }
-        )
-
-    report = generate_comparative_report(variant_results)
-
-    return {"panels": panels, "report": report}
+    return panels
 
 
 def task_filter_temporal_coverage(
@@ -421,25 +200,21 @@ def task_filter_temporal_coverage(
         "panel_2022_cov98": BLD / "data" / "clean" / "panel_2003_2022_cov98.parquet",
         "panel_2021_strict": BLD / "data" / "clean" / "panel_2003_2021_strict.parquet",
         "panel_2021_cov98": BLD / "data" / "clean" / "panel_2003_2021_cov98.parquet",
-        "report": BLD / "documents" / "temporal_filter_report.md",
     },
 ) -> None:
     """Filter macro panel to series with sufficient temporal coverage.
 
-    Produces 4 filtered panels (2 windows x 2 thresholds) and one
-    comparative report. Task only handles I/O; real logic in
-    run_all_filter_variants().
+    Produces 4 filtered panels (2 windows x 2 thresholds).
+    Task only handles I/O; real logic in run_all_filter_variants().
     """
     panel = pd.read_parquet(depends_on)
     print(f"Input: {len(panel)} rows, {panel['series_id'].nunique()} series")
 
-    results = run_all_filter_variants(panel, _FILTER_VARIANTS)
+    panels = run_all_filter_variants(panel, _FILTER_VARIANTS)
 
-    for key, filtered in results["panels"].items():
+    for key, filtered in panels.items():
         out_path = produces[key]
         out_path.parent.mkdir(parents=True, exist_ok=True)
         filtered.to_parquet(out_path, index=False)
 
-    produces["report"].parent.mkdir(parents=True, exist_ok=True)
-    produces["report"].write_text(results["report"], encoding="utf-8")
-    print(f"Wrote {len(results['panels'])} panels + comparative report")
+    print(f"Wrote {len(panels)} filtered panels")

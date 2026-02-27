@@ -9499,8 +9499,8 @@ packages:
   timestamp: 1733255681319
 - pypi: ./
   name: meu-replication
-  version: 0.1.dev29+gc28bdf069.d20260227
-  sha256: 5556133122ca02b6744341b03e2282f46a41ec1cc82972ebcb15aef7dfe5137f
+  version: 0.1.dev32+gaf52c59e5.d20260227
+  sha256: c12fa090799f6093e45427b4299d97f8c4a7c8a9ac50200d2b7c645daafebcfa
   requires_python: ==3.14
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/mistune-3.2.0-pyhcf101f3_0.conda
