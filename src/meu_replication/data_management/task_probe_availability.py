@@ -24,7 +24,7 @@ import pandas as pd
 import pytask
 
 from meu_replication.config import BLD, MEU_COUNTRIES, SRC
-from meu_replication.data_management.registry.registry_io import load_registry
+from meu_replication.registry.registry_io import load_registry
 
 _OK_THRESHOLD = 10  # Minimum rows to classify as "ok" (vs "ok_short")
 
@@ -41,7 +41,7 @@ _PROBE_COLUMNS = [
 # -- Shared dependencies for all probe tasks --
 
 _PROBE_DEPENDS = {
-    "registry": SRC / "data_management" / "registry" / "series_registry.csv",
+    "registry": SRC / "registry" / "series_registry.csv",
     "probe": SRC / "data_fetch" / "probe.py",
     "adapters": SRC / "data_fetch" / "adapters.py",
     "standardize": SRC / "data_fetch" / "standardize.py",

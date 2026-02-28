@@ -14,7 +14,7 @@ from meu_replication.config import BLD, MEU_COUNTRIES, SRC
 def _build_meta_depends() -> dict[str, Path]:
     """Build dependency dict for registry + all 77 per-country snapshot files."""
     deps = {
-        "registry": SRC / "data_management" / "registry" / "series_registry.csv",
+        "registry": SRC / "registry" / "series_registry.csv",
         "availability": BLD / "meta" / "series_availability.parquet",
     }
     for country in MEU_COUNTRIES:

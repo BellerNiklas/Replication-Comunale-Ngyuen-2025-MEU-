@@ -56,5 +56,5 @@ def load_countries():
     """
     import pandas as pd
 
-    countries_path = SRC / "data_management" / "registry" / "countries.csv"
+    countries_path = SRC / "registry" / "countries.csv"
     return pd.read_csv(countries_path)

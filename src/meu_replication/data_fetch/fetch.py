@@ -5,7 +5,7 @@ import json
 import pandas as pd
 
 from meu_replication.data_fetch import adapters, standardize
-from meu_replication.data_management.registry.registry_io import load_registry
+from meu_replication.registry.registry_io import load_registry
 
 
 def fetch_one(series_id: str, *, registry: pd.DataFrame | None = None) -> pd.DataFrame:

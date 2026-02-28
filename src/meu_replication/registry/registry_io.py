@@ -6,7 +6,7 @@ import pandas as pd
 
 from meu_replication.config import SRC
 
-REGISTRY_PATH = SRC / "data_management" / "registry" / "series_registry.csv"
+REGISTRY_PATH = SRC / "registry" / "series_registry.csv"
 
 ALLOWED_SOURCES = {"eurostat", "ecb", "oecd", "bis"}
 

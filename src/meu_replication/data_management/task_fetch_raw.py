@@ -47,7 +47,7 @@ _EMPTY_COLUMNS = [
 # -- Shared dependencies for all fetch tasks --
 
 _FETCH_DEPENDS = {
-    "registry": SRC / "data_management" / "registry" / "series_registry.csv",
+    "registry": SRC / "registry" / "series_registry.csv",
     "availability": BLD / "meta" / "series_availability.parquet",
     "adapters": SRC / "data_fetch" / "adapters.py",
     "fetch": SRC / "data_fetch" / "fetch.py",
@@ -66,7 +66,7 @@ def _fetch_source_country(
     Real logic lives in fetch.fetch_many().
     """
     from meu_replication.data_fetch.fetch import fetch_many
-    from meu_replication.data_management.registry.registry_io import load_registry
+    from meu_replication.registry.registry_io import load_registry
 
     registry = load_registry()
     availability = pd.read_parquet(BLD / "meta" / "series_availability.parquet")
@@ -136,8 +136,8 @@ for _country in _ECB_COUNTRIES:
 # -- OECD: 1 bulk fetch + 1 split (replaces 19 per-country tasks) --
 
 _OECD_BULK_DEPENDS = {
-    "registry": SRC / "data_management" / "registry" / "series_registry.csv",
-    "countries": SRC / "data_management" / "registry" / "countries.csv",
+    "registry": SRC / "registry" / "series_registry.csv",
+    "countries": SRC / "registry" / "countries.csv",
     "adapters": SRC / "data_fetch" / "adapters.py",
     "standardize": SRC / "data_fetch" / "standardize.py",
 }
@@ -155,10 +155,10 @@ def task_fetch_oecd_bulk(
     """
     from meu_replication.data_fetch.adapters import fetch_oecd_bulk
     from meu_replication.data_fetch.standardize import standardize_oecd_bulk
-    from meu_replication.data_management.registry.registry_io import load_registry
+    from meu_replication.registry.registry_io import load_registry
 
     registry = load_registry()
-    countries = pd.read_csv(SRC / "data_management" / "registry" / "countries.csv")
+    countries = pd.read_csv(SRC / "registry" / "countries.csv")
 
     raw = fetch_oecd_bulk(registry, countries)
     df = standardize_oecd_bulk(raw, registry, countries)

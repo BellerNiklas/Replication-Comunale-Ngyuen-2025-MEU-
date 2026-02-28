@@ -5,15 +5,15 @@ The core logic (expand_registry, _expand_placeholders, etc.) depends only
 on its inputs and produces a DataFrame as output.
 
 Usage:
-    pixi run python -m meu_replication.data_management.registry.expand_registry
+    pixi run python -m meu_replication.registry.expand_registry
 """
 
 import pandas as pd
 
 from meu_replication.config import SRC, load_countries
 
-TEMPLATES_PATH = SRC / "data_management" / "registry" / "series_templates.csv"
-REGISTRY_PATH = SRC / "data_management" / "registry" / "series_registry.csv"
+TEMPLATES_PATH = SRC / "registry" / "series_templates.csv"
+REGISTRY_PATH = SRC / "registry" / "series_registry.csv"
 
 
 def expand_registry(

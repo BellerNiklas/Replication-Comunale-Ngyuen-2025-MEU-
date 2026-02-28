@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from meu_replication.data_management.registry.expand_registry import (
+from meu_replication.registry.expand_registry import (
     _expand_placeholders,
     _expand_template_for_country,
     _expand_template_for_ea,
@@ -312,10 +312,10 @@ def test_nan_to_empty_with_string():
 def test_expand_real_templates():
     """Test expansion of real templates produces valid registry."""
     from meu_replication.config import load_countries
-    from meu_replication.data_management.registry.expand_registry import (
+    from meu_replication.registry.expand_registry import (
         load_templates,
     )
-    from meu_replication.data_management.registry.registry_io import (
+    from meu_replication.registry.registry_io import (
         validate_registry,
     )
 
