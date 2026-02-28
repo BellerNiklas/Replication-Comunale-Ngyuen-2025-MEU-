@@ -4,27 +4,32 @@ from pathlib import Path
 
 import pandas as pd
 
-from meu_replication.config import BLD, SAMPLE_END, SAMPLE_END_ALT, SAMPLE_START
 from meu_replication.cleaning.temporal_coverage import (
     build_variants,
     compute_allowed_missing,
     run_all_filter_variants,
 )
+from meu_replication.config import (
+    BLD,
+    SAMPLE_END,
+    SAMPLE_END_ALT,
+    SAMPLE_START_TRANSFORMED,
+)
 
 _FILTER_VARIANTS = build_variants(
     windows=[
-        ("2022", SAMPLE_START, SAMPLE_END),
-        ("2021", SAMPLE_START, SAMPLE_END_ALT),
+        ("2022", SAMPLE_START_TRANSFORMED, SAMPLE_END),
+        ("2021", SAMPLE_START_TRANSFORMED, SAMPLE_END_ALT),
     ],
     thresholds=[
         ("strict", 0),
-        ("cov98", compute_allowed_missing(SAMPLE_START, SAMPLE_END)),
+        ("cov98", compute_allowed_missing(SAMPLE_START_TRANSFORMED, SAMPLE_END)),
     ],
 )
 
 
 def task_filter_temporal_coverage(
-    depends_on: Path = BLD / "data" / "clean" / "macro_panel.parquet",
+    depends_on: Path = BLD / "data" / "clean" / "transformed_panel.parquet",
     produces: dict[str, Path] = {
         v["key"]: BLD
         / "data"
