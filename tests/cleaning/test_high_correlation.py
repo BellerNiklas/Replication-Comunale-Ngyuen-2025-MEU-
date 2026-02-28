@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from meu_replication.data_management.high_correlation import (
+from meu_replication.cleaning.high_correlation import (
     _correlated_pairs,
     _find_redundant_series,
     _pivot_to_wide,

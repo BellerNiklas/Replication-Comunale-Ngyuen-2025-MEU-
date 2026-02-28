@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from meu_replication.data_management.temporal_coverage import (
+from meu_replication.cleaning.temporal_coverage import (
     _build_expected_months,
     filter_by_temporal_coverage,
     run_all_filter_variants,

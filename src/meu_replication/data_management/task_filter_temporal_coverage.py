@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from meu_replication.config import BLD, SAMPLE_END, SAMPLE_END_ALT, SAMPLE_START
-from meu_replication.data_management.temporal_coverage import (
+from meu_replication.cleaning.temporal_coverage import (
     build_variants,
     compute_allowed_missing,
     run_all_filter_variants,

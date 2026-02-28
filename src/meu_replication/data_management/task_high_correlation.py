@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from meu_replication.config import BLD, HIGH_CORR_THRESHOLD
-from meu_replication.data_management.high_correlation import remove_high_correlation
+from meu_replication.cleaning.high_correlation import remove_high_correlation
 
 
 def task_remove_high_correlation(
