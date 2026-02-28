@@ -43,6 +43,9 @@ SAMPLE_START: str = "2003-01"
 SAMPLE_END: str = "2022-12"
 SAMPLE_END_ALT: str = "2021-12"  # Alternative window (includes CARS_002-004)
 
+# High-correlation filter threshold (Comunale & Nguyen 2025)
+HIGH_CORR_THRESHOLD: float = 0.95
+
 
 def load_countries():
     """Load canonical country table.

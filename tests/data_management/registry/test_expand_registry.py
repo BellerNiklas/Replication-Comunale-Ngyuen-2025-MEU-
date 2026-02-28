@@ -47,6 +47,7 @@ def _make_template(
     category_name="Industrial_production",
     variable_name="Test variable",
     dataset="STS_INPR_M",
+    transformationcode=5,
 ):
     """Create a template Series for testing."""
     return pd.Series(
@@ -63,6 +64,7 @@ def _make_template(
             "unit_measure_filter": "",
             "frequency": "M",
             "start_period": "2003-01",
+            "transformationcode": transformationcode,
         }
     )
 

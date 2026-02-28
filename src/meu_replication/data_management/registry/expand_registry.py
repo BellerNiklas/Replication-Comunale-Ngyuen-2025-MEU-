@@ -31,7 +31,7 @@ def expand_registry(
         Schema matches series_registry.csv:
             series_id, source, category, category_name, country_iso2,
             variable_name, dataset, key, filters_json, unit_measure_filter,
-            frequency, start_period
+            frequency, start_period, transformationcode
     """
     ea_members = countries[countries.ea_member == True]  # noqa: E712
 
@@ -73,6 +73,7 @@ def _expand_template_for_ea(template: pd.Series) -> dict:
         "unit_measure_filter": _nan_to_empty(template.get("unit_measure_filter", "")),
         "frequency": template.get("frequency", "M"),
         "start_period": template.get("start_period", "2003-01"),
+        "transformationcode": int(template["transformationcode"]),
     }
 
 
@@ -100,6 +101,7 @@ def _expand_template_for_country(
         "unit_measure_filter": _nan_to_empty(template.get("unit_measure_filter", "")),
         "frequency": template.get("frequency", "M"),
         "start_period": template.get("start_period", "2003-01"),
+        "transformationcode": int(template["transformationcode"]),
     }
 
 
