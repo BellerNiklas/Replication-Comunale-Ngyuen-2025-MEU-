@@ -1,5 +1,3 @@
-"""Unit tests for high correlation filtering functions."""
-
 import pandas as pd
 
 from meu_replication.cleaning.high_correlation import (
@@ -52,7 +50,6 @@ def _make_panel(
 
 
 def test_pivot_to_wide_shape():
-    """Pivot produces correct shape: rows=dates, cols=series."""
     panel = _make_panel({"A": [1.0, 2.0, 3.0], "B": [4.0, 5.0, 6.0]})
     wide = _pivot_to_wide(panel)
     n_dates = 3
@@ -67,12 +64,11 @@ def test_pivot_to_wide_shape():
 
 
 def test_correlated_pairs_finds_perfect_correlation():
-    """Perfectly correlated pair is detected, uncorrelated pair is not."""
     panel = _make_panel(
         {
             "A": [1.0, 2.0, 3.0, 4.0, 5.0],
-            "B": [2.0, 4.0, 6.0, 8.0, 10.0],  # corr=1.0 with A
-            "C": [5.0, 3.0, 1.0, 4.0, 2.0],  # uncorrelated
+            "B": [2.0, 4.0, 6.0, 8.0, 10.0],
+            "C": [5.0, 3.0, 1.0, 4.0, 2.0],
         }
     )
     wide = _pivot_to_wide(panel)
@@ -85,7 +81,6 @@ def test_correlated_pairs_finds_perfect_correlation():
 
 
 def test_correlated_pairs_sorted_descending():
-    """Pairs are sorted by absolute correlation descending."""
     corr = pd.DataFrame(
         [[1.0, 0.99, 0.96], [0.99, 1.0, 0.97], [0.96, 0.97, 1.0]],
         index=["A", "B", "C"],
@@ -102,11 +97,10 @@ def test_correlated_pairs_sorted_descending():
 
 
 def test_alphabetical_tiebreak():
-    """Alphabetically-later series_id is dropped."""
     panel = _make_panel(
         {
             "AT_A": [1.0, 2.0, 3.0, 4.0, 5.0],
-            "AT_B": [2.0, 4.0, 6.0, 8.0, 10.0],  # corr=1.0 with AT_A
+            "AT_B": [2.0, 4.0, 6.0, 8.0, 10.0],
         }
     )
     dropped, records = _find_redundant_series(panel, 0.95, "AT")
@@ -124,12 +118,11 @@ def test_alphabetical_tiebreak():
 
 
 def test_drops_correlated_keeps_uncorrelated():
-    """Correlated series dropped, uncorrelated kept."""
     panel = _make_panel(
         {
             "A": [1.0, 2.0, 3.0, 4.0, 5.0],
-            "B": [2.0, 4.0, 6.0, 8.0, 10.0],  # corr=1.0 with A
-            "C": [5.0, 3.0, 1.0, 4.0, 2.0],  # uncorrelated
+            "B": [2.0, 4.0, 6.0, 8.0, 10.0],
+            "C": [5.0, 3.0, 1.0, 4.0, 2.0],
         }
     )
     filtered, drop_info = remove_high_correlation(panel, threshold=0.95)
@@ -142,7 +135,6 @@ def test_drops_correlated_keeps_uncorrelated():
 
 
 def test_per_country_independence():
-    """Countries are processed independently."""
     at = _make_panel(
         {"AT_X": [1.0, 2.0, 3.0], "AT_Y": [10.0, 20.0, 30.0]}, country="AT"
     )
@@ -158,7 +150,6 @@ def test_per_country_independence():
 
 
 def test_no_drop_below_threshold():
-    """Nothing dropped when threshold is unreachable."""
     panel = _make_panel(
         {
             "A": [1.0, 2.0, 3.0, 4.0, 5.0],
@@ -175,7 +166,6 @@ def test_no_drop_below_threshold():
 
 
 def test_schema_preserved():
-    """Output has the same columns as input."""
     panel = _make_panel(
         {
             "A": [1.0, 2.0, 3.0, 4.0, 5.0],
@@ -188,7 +178,6 @@ def test_schema_preserved():
 
 
 def test_empty_input():
-    """Empty input produces empty output without crash."""
     panel = _make_panel({})
     filtered, drop_info = remove_high_correlation(panel, threshold=0.95)
 
@@ -197,11 +186,10 @@ def test_empty_input():
 
 
 def test_negative_correlation_detected():
-    """Negatively correlated pairs (|corr| > threshold) are also caught."""
     panel = _make_panel(
         {
             "A": [1.0, 2.0, 3.0, 4.0, 5.0],
-            "B": [-1.0, -2.0, -3.0, -4.0, -5.0],  # corr=-1.0 with A
+            "B": [-1.0, -2.0, -3.0, -4.0, -5.0],
         }
     )
     filtered, drop_info = remove_high_correlation(panel, threshold=0.95)
@@ -213,8 +201,6 @@ def test_negative_correlation_detected():
 
 
 def test_greedy_chain():
-    """Chain of correlated series: greedy algorithm handles correctly."""
-    # A, B, C all perfectly correlated with each other
     panel = _make_panel(
         {
             "A": [1.0, 2.0, 3.0, 4.0, 5.0],
@@ -225,24 +211,20 @@ def test_greedy_chain():
     filtered, drop_info = remove_high_correlation(panel, threshold=0.95)
 
     remaining = set(filtered["series_id"].unique())
-    # A is alphabetically first, so it should be kept
     assert "A" in remaining
-    # B and C both correlated with A, so both dropped
     assert "B" not in remaining
     assert "C" not in remaining
 
 
 def test_no_cascading_drops():
-    """A kept series is never later dropped by the algorithm."""
     panel = _make_panel(
         {
             "A": [1.0, 2.0, 3.0, 4.0, 5.0],
-            "B": [2.0, 4.0, 6.0, 8.0, 10.0],  # corr=1.0 with A
+            "B": [2.0, 4.0, 6.0, 8.0, 10.0],
         }
     )
     _, drop_info = remove_high_correlation(panel, threshold=0.95)
 
-    # No series should appear as both kept and dropped
     kept_set = set(drop_info["kept_series"])
     dropped_set = set(drop_info["dropped_series"])
     assert not kept_set & dropped_set

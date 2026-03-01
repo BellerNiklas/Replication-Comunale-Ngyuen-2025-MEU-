@@ -1,5 +1,3 @@
-"""Tests for template expansion to full registry."""
-
 import pandas as pd
 import pytest
 
@@ -22,7 +20,6 @@ def _make_country(
     oecd="DEU",
     bis="DE",
 ):
-    """Create a country Series for testing."""
     return pd.Series(
         {
             "country_iso2": iso2,
@@ -49,7 +46,6 @@ def _make_template(
     dataset="STS_INPR_M",
     transformationcode=5,
 ):
-    """Create a template Series for testing."""
     return pd.Series(
         {
             "template_id": template_id,
@@ -84,7 +80,6 @@ def _make_template(
     ],
 )
 def test_expand_placeholders(template, country_kwargs, expected):
-    """Test placeholder replacement for all source types and edge cases."""
     country = _make_country(**country_kwargs)
     assert _expand_placeholders(template, country) == expected
 
@@ -99,7 +94,6 @@ def test_expand_placeholders(template, country_kwargs, expected):
     ],
 )
 def test_expand_placeholders_eurostat_per_country(iso2, eurostat):
-    """Test Eurostat placeholder resolves correctly per country."""
     country = _make_country(iso2=iso2, eurostat=eurostat)
     result = _expand_placeholders('{"geo": "{COUNTRY_EUROSTAT}"}', country)
     assert result == f'{{"geo": "{eurostat}"}}'
@@ -109,21 +103,18 @@ def test_expand_placeholders_eurostat_per_country(iso2, eurostat):
 
 
 def test_expand_template_for_ea_series_id():
-    """Test EA template gets U2 prefix."""
     template = _make_template(template_id="FX_001", scope="ea")
     result = _expand_template_for_ea(template)
     assert result["series_id"] == "U2_FX_001"
 
 
 def test_expand_template_for_ea_country_iso2():
-    """Test EA template sets country_iso2 to U2."""
     template = _make_template(scope="ea")
     result = _expand_template_for_ea(template)
     assert result["country_iso2"] == "U2"
 
 
 def test_expand_template_for_ea_preserves_key():
-    """Test EA template preserves key unchanged."""
     template = _make_template(
         scope="ea",
         key_template="M.U2.EUR.4F.BB.U2_10Y.YLD",
@@ -137,7 +128,6 @@ def test_expand_template_for_ea_preserves_key():
 
 
 def test_expand_template_for_country_series_id():
-    """Test country template gets country prefix."""
     template = _make_template(template_id="IP_001")
     country = _make_country(iso2="FR", eurostat="FR")
     result = _expand_template_for_country(template, country)
@@ -145,7 +135,6 @@ def test_expand_template_for_country_series_id():
 
 
 def test_expand_template_for_country_filters_resolved():
-    """Test country template resolves filter placeholders."""
     template = _make_template(
         filters_json_template='{"geo": "{COUNTRY_EUROSTAT}", "unit": "I21"}',
     )
@@ -155,7 +144,6 @@ def test_expand_template_for_country_filters_resolved():
 
 
 def test_expand_template_for_country_key_resolved():
-    """Test country template resolves key placeholders."""
     template = _make_template(
         source="ecb",
         key_template="M.{COUNTRY_ISO2}.N.A.A20.A.1.U6.1000.Z01.E",
@@ -170,7 +158,6 @@ def test_expand_template_for_country_key_resolved():
 
 
 def _make_u2_country():
-    """Create U2 (Euro Area) country Series for testing."""
     return pd.Series(
         {
             "country_iso2": "U2",
@@ -186,7 +173,6 @@ def _make_u2_country():
 
 
 def test_expand_registry_counts():
-    """Test expansion produces correct row counts."""
     templates = pd.DataFrame(
         [
             _make_template(template_id="IP_001", scope="country"),
@@ -199,7 +185,6 @@ def test_expand_registry_counts():
             ),
         ]
     )
-
     countries = pd.DataFrame(
         [
             _make_country(iso2="DE"),
@@ -207,58 +192,46 @@ def test_expand_registry_counts():
             _make_u2_country(),
         ]
     )
-
     result = expand_registry(templates, countries)
-
-    # 1 country template × 2 EA members + 1 EA template × 1 = 3
     assert len(result) == 3
 
 
 def test_expand_registry_unique_series_ids():
-    """Test all expanded series_ids are unique."""
     templates = pd.DataFrame(
         [
             _make_template(template_id="IP_001", scope="country"),
             _make_template(template_id="IP_002", scope="country"),
         ]
     )
-
     countries = pd.DataFrame(
         [
             _make_country(iso2="DE"),
             _make_country(iso2="FR", iso3="FRA", eurostat="FR", oecd="FRA"),
         ]
     )
-
     result = expand_registry(templates, countries)
     assert result["series_id"].is_unique
 
 
 def test_expand_registry_unknown_scope_raises():
-    """Test that unknown scope raises ValueError."""
     templates = pd.DataFrame(
         [_make_template(template_id="BAD_001", scope="global")]
     )
-
     countries = pd.DataFrame([_make_country()])
-
     with pytest.raises(ValueError, match="Unknown scope 'global'"):
         expand_registry(templates, countries)
 
 
 def test_expand_registry_u2_excluded_from_country():
-    """Test that U2 is not included in country-scope expansion."""
     templates = pd.DataFrame(
         [_make_template(template_id="IP_001", scope="country")]
     )
-
     countries = pd.DataFrame(
         [
             _make_country(iso2="DE"),
             _make_u2_country(),
         ]
     )
-
     result = expand_registry(templates, countries)
     assert "U2" not in result["country_iso2"].values
 
@@ -267,17 +240,14 @@ def test_expand_registry_u2_excluded_from_country():
 
 
 def test_nan_to_empty_with_nan():
-    """Test NaN converts to empty string."""
     assert _nan_to_empty(float("nan")) == ""
 
 
 def test_nan_to_empty_with_none():
-    """Test None converts to empty string."""
     assert _nan_to_empty(None) == ""
 
 
 def test_nan_to_empty_with_string():
-    """Test regular string passes through."""
     assert _nan_to_empty("hello") == "hello"
 
 
@@ -285,7 +255,6 @@ def test_nan_to_empty_with_string():
 
 
 def test_expand_real_templates():
-    """Test expansion of real templates produces valid registry."""
     from meu_replication.config import load_countries
     from meu_replication.registry.expand_registry import (
         load_templates,
@@ -298,14 +267,11 @@ def test_expand_real_templates():
     countries = load_countries()
     registry = expand_registry(templates, countries)
 
-    # Check counts
     n_country = len(templates[templates.scope == "country"])
     n_ea = len(templates[templates.scope == "ea"])
     expected = n_country * 19 + n_ea
     assert len(registry) == expected
 
-    # Check all series_ids are unique
     assert registry["series_id"].is_unique
 
-    # Check the expanded registry passes existing validation
     validate_registry(registry)

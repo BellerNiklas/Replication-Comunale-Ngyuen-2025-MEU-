@@ -1,5 +1,3 @@
-"""Tests for probe module (mocked to avoid network calls)."""
-
 from unittest.mock import patch
 
 import pandas as pd
@@ -96,7 +94,6 @@ def mock_registry():
 
 
 def _mock_standardized_df(n_rows: int) -> pd.DataFrame:
-    """Create a mock standardized DataFrame with n_rows."""
     return pd.DataFrame(
         {
             "date": [f"2025-{i + 1:02d}" for i in range(n_rows)],
@@ -124,7 +121,6 @@ def _mock_standardized_df(n_rows: int) -> pd.DataFrame:
     ],
 )
 def test_extract_template_id(series_id, country, expected):
-    """Test template_id extraction for various prefixes and edge cases."""
     assert _extract_template_id(series_id, country) == expected
 
 
@@ -142,7 +138,6 @@ def test_extract_template_id(series_id, country, expected):
     ],
 )
 def test_is_data_absence_error_true(error):
-    """Test errors that indicate data absence are classified correctly."""
     assert _is_data_absence_error(error)
 
 
@@ -155,7 +150,6 @@ def test_is_data_absence_error_true(error):
     ],
 )
 def test_is_data_absence_error_false(error):
-    """Test errors that are NOT data absence are classified correctly."""
     assert not _is_data_absence_error(error)
 
 
@@ -163,7 +157,6 @@ def test_is_data_absence_error_false(error):
 
 
 def test_probe_start_period_fixed():
-    """Test probe start period is fixed at 2020-01 for discontinued series."""
     result = _probe_start_period()
     assert result == "2020-01"
 
@@ -173,11 +166,8 @@ def test_probe_start_period_fixed():
 
 @patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_ok(mock_fetch, mock_registry):
-    """Test probe returns 'ok' when ≥10 rows returned."""
     mock_fetch.return_value = _mock_standardized_df(12)
-
     result = probe_one("DE_IP_001", registry=mock_registry)
-
     assert result["status"] == "ok"
     assert result["rows_fetched"] == 12
     assert result["series_id"] == "DE_IP_001"
@@ -188,22 +178,16 @@ def test_probe_one_ok(mock_fetch, mock_registry):
 
 @patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_ok_short(mock_fetch, mock_registry):
-    """Test probe returns 'ok_short' when 1-9 rows returned."""
     mock_fetch.return_value = _mock_standardized_df(5)
-
     result = probe_one("DE_IP_001", registry=mock_registry)
-
     assert result["status"] == "ok_short"
     assert result["rows_fetched"] == 5
 
 
 @patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_missing_empty_df(mock_fetch, mock_registry):
-    """Test probe returns 'missing' when empty DataFrame returned."""
     mock_fetch.return_value = pd.DataFrame()
-
     result = probe_one("DE_IP_001", registry=mock_registry)
-
     assert result["status"] == "missing"
     assert result["rows_fetched"] == 0
     assert result["error_kind"] == "empty_result"
@@ -211,11 +195,8 @@ def test_probe_one_missing_empty_df(mock_fetch, mock_registry):
 
 @patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_missing_no_data_error(mock_fetch, mock_registry):
-    """Test probe returns 'missing' for 'No data returned' error."""
     mock_fetch.side_effect = RuntimeError("No data returned from Eurostat")
-
     result = probe_one("DE_IP_001", registry=mock_registry)
-
     assert result["status"] == "missing"
     assert result["rows_fetched"] == 0
     assert result["error_kind"] == "RuntimeError"
@@ -223,11 +204,8 @@ def test_probe_one_missing_no_data_error(mock_fetch, mock_registry):
 
 @patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_error_timeout(mock_fetch, mock_registry):
-    """Test probe returns 'error' for timeout."""
     mock_fetch.side_effect = RuntimeError("Connection timed out after 60s")
-
     result = probe_one("DE_IP_001", registry=mock_registry)
-
     assert result["status"] == "error"
     assert result["rows_fetched"] == 0
     assert result["error_kind"] == "RuntimeError"
@@ -236,22 +214,16 @@ def test_probe_one_error_timeout(mock_fetch, mock_registry):
 
 @patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_ecb_country(mock_fetch, mock_registry):
-    """Test probe works for ECB country-level series."""
     mock_fetch.return_value = _mock_standardized_df(10)
-
     result = probe_one("DE_FIN_LOAN_001", registry=mock_registry)
-
     assert result["status"] == "ok"
     assert result["template_id"] == "FIN_LOAN_001"
 
 
 @patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_u2_ea_series(mock_fetch, mock_registry):
-    """Test probe works for U2 EA-aggregate series."""
     mock_fetch.return_value = _mock_standardized_df(12)
-
     result = probe_one("U2_FX_001", registry=mock_registry)
-
     assert result["status"] == "ok"
     assert result["country_iso2"] == "U2"
     assert result["template_id"] == "FX_001"
@@ -265,17 +237,13 @@ def test_probe_one_u2_ea_series(mock_fetch, mock_registry):
 def test_probe_one_eurostat_calls_correct_adapter(
     mock_adapters, mock_std, mock_registry
 ):
-    """Test Eurostat probe calls fetch_eurostat_raw."""
     mock_adapters.fetch_eurostat_raw.return_value = pd.DataFrame(
         {"geo": ["DE"], "2025-01": [100.0]}
     )
     mock_std.standardize_from_eurostat.return_value = _mock_standardized_df(1)
-
     probe_one("DE_IP_001", registry=mock_registry)
-
     mock_adapters.fetch_eurostat_raw.assert_called_once()
     call_args = mock_adapters.fetch_eurostat_raw.call_args
-    # Verify filters have overridden startPeriod (2020, not 2003)
     filters = call_args[0][1]
     assert filters["startPeriod"] == 2020
 
@@ -283,24 +251,18 @@ def test_probe_one_eurostat_calls_correct_adapter(
 @patch("meu_replication.data_fetch.probe.standardize")
 @patch("meu_replication.data_fetch.probe.adapters")
 def test_probe_one_ecb_calls_correct_adapter(mock_adapters, mock_std, mock_registry):
-    """Test ECB probe calls fetch_ecb_raw with recent start_period."""
     mock_adapters.fetch_ecb_raw.return_value = pd.DataFrame(
         {"TIME_PERIOD": ["2025-01"], "OBS_VALUE": [100.0]}
     )
     mock_std.standardize_from_ecb_like.return_value = _mock_standardized_df(1)
-
     probe_one("DE_FIN_LOAN_001", registry=mock_registry)
-
     mock_adapters.fetch_ecb_raw.assert_called_once()
     call_args = mock_adapters.fetch_ecb_raw.call_args
-    # start_period should be 2020-01 (not 2003-01)
     assert call_args.kwargs["start_period"] == "2020-01"
 
 
 def test_probe_one_oecd_returns_error_status(mock_registry):
-    """Test OECD probe returns error status (OECD uses bulk fetch, not per-series probing)."""
     result = probe_one("DE_OECD_SENT_001", registry=mock_registry)
-
     assert result["status"] == "error"
     assert "bulk fetch" in result["error_message"].lower()
 
@@ -308,14 +270,11 @@ def test_probe_one_oecd_returns_error_status(mock_registry):
 @patch("meu_replication.data_fetch.probe.standardize")
 @patch("meu_replication.data_fetch.probe.adapters")
 def test_probe_one_bis_calls_correct_adapter(mock_adapters, mock_std, mock_registry):
-    """Test BIS probe calls fetch_bis_raw."""
     mock_adapters.fetch_bis_raw.return_value = pd.DataFrame(
         {"TIME_PERIOD": ["2025-01"], "OBS_VALUE": [100.0]}
     )
     mock_std.standardize_from_bis.return_value = _mock_standardized_df(1)
-
     probe_one("DE_NEER_001", registry=mock_registry)
-
     mock_adapters.fetch_bis_raw.assert_called_once()
 
 
@@ -324,10 +283,7 @@ def test_probe_one_bis_calls_correct_adapter(mock_adapters, mock_std, mock_regis
 
 @patch("meu_replication.data_fetch.probe._fetch_probe")
 def test_probe_one_truncates_long_error(mock_fetch, mock_registry):
-    """Test that error messages are truncated to 200 chars."""
     long_msg = "A" * 500
     mock_fetch.side_effect = RuntimeError(long_msg)
-
     result = probe_one("DE_IP_001", registry=mock_registry)
-
     assert len(result["error_message"]) == 200

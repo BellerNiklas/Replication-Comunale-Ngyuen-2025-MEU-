@@ -1,5 +1,3 @@
-"""Tests for registry I/O and validation."""
-
 import pandas as pd
 import pytest
 
@@ -21,13 +19,11 @@ def test_committed_registry_matches_templates():
     committed = load_registry()
     expanded = expand_registry(load_templates(), load_countries())
 
-    # Same number of rows
     assert len(committed) == len(expanded), (
         f"Registry has {len(committed)} rows but expansion produces {len(expanded)}. "
         "Regenerate with: pixi run python -m meu_replication.registry.expand_registry"
     )
 
-    # Same series_ids (order-independent)
     committed_ids = set(committed["series_id"])
     expanded_ids = set(expanded["series_id"])
     assert committed_ids == expanded_ids, (
@@ -35,17 +31,16 @@ def test_committed_registry_matches_templates():
     )
 
 
-def test_load_registry_succeeds():
-    """Test that load_registry successfully loads the real registry."""
+def test_load_registry_returns_dataframe():
+    assert isinstance(load_registry(), pd.DataFrame)
+
+
+def test_load_registry_has_rows():
+    assert len(load_registry()) > 0
+
+
+def test_load_registry_has_required_columns():
     registry = load_registry()
-
-    # Check it's a DataFrame
-    assert isinstance(registry, pd.DataFrame)
-
-    # Check it has rows
-    assert len(registry) > 0
-
-    # Check required columns exist
     required_cols = {
         "series_id",
         "source",
@@ -64,11 +59,9 @@ def test_load_registry_succeeds():
 
 
 def test_validate_registry_unique_series_id():
-    """Test that duplicate series_id raises ValueError."""
-    # Create DataFrame with duplicate series_id
     df = pd.DataFrame(
         {
-            "series_id": ["DE_IP_001", "DE_IP_001"],  # Duplicate
+            "series_id": ["DE_IP_001", "DE_IP_001"],
             "source": ["eurostat", "eurostat"],
             "category": [1, 1],
             "category_name": ["Industrial_production", "Industrial_production"],
@@ -82,17 +75,15 @@ def test_validate_registry_unique_series_id():
             "start_period": ["2003-01", "2003-01"],
         }
     )
-
     with pytest.raises(ValueError, match="Duplicate series_id found"):
         validate_registry(df)
 
 
 def test_validate_registry_invalid_source_raises():
-    """Test that invalid source value raises ValueError."""
     df = pd.DataFrame(
         {
             "series_id": ["DE_IP_001"],
-            "source": ["invalid_source"],  # Invalid
+            "source": ["invalid_source"],
             "category": [1],
             "category_name": ["Industrial_production"],
             "country_iso2": ["DE"],
@@ -105,13 +96,11 @@ def test_validate_registry_invalid_source_raises():
             "start_period": ["2003-01"],
         }
     )
-
     with pytest.raises(ValueError, match="Invalid source values"):
         validate_registry(df)
 
 
 def test_validate_registry_eurostat_requires_filters_json():
-    """Test that Eurostat series without filters_json raises ValueError."""
     df = pd.DataFrame(
         {
             "series_id": ["DE_IP_001"],
@@ -122,19 +111,17 @@ def test_validate_registry_eurostat_requires_filters_json():
             "variable_name": ["Test variable"],
             "dataset": ["STS_INPR_M"],
             "key": [""],
-            "filters_json": [""],  # Missing
+            "filters_json": [""],
             "unit_measure_filter": [""],
             "frequency": ["M"],
             "start_period": ["2003-01"],
         }
     )
-
     with pytest.raises(ValueError, match="Eurostat series requires 'filters_json'"):
         validate_registry(df)
 
 
 def test_validate_registry_ecb_requires_key():
-    """Test that ECB series without key raises ValueError."""
     df = pd.DataFrame(
         {
             "series_id": ["DE_INT_001"],
@@ -144,27 +131,25 @@ def test_validate_registry_ecb_requires_key():
             "country_iso2": ["DE"],
             "variable_name": ["Test variable"],
             "dataset": ["IRS"],
-            "key": [""],  # Missing
+            "key": [""],
             "filters_json": [""],
             "unit_measure_filter": [""],
             "frequency": ["M"],
             "start_period": ["2003-01"],
         }
     )
-
     with pytest.raises(ValueError, match="ECB series requires 'key'"):
         validate_registry(df)
 
 
 def test_validate_registry_invalid_country_code_raises():
-    """Test that invalid country_iso2 raises ValueError."""
     df = pd.DataFrame(
         {
             "series_id": ["DE_IP_001"],
             "source": ["eurostat"],
             "category": [1],
             "category_name": ["Industrial_production"],
-            "country_iso2": ["DEU"],  # Should be 2 letters, not 3
+            "country_iso2": ["DEU"],
             "variable_name": ["Test variable"],
             "dataset": ["STS_INPR_M"],
             "key": [""],
@@ -174,13 +159,11 @@ def test_validate_registry_invalid_country_code_raises():
             "start_period": ["2003-01"],
         }
     )
-
     with pytest.raises(ValueError, match="Invalid country_iso2 codes"):
         validate_registry(df)
 
 
 def test_validate_registry_missing_dataset_raises():
-    """Test that missing dataset field raises ValueError."""
     df = pd.DataFrame(
         {
             "series_id": ["DE_IP_001"],
@@ -189,7 +172,7 @@ def test_validate_registry_missing_dataset_raises():
             "category_name": ["Industrial_production"],
             "country_iso2": ["DE"],
             "variable_name": ["Test variable"],
-            "dataset": [""],  # Missing
+            "dataset": [""],
             "key": [""],
             "filters_json": ['{"geo": "DE"}'],
             "unit_measure_filter": [""],
@@ -197,13 +180,11 @@ def test_validate_registry_missing_dataset_raises():
             "start_period": ["2003-01"],
         }
     )
-
     with pytest.raises(ValueError, match="Missing required field 'dataset'"):
         validate_registry(df)
 
 
 def test_validate_registry_valid_registry_passes():
-    """Test that a valid registry passes validation."""
     df = pd.DataFrame(
         {
             "series_id": ["DE_IP_001", "DE_INT_001"],
@@ -220,6 +201,4 @@ def test_validate_registry_valid_registry_passes():
             "start_period": ["2003-01", "2003-01"],
         }
     )
-
-    # Should not raise
     validate_registry(df)
