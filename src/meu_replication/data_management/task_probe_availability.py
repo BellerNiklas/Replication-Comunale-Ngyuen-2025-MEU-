@@ -24,7 +24,6 @@ import pandas as pd
 import pytask
 
 from meu_replication.config import BLD, MEU_COUNTRIES, SRC
-from meu_replication.registry.registry_io import load_registry
 
 _OK_THRESHOLD = 10  # Minimum rows to classify as "ok" (vs "ok_short")
 
@@ -51,36 +50,22 @@ _PROBE_DEPENDS = {
 def _probe_source_country(
     source: str,
     country: str,
-    output_path: Path,
-) -> None:
-    """Probe all series for one (source, country) pair (shared helper).
+    registry: pd.DataFrame,
+) -> list[dict]:
+    """Probe all series for one (source, country) pair.
 
-    Short and boring: load registry, filter, probe, write.
-    Real logic lives in probe.probe_many().
+    Returns list of result dicts (may be empty).
     """
     from meu_replication.data_fetch.probe import probe_many
 
-    registry = load_registry()
-
-    # Filter registry to this country + source
     mask = (registry.country_iso2 == country) & (registry.source == source)
     series_ids = registry.loc[mask, "series_id"].tolist()
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
     if not series_ids:
-        print(f"[Probe/{source}/{country}] No series to probe — writing empty file")
-        pd.DataFrame(columns=_PROBE_COLUMNS).to_parquet(output_path, index=False)
-        return
+        return []
 
-    # OECD has stricter rate limits (429 errors with default 1s delay)
     delay = 5.0 if source == "oecd" else 1.0
-    n = len(series_ids)
-    print(f"[Probe/{source}/{country}] Probing {n} series (delay={delay}s)...")
-    results = probe_many(series_ids, registry=registry, delay=delay)
-
-    pd.DataFrame(results).to_parquet(output_path, index=False)
-    print(f"[Probe/{source}/{country}] {dict(Counter(r['status'] for r in results))}")
+    return probe_many(series_ids, registry=registry, delay=delay)
 
 
 # -- Eurostat: 19 tasks --
@@ -94,7 +79,14 @@ for _country in MEU_COUNTRIES:
         produces: Path = BLD / "meta" / "availability" / f"eurostat_{_country}.parquet",
     ) -> None:
         """Probe Eurostat availability for one country."""
-        _probe_source_country("eurostat", country, produces)
+        registry = pd.read_csv(depends_on["registry"])
+        results = _probe_source_country("eurostat", country, registry)
+        if results:
+            pd.DataFrame(results).to_parquet(produces, index=False)
+        else:
+            pd.DataFrame(columns=_PROBE_COLUMNS).to_parquet(produces, index=False)
+        status_counts = Counter(r["status"] for r in results) if results else {}
+        print(f"[Probe/eurostat/{country}] {dict(status_counts)}")
 
 
 # -- ECB: 20 tasks (19 countries + U2 for EA-aggregate series) --
@@ -110,7 +102,14 @@ for _country in _ECB_COUNTRIES:
         produces: Path = BLD / "meta" / "availability" / f"ecb_{_country}.parquet",
     ) -> None:
         """Probe ECB availability for one country (or U2 for EA aggregates)."""
-        _probe_source_country("ecb", country, produces)
+        registry = pd.read_csv(depends_on["registry"])
+        results = _probe_source_country("ecb", country, registry)
+        if results:
+            pd.DataFrame(results).to_parquet(produces, index=False)
+        else:
+            pd.DataFrame(columns=_PROBE_COLUMNS).to_parquet(produces, index=False)
+        status_counts = Counter(r["status"] for r in results) if results else {}
+        print(f"[Probe/ecb/{country}] {dict(status_counts)}")
 
 
 # -- OECD: 1 task (derived from bulk fetch, no API calls) --
@@ -159,18 +158,23 @@ def _build_oecd_availability(
     return pd.DataFrame(rows, columns=_PROBE_COLUMNS)
 
 
+_OECD_AVAIL_DEPENDS = {
+    "bulk": BLD / "data" / "raw" / "oecd" / "bulk_snapshot.parquet",
+    "registry": SRC / "registry" / "series_registry.csv",
+}
+
+
 def task_derive_oecd_availability(
-    depends_on: Path = BLD / "data" / "raw" / "oecd" / "bulk_snapshot.parquet",
+    depends_on: dict = _OECD_AVAIL_DEPENDS,
     produces: dict = _build_oecd_avail_produces(),
 ) -> None:
     """Derive OECD availability from bulk fetch results (no API calls)."""
-    registry = load_registry()
+    registry = pd.read_csv(depends_on["registry"])
     oecd_series = registry[registry.source == "oecd"]
-    bulk = pd.read_parquet(depends_on)
+    bulk = pd.read_parquet(depends_on["bulk"])
 
     for country, path in produces.items():
         result = _build_oecd_availability(bulk, oecd_series, country)
-        path.parent.mkdir(parents=True, exist_ok=True)
         result.to_parquet(path, index=False)
         print(f"[Avail/oecd/{country}] {dict(Counter(result['status']))}")
 
@@ -186,7 +190,14 @@ for _country in MEU_COUNTRIES:
         produces: Path = BLD / "meta" / "availability" / f"bis_{_country}.parquet",
     ) -> None:
         """Probe BIS availability for one country."""
-        _probe_source_country("bis", country, produces)
+        registry = pd.read_csv(depends_on["registry"])
+        results = _probe_source_country("bis", country, registry)
+        if results:
+            pd.DataFrame(results).to_parquet(produces, index=False)
+        else:
+            pd.DataFrame(columns=_PROBE_COLUMNS).to_parquet(produces, index=False)
+        status_counts = Counter(r["status"] for r in results) if results else {}
+        print(f"[Probe/bis/{country}] {dict(status_counts)}")
 
 
 # -- Combine: 1 task --
@@ -219,8 +230,6 @@ def task_combine_availability(
             df = pd.read_parquet(path)
             if not df.empty:
                 dfs.append(df)
-
-    produces.parent.mkdir(parents=True, exist_ok=True)
 
     if not dfs:
         print("WARNING: No probe results found — writing empty manifest")

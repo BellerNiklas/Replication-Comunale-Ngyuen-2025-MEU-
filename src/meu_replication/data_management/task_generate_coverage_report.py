@@ -23,7 +23,6 @@ def task_generate_coverage_report(
 
     report = _generate_coverage_markdown(panel, availability)
 
-    produces.parent.mkdir(parents=True, exist_ok=True)
     produces.write_text(report, encoding="utf-8")
     print(f"Wrote coverage report to {produces}")
 

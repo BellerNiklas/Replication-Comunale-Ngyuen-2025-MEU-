@@ -16,6 +16,7 @@ This project replicates the MacroEconomic Uncertainty (MEU) measure for the euro
 ```bash
 pixi install              # Install all dependencies (pinned via pixi.lock)
 pixi run pytask           # Run the full computational pipeline
+pixi run pytask -n 8      # Same, but with 8 parallel workers (recommended)
 pixi run pytest           # Run the test suite
 pixi run prek             # Run pre-commit checks
 ```
@@ -29,9 +30,10 @@ The full data fetch (`pixi run pytask`) takes approximately **15-30 minutes** de
 ```
 src/meu_replication/      # Source code (hand-written, version controlled)
   config.py               # Central path definitions (SRC, BLD, ROOT)
+  cleaning/               # Pure functions: stationarity, temporal coverage, correlation
   data_fetch/             # API adapters for Eurostat, ECB, OECD, BIS
-  data_management/        # pytask tasks: fetch, probe, clean, coverage
-    registry/             # Series registry and country definitions (CSV)
+  data_management/        # pytask tasks: fetch, probe, clean, transform, filter
+  registry/               # Series registry, templates, country definitions (CSV)
   analysis/               # (Placeholder for MEU estimation tasks)
   final/                  # (Placeholder for figure/table generation)
 bld/                      # Generated outputs (NOT committed, safe to delete)
@@ -118,7 +120,7 @@ The 98% threshold allows up to `floor(0.02 * n_months)` missing observations. Th
 
 Following Comunale & Nguyen (2025): "for each country, if two variables are highly correlated variables (with a correlation larger than 0.95 in absolute term), only one of them will be kept."
 
-This step operates on **transformed** data (after Stage 1) to avoid spurious correlations caused by common trends in raw levels. For each country independently:
+This step operates on the **temporal-coverage filtered** panels (after Stage 2), ensuring correlations are computed on stationary, coverage-complete data rather than raw levels with common trends. For each country independently:
 
 1. The panel is pivoted to wide format (rows = dates, columns = series)
 2. The pairwise Pearson correlation matrix is computed

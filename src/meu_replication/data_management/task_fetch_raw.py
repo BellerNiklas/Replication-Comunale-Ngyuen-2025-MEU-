@@ -58,45 +58,29 @@ _FETCH_DEPENDS = {
 def _fetch_source_country(
     source: str,
     country: str,
-    output_path: Path,
-) -> None:
-    """Fetch all available series for one (source, country) pair.
+    registry: pd.DataFrame,
+    availability: pd.DataFrame,
+) -> pd.DataFrame:
+    """Filter to available series and fetch them.
 
-    Short and boring: load registry, filter to available series, fetch, write.
-    Real logic lives in fetch.fetch_many().
+    Pure function (except network calls via fetch_many, which is its purpose).
+    Returns DataFrame (may be empty).
     """
     from meu_replication.data_fetch.fetch import fetch_many
-    from meu_replication.registry.registry_io import load_registry
 
-    registry = load_registry()
-    availability = pd.read_parquet(BLD / "meta" / "series_availability.parquet")
-
-    # Filter registry to this country + source
     country_series = registry[
         (registry.country_iso2 == country) & (registry.source == source)
     ].series_id.tolist()
 
-    # Only fetch series confirmed as available by probing
     available_series = availability[
         (availability.series_id.isin(country_series))
         & (availability.status.isin(["ok", "ok_short"]))
     ].series_id.tolist()
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
     if not available_series:
-        print(f"[Fetch/{source}/{country}] No available series — writing empty file")
-        pd.DataFrame(columns=_EMPTY_COLUMNS).to_parquet(output_path, index=False)
-        return
+        return pd.DataFrame(columns=_EMPTY_COLUMNS)
 
-    print(
-        f"[Fetch/{source}/{country}] Fetching {len(available_series)}"
-        f"/{len(country_series)} available series..."
-    )
-    df = fetch_many(available_series, registry=registry)
-
-    df.to_parquet(output_path, index=False)
-    print(f"[Fetch/{source}/{country}] Wrote {len(df)} rows")
+    return fetch_many(available_series, registry=registry)
 
 
 # -- Eurostat: 19 tasks --
@@ -114,7 +98,11 @@ for _country in MEU_COUNTRIES:
         / f"{_country}_snapshot.parquet",
     ) -> None:
         """Fetch Eurostat data for one country."""
-        _fetch_source_country("eurostat", country, produces)
+        registry = pd.read_csv(depends_on["registry"])
+        availability = pd.read_parquet(depends_on["availability"])
+        df = _fetch_source_country("eurostat", country, registry, availability)
+        df.to_parquet(produces, index=False)
+        print(f"[Fetch/eurostat/{country}] Wrote {len(df)} rows")
 
 
 # -- ECB: 20 tasks (19 countries + U2 for EA-aggregate series) --
@@ -130,7 +118,11 @@ for _country in _ECB_COUNTRIES:
         produces: Path = BLD / "data" / "raw" / "ecb" / f"{_country}_snapshot.parquet",
     ) -> None:
         """Fetch ECB data for one country (or U2 for EA aggregates)."""
-        _fetch_source_country("ecb", country, produces)
+        registry = pd.read_csv(depends_on["registry"])
+        availability = pd.read_parquet(depends_on["availability"])
+        df = _fetch_source_country("ecb", country, registry, availability)
+        df.to_parquet(produces, index=False)
+        print(f"[Fetch/ecb/{country}] Wrote {len(df)} rows")
 
 
 # -- OECD: 1 bulk fetch + 1 split (replaces 19 per-country tasks) --
@@ -155,15 +147,13 @@ def task_fetch_oecd_bulk(
     """
     from meu_replication.data_fetch.adapters import fetch_oecd_bulk
     from meu_replication.data_fetch.standardize import standardize_oecd_bulk
-    from meu_replication.registry.registry_io import load_registry
 
-    registry = load_registry()
-    countries = pd.read_csv(SRC / "registry" / "countries.csv")
+    registry = pd.read_csv(depends_on["registry"])
+    countries = pd.read_csv(depends_on["countries"])
 
     raw = fetch_oecd_bulk(registry, countries)
     df = standardize_oecd_bulk(raw, registry, countries)
 
-    produces.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(produces, index=False)
     print(f"[Fetch/oecd/bulk] Wrote {len(df)} rows, {df['series_id'].nunique()} series")
 
@@ -190,7 +180,6 @@ def task_split_oecd_by_country(
 
     for country, path in produces.items():
         country_df = bulk[bulk.country_iso2 == country].reset_index(drop=True)
-        path.parent.mkdir(parents=True, exist_ok=True)
         if country_df.empty:
             print(f"[Split/oecd/{country}] No data — writing empty file")
             pd.DataFrame(columns=_EMPTY_COLUMNS).to_parquet(path, index=False)
@@ -213,4 +202,8 @@ for _country in MEU_COUNTRIES:
         produces: Path = BLD / "data" / "raw" / "bis" / f"{_country}_snapshot.parquet",
     ) -> None:
         """Fetch BIS data for one country."""
-        _fetch_source_country("bis", country, produces)
+        registry = pd.read_csv(depends_on["registry"])
+        availability = pd.read_parquet(depends_on["availability"])
+        df = _fetch_source_country("bis", country, registry, availability)
+        df.to_parquet(produces, index=False)
+        print(f"[Fetch/bis/{country}] Wrote {len(df)} rows")

@@ -49,7 +49,6 @@ def task_filter_temporal_coverage(
 
     for key, filtered in panels.items():
         out_path = produces[key]
-        out_path.parent.mkdir(parents=True, exist_ok=True)
         filtered.to_parquet(out_path, index=False)
 
     print(f"Wrote {len(panels)} filtered panels")

@@ -33,7 +33,6 @@ for _key in PANEL_VARIANTS:
         )
         n_after = filtered["series_id"].nunique()
 
-        produces["panel"].parent.mkdir(parents=True, exist_ok=True)
         filtered.to_parquet(produces["panel"], index=False)
         drop_info.to_csv(produces["drop_info"], index=False)
 

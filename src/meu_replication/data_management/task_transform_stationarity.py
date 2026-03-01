@@ -28,7 +28,6 @@ def task_transform_stationarity(
     transform_map = build_transform_map(registry)
     transformed = apply_stationarity_transforms(panel, transform_map)
 
-    produces.parent.mkdir(parents=True, exist_ok=True)
     transformed.to_parquet(produces, index=False)
 
     n_before = panel["series_id"].nunique()

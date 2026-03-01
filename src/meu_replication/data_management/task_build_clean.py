@@ -20,36 +20,20 @@ def _build_raw_depends() -> dict[str, Path]:
     return deps
 
 
-def _load_raw_snapshots(depends_on: dict[str, Path]) -> pd.DataFrame:
-    """Load and concatenate all non-empty raw snapshot files.
-
-    Args:
-        depends_on: Dict mapping label -> Path for raw parquet files.
-
-    Returns:
-        Combined raw DataFrame.
-
-    Raises:
-        ValueError: If no raw data found.
-    """
+def task_build_clean(
+    depends_on: dict = _build_raw_depends(),
+    produces: Path = BLD / "data" / "clean" / "macro_panel.parquet",
+) -> None:
+    """Build clean macro panel from per-country snapshots."""
     dfs = [
         df for path in depends_on.values() if not (df := pd.read_parquet(path)).empty
     ]
     if not dfs:
         msg = "No raw data found — cannot build clean panel"
         raise ValueError(msg)
-    return pd.concat(dfs, ignore_index=True)
+    raw = pd.concat(dfs, ignore_index=True)
 
-
-def task_build_clean(
-    depends_on: dict = _build_raw_depends(),
-    produces: Path = BLD / "data" / "clean" / "macro_panel.parquet",
-) -> None:
-    """Build clean macro panel from per-country snapshots."""
-    raw = _load_raw_snapshots(depends_on)
     cleaned = _clean_macro_panel(raw)
-
-    produces.parent.mkdir(parents=True, exist_ok=True)
     cleaned.to_parquet(produces, index=False)
     n_series = cleaned["series_id"].nunique()
     print(f"Wrote {len(cleaned)} rows ({n_series} series) to {produces.name}")
