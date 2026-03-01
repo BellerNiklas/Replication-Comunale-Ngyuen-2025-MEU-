@@ -72,46 +72,21 @@ def _make_template(
 # --- _expand_placeholders ---
 
 
-def test_expand_placeholders_iso2():
-    """Test ISO2 placeholder replacement."""
-    country = _make_country(iso2="DE")
-    result = _expand_placeholders("M.{COUNTRY_ISO2}.N.A", country)
-    assert result == "M.DE.N.A"
-
-
-def test_expand_placeholders_eurostat_greece():
-    """Test Greece uses EL for Eurostat (not GR)."""
-    country = _make_country(iso2="GR", eurostat="EL")
-    result = _expand_placeholders('{"geo": "{COUNTRY_EUROSTAT}"}', country)
-    assert result == '{"geo": "EL"}'
-
-
-def test_expand_placeholders_oecd_iso3():
-    """Test OECD placeholder uses ISO3."""
-    country = _make_country(iso2="FR", iso3="FRA", oecd="FRA")
-    result = _expand_placeholders("{COUNTRY_OECD}.M.BCICP", country)
-    assert result == "FRA.M.BCICP"
-
-
-def test_expand_placeholders_bis():
-    """Test BIS placeholder."""
-    country = _make_country(iso2="DE", bis="DE")
-    result = _expand_placeholders("M.N.B.{COUNTRY_BIS}", country)
-    assert result == "M.N.B.DE"
-
-
-def test_expand_placeholders_empty_string():
-    """Test empty template string returns empty."""
-    country = _make_country()
-    result = _expand_placeholders("", country)
-    assert result == ""
-
-
-def test_expand_placeholders_no_placeholders():
-    """Test string without placeholders is unchanged."""
-    country = _make_country()
-    result = _expand_placeholders("M.USD.EUR.SP00.A", country)
-    assert result == "M.USD.EUR.SP00.A"
+@pytest.mark.parametrize(
+    ("template", "country_kwargs", "expected"),
+    [
+        ("M.{COUNTRY_ISO2}.N.A", {"iso2": "DE"}, "M.DE.N.A"),
+        ('{"geo": "{COUNTRY_EUROSTAT}"}', {"iso2": "GR", "eurostat": "EL"}, '{"geo": "EL"}'),
+        ("{COUNTRY_OECD}.M.BCICP", {"iso2": "FR", "iso3": "FRA", "oecd": "FRA"}, "FRA.M.BCICP"),
+        ("M.N.B.{COUNTRY_BIS}", {"iso2": "DE", "bis": "DE"}, "M.N.B.DE"),
+        ("", {}, ""),
+        ("M.USD.EUR.SP00.A", {}, "M.USD.EUR.SP00.A"),
+    ],
+)
+def test_expand_placeholders(template, country_kwargs, expected):
+    """Test placeholder replacement for all source types and edge cases."""
+    country = _make_country(**country_kwargs)
+    assert _expand_placeholders(template, country) == expected
 
 
 @pytest.mark.parametrize(

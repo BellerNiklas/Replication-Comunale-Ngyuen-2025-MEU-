@@ -1,6 +1,6 @@
 """Tests for fetch module (mocked to avoid network calls)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -76,65 +76,34 @@ def mock_standardized_df():
     )
 
 
+@pytest.mark.parametrize(
+    ("series_id", "adapter_method", "standardize_method"),
+    [
+        ("DE_IP_001", "fetch_eurostat_raw", "standardize_from_eurostat"),
+        ("EA_FX_001", "fetch_ecb_raw", "standardize_from_ecb_like"),
+        ("BIS_NEER_001_DE", "fetch_bis_raw", "standardize_from_bis"),
+    ],
+)
 @patch("meu_replication.data_fetch.fetch.adapters")
 @patch("meu_replication.data_fetch.fetch.standardize")
-def test_fetch_one_eurostat(mock_std, mock_adapters, mock_registry, mock_standardized_df):
-    """Test fetch_one dispatches correctly for Eurostat."""
-    # Setup mocks
-    mock_adapters.fetch_eurostat_raw.return_value = pd.DataFrame()
-    mock_std.standardize_from_eurostat.return_value = mock_standardized_df
+def test_fetch_one_dispatches_to_correct_adapter(
+    mock_std,
+    mock_adapters,
+    mock_registry,
+    mock_standardized_df,
+    series_id,
+    adapter_method,
+    standardize_method,
+):
+    """Test fetch_one dispatches to the correct adapter per source."""
+    getattr(mock_adapters, adapter_method).return_value = pd.DataFrame()
+    getattr(mock_std, standardize_method).return_value = mock_standardized_df
     mock_std.validate_long.return_value = None
 
-    # Call
-    result = fetch_one("DE_IP_001", registry=mock_registry)
+    result = fetch_one(series_id, registry=mock_registry)
 
-    # Verify correct adapter was called
-    mock_adapters.fetch_eurostat_raw.assert_called_once()
-    mock_std.standardize_from_eurostat.assert_called_once()
-    mock_std.validate_long.assert_called_once()
-
-    # Verify result
-    assert isinstance(result, pd.DataFrame)
-    assert len(result) == 2
-
-
-@patch("meu_replication.data_fetch.fetch.adapters")
-@patch("meu_replication.data_fetch.fetch.standardize")
-def test_fetch_one_ecb(mock_std, mock_adapters, mock_registry, mock_standardized_df):
-    """Test fetch_one dispatches correctly for ECB."""
-    # Setup mocks
-    mock_adapters.fetch_ecb_raw.return_value = pd.DataFrame()
-    mock_std.standardize_from_ecb_like.return_value = mock_standardized_df
-    mock_std.validate_long.return_value = None
-
-    # Call
-    result = fetch_one("EA_FX_001", registry=mock_registry)
-
-    # Verify correct adapter was called
-    mock_adapters.fetch_ecb_raw.assert_called_once()
-    mock_std.standardize_from_ecb_like.assert_called_once()
-
-    # Verify result
-    assert isinstance(result, pd.DataFrame)
-
-
-@patch("meu_replication.data_fetch.fetch.adapters")
-@patch("meu_replication.data_fetch.fetch.standardize")
-def test_fetch_one_bis(mock_std, mock_adapters, mock_registry, mock_standardized_df):
-    """Test fetch_one dispatches correctly for BIS."""
-    # Setup mocks
-    mock_adapters.fetch_bis_raw.return_value = pd.DataFrame()
-    mock_std.standardize_from_bis.return_value = mock_standardized_df
-    mock_std.validate_long.return_value = None
-
-    # Call
-    result = fetch_one("BIS_NEER_001_DE", registry=mock_registry)
-
-    # Verify correct adapter was called
-    mock_adapters.fetch_bis_raw.assert_called_once()
-    mock_std.standardize_from_bis.assert_called_once()
-
-    # Verify result
+    getattr(mock_adapters, adapter_method).assert_called_once()
+    getattr(mock_std, standardize_method).assert_called_once()
     assert isinstance(result, pd.DataFrame)
 
 

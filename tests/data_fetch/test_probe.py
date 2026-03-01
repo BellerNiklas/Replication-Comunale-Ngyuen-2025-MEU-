@@ -114,69 +114,49 @@ def _mock_standardized_df(n_rows: int) -> pd.DataFrame:
 # --- _extract_template_id ---
 
 
-def test_extract_template_id_de():
-    """Test template_id extraction for DE prefix."""
-    assert _extract_template_id("DE_IP_001", "DE") == "IP_001"
-
-
-def test_extract_template_id_u2():
-    """Test template_id extraction for U2 prefix."""
-    assert _extract_template_id("U2_FX_001", "U2") == "FX_001"
-
-
-def test_extract_template_id_multi_underscore():
-    """Test template_id extraction with multiple underscores."""
-    assert _extract_template_id("DE_FIN_LOAN_001", "DE") == "FIN_LOAN_001"
-
-
-def test_extract_template_id_no_prefix():
-    """Test fallback when series_id doesn't start with country prefix."""
-    assert _extract_template_id("UNKNOWN_001", "DE") == "UNKNOWN_001"
+@pytest.mark.parametrize(
+    ("series_id", "country", "expected"),
+    [
+        ("DE_IP_001", "DE", "IP_001"),
+        ("U2_FX_001", "U2", "FX_001"),
+        ("DE_FIN_LOAN_001", "DE", "FIN_LOAN_001"),
+        ("UNKNOWN_001", "DE", "UNKNOWN_001"),
+    ],
+)
+def test_extract_template_id(series_id, country, expected):
+    """Test template_id extraction for various prefixes and edge cases."""
+    assert _extract_template_id(series_id, country) == expected
 
 
 # --- _is_data_absence_error ---
 
 
-def test_is_data_absence_no_data():
-    """Test 'No data returned' classified as absence."""
-    assert _is_data_absence_error(RuntimeError("No data returned from Eurostat"))
+@pytest.mark.parametrize(
+    "error",
+    [
+        RuntimeError("No data returned from Eurostat"),
+        ValueError("Empty response from URL"),
+        RuntimeError("Empty DataFrame returned from URL"),
+        RuntimeError("HTTP 404 Not Found"),
+        RuntimeError("400 Client Error: Bad Request for url: https://ec.europa.eu/eurostat/api/..."),
+    ],
+)
+def test_is_data_absence_error_true(error):
+    """Test errors that indicate data absence are classified correctly."""
+    assert _is_data_absence_error(error)
 
 
-def test_is_data_absence_empty():
-    """Test 'Empty response' classified as absence."""
-    assert _is_data_absence_error(ValueError("Empty response from URL"))
-
-
-def test_is_data_absence_empty_df():
-    """Test 'Empty DataFrame' classified as absence."""
-    assert _is_data_absence_error(RuntimeError("Empty DataFrame returned from URL"))
-
-
-def test_is_data_absence_404():
-    """Test '404' in error message classified as absence."""
-    assert _is_data_absence_error(RuntimeError("HTTP 404 Not Found"))
-
-
-def test_is_data_absence_400_bad_request():
-    """Test '400 Client Error: Bad Request' classified as absence."""
-    assert _is_data_absence_error(
-        RuntimeError("400 Client Error: Bad Request for url: https://ec.europa.eu/eurostat/api/...")
-    )
-
-
-def test_is_not_absence_timeout():
-    """Test timeout is NOT classified as absence."""
-    assert not _is_data_absence_error(RuntimeError("Connection timed out"))
-
-
-def test_is_not_absence_500():
-    """Test 500 error is NOT classified as absence."""
-    assert not _is_data_absence_error(RuntimeError("HTTP 500 Internal Server Error"))
-
-
-def test_is_not_absence_rate_limit():
-    """Test rate limit error is NOT classified as absence."""
-    assert not _is_data_absence_error(RuntimeError("429 Too Many Requests"))
+@pytest.mark.parametrize(
+    "error",
+    [
+        RuntimeError("Connection timed out"),
+        RuntimeError("HTTP 500 Internal Server Error"),
+        RuntimeError("429 Too Many Requests"),
+    ],
+)
+def test_is_data_absence_error_false(error):
+    """Test errors that are NOT data absence are classified correctly."""
+    assert not _is_data_absence_error(error)
 
 
 # --- _probe_start_period ---
