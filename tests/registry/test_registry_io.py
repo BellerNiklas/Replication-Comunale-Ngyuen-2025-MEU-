@@ -9,6 +9,32 @@ from meu_replication.registry.registry_io import (
 )
 
 
+def test_committed_registry_matches_templates():
+    """Guard: committed series_registry.csv must match expand(templates x countries).
+
+    Prevents drift between templates and the committed registry. If this fails,
+    regenerate with: pixi run python -m meu_replication.registry.expand_registry
+    """
+    from meu_replication.config import load_countries
+    from meu_replication.registry.expand_registry import expand_registry, load_templates
+
+    committed = load_registry()
+    expanded = expand_registry(load_templates(), load_countries())
+
+    # Same number of rows
+    assert len(committed) == len(expanded), (
+        f"Registry has {len(committed)} rows but expansion produces {len(expanded)}. "
+        "Regenerate with: pixi run python -m meu_replication.registry.expand_registry"
+    )
+
+    # Same series_ids (order-independent)
+    committed_ids = set(committed["series_id"])
+    expanded_ids = set(expanded["series_id"])
+    assert committed_ids == expanded_ids, (
+        f"Drift detected: {committed_ids ^ expanded_ids}"
+    )
+
+
 def test_load_registry_succeeds():
     """Test that load_registry successfully loads the real registry."""
     registry = load_registry()
