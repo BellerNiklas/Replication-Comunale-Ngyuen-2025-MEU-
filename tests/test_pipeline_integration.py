@@ -5,7 +5,6 @@ synthetic dataset (2 countries, 3 series each, 3 transformation codes).
 No network calls. Catches schema mismatches between pipeline stages.
 """
 
-import numpy as np
 import pandas as pd
 import pytest
 

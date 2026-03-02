@@ -23,9 +23,25 @@ _FILTER_VARIANTS = build_variants(
     ],
     thresholds=[
         ("strict", 0),
-        ("cov98", compute_allowed_missing(SAMPLE_START_TRANSFORMED, SAMPLE_END)),
     ],
-)
+) + [
+    {
+        "label": "2022_cov98",
+        "key": "panel_2022_cov98",
+        "start": SAMPLE_START_TRANSFORMED,
+        "end": SAMPLE_END,
+        "allowed_missing": compute_allowed_missing(SAMPLE_START_TRANSFORMED, SAMPLE_END),
+    },
+    {
+        "label": "2021_cov98",
+        "key": "panel_2021_cov98",
+        "start": SAMPLE_START_TRANSFORMED,
+        "end": SAMPLE_END_ALT,
+        "allowed_missing": compute_allowed_missing(
+            SAMPLE_START_TRANSFORMED, SAMPLE_END_ALT
+        ),
+    },
+]
 
 
 def task_filter_temporal_coverage(

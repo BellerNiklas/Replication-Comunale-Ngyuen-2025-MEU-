@@ -34,8 +34,8 @@ src/meu_replication/      # Source code (hand-written, version controlled)
   data_fetch/             # API adapters for Eurostat, ECB, OECD, BIS
   data_management/        # pytask tasks: fetch, probe, clean, transform, filter
   registry/               # Series registry, templates, country definitions (CSV)
-  analysis/               # (Placeholder for MEU estimation tasks)
-  final/                  # (Placeholder for figure/table generation)
+  analysis/               # MEU estimation tasks (template)
+  final/                  # Figure and table generation (template)
 bld/                      # Generated outputs (NOT committed, safe to delete)
 _build/                   # Document build outputs (NOT committed)
 documents/                # Paper and presentation sources (MyST Markdown)
@@ -44,7 +44,7 @@ tests/                    # Unit and integration tests
 
 ## Data
 
-The replication requires a large monthly dataset of approximately **1,470 variables** (before cleaning) covering **19 euro area countries** from **January 2003** to **December 2022** (240 months). Each country has up to 119 country-specific series, plus 29 euro area-level (U2) financial series shared across all countries, totalling up to 148 variables per country.
+The replication requires a large monthly dataset of approximately **1,780 series** (before cleaning) covering **19 euro area countries** from **January 2003** to **December 2022** (240 months). The series registry defines up to 119 country-specific templates plus 29 euro area-level (U2) financial series (2,290 registry entries total), but not all templates yield data for every country — smaller economies have fewer available series (e.g., Germany: 119, Ireland: 60).
 
 ### Data Sources and Availability
 
@@ -62,12 +62,12 @@ All data is fetched programmatically from public APIs. No manual downloads are r
 | Cat. | Category | # Templates | Examples |
 |------|----------|-------------|----------|
 | 1 | Industrial Production | 12 | Total industry, manufacturing, capital goods, consumer goods, energy |
-| 2 | Labor Market | 21 | Employment indices, unemployment rate, hours worked, wages |
-| 3 | Prices | 22 | PPI, HICP (overall, energy, food, services), import price indices |
-| 4 | Activity Indicators | 17 | Car registrations, turnover indices, building permits, retail |
+| 2 | Labor Market | 25 | Employment indices, unemployment rate, hours worked, wages |
+| 3 | Prices | 25 | PPI, HICP (overall, energy, food, services), import price indices |
+| 4 | Activity Indicators | 21 | Car registrations, turnover indices, building permits, retail |
 | 5 | Trade | 2 | Total imports and exports (world, million EUR) |
 | 6 | Sentiment & Surveys | 12 | Economic sentiment, consumer/industrial/services/construction confidence |
-| 7 | Financial | 19 | MFI loans/deposits/debt securities, interest rates, NEER, share prices |
+| 7 | Financial | 22 | MFI loans/deposits/debt securities, interest rates, NEER, share prices |
 
 ### Euro Area-Level Variables (29 series, category 8)
 
@@ -79,6 +79,12 @@ All data is fetched programmatically from public APIs. No manual downloads are r
 | Exchange rates | 5 | USD, GBP, JPY, CNY, CHF vs EUR |
 | Monetary aggregates | 3 | M1, M3, currency in circulation |
 
+### Missing variables, not available anymore (relative to Comunale & Nguyen)
+| Cat.| Category | # Variable | Comment | 
+|------|-------|----------|----------|
+|1 | Industrial production | Total Industry no construction | series code not available | 
+| 7 | Financial indicators | Lending spreads for new NFC loans and the swap rate | data-set not available |
+| 7 | Financial indicators | Lending spreads for new loans to households and the swap rate | data-set not available | 
 ## Data Cleaning Pipeline
 
 The raw data undergoes three sequential cleaning stages before it is used for MEU estimation. Each stage is implemented as a separate pytask task with pure functions (no mutations), following the project's EPP functional rules.
@@ -107,12 +113,15 @@ After transformation, series are filtered based on their temporal coverage withi
 
 | Panel | Sample period | Missing rule | Allowed missing months | Output file |
 |-------|--------------|-------------|----------------------|-------------|
-| 2022 strict | 2003-01 to 2022-12 (240 months) | 100% coverage | 0 | `panel_2003_2022_strict.parquet` |
-| 2022 cov98 | 2003-01 to 2022-12 (240 months) | 98% coverage | 4 | `panel_2003_2022_cov98.parquet` |
-| 2021 strict | 2003-01 to 2021-12 (228 months) | 100% coverage | 0 | `panel_2003_2021_strict.parquet` |
-| 2021 cov98 | 2003-01 to 2021-12 (228 months) | 98% coverage | 4 | `panel_2003_2021_cov98.parquet` |
+| 2022 strict | 2003-02 to 2022-12 (239 months) | 100% coverage | 0 | `panel_2003_2022_strict.parquet` |
+| 2022 cov98 | 2003-02 to 2022-12 (239 months) | 98% coverage | 4 | `panel_2003_2022_cov98.parquet` |
+| 2021 strict | 2003-02 to 2021-12 (227 months) | 100% coverage | 0 | `panel_2003_2021_strict.parquet` |
+| 2021 cov98 | 2003-02 to 2021-12 (227 months) | 98% coverage | 4 | `panel_2003_2021_cov98.parquet` |
 
 The 98% threshold allows up to `floor(0.02 * n_months)` missing observations. The 2021 alternative window includes additional car registration series (CARS_002-004) that are not available through 2022.
+> Note: filtering is applied after stationarity transforms. Since differencing
+> removes 2003-01 for code 2/5 series, the effective transformed sample starts
+> in **2003-02**.
 
 **Implementation:** `temporal_coverage.py` contains the pure filtering functions. For each series, the number of distinct months present in the sample period is counted. Series falling below the threshold are dropped and documented in a drop-info DataFrame.
 
@@ -143,8 +152,18 @@ The alphabetical tie-breaking rule ensures full determinism and reproducibility 
 | `panel_2003_2022_cov98.parquet` | After Stage 2: 98% coverage, 2022 horizon |
 | `panel_2003_2021_strict.parquet` | After Stage 2: strict coverage, 2021 horizon |
 | `panel_2003_2021_cov98.parquet` | After Stage 2: 98% coverage, 2021 horizon |
-| `panel_2003_2022_strict_corr.parquet` | After Stage 3: correlation-filtered (strict, 2022) |
-| `high_corr_drop_info.csv` | Metadata: which series were dropped and why |
+| `panel_2003_2022_cov98_corr.parquet` | After Stage 3: correlation-filtered (cov98, 2022) |
+| `panel_2003_2021_strict_corr.parquet` | After Stage 3: correlation-filtered (strict, 2021) |
+| `panel_2003_2021_cov98_corr.parquet` | After Stage 3: correlation-filtered (cov98, 2021) |
+| `panel_*_corr_drop_info.csv` | Metadata for each panel variant: dropped series and reason |
+
+## Limitations and Known Deviations
+
+- This repository currently focuses on data ingestion and cleaning; MEU
+  estimation and final figure/table tasks are still placeholders.
+- Full pipeline runtime depends on external APIs (availability/rate limits).
+- The replication uses public API snapshots at run-time; exact row counts can
+  shift if providers revise historical observations.
 
 ## References
 
