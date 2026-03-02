@@ -102,8 +102,7 @@ requests = ">=2.28"
 
 [tool.pixi.tasks]
 ty = { cmd = "ty check", description = "Check typing" }
-view-paper = { cmd = "jupyter book start", description = "View the HTML paper in browser" }
-view-pres = { cmd = "npx slidev documents/presentation.md", description = "View the presentation in browser" }
+
 [tool.pixi.feature.docs.dependencies]
 jupyter-book = ">=2.0"
 mystmd = "*"
@@ -122,7 +121,7 @@ docs = { features = [ "docs" ], solve-group = "default" }
 # ======================================================================================
 
 [tool.pytask.ini_options]
-paths = [ "./src/meu_replication", "./documents" ]
+paths = [ "./src/meu_replication" ]
 pdbcls = "pdbp:Pdb"
 
 # ======================================================================================

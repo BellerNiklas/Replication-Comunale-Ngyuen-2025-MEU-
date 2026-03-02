@@ -37,8 +37,6 @@ src/meu_replication/      # Source code (hand-written, version controlled)
   analysis/               # MEU estimation tasks (template)
   final/                  # Figure and table generation (template)
 bld/                      # Generated outputs (NOT committed, safe to delete)
-_build/                   # Document build outputs (NOT committed)
-documents/                # Paper and presentation sources (MyST Markdown)
 tests/                    # Unit and integration tests
 ```
 
