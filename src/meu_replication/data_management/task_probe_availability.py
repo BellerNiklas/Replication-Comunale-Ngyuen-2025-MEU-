@@ -19,6 +19,7 @@ Total: 60 tasks.
 
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pytask
@@ -27,7 +28,7 @@ from meu_replication.config import BLD, MEU_COUNTRIES, SRC
 
 _OK_THRESHOLD = 10  # Minimum rows to classify as "ok" (vs "ok_short")
 
-_PROBE_COLUMNS = [
+_PROBE_COLUMNS: tuple[str, ...] = (
     "series_id",
     "template_id",
     "country_iso2",
@@ -35,7 +36,7 @@ _PROBE_COLUMNS = [
     "rows_fetched",
     "error_kind",
     "error_message",
-]
+)
 
 # -- Shared dependencies for all probe tasks --
 
@@ -51,7 +52,7 @@ def _probe_source_country(
     source: str,
     country: str,
     registry: pd.DataFrame,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Probe all series for one (source, country) pair.
 
     Returns list of result dicts (may be empty).
@@ -84,7 +85,7 @@ for _country in MEU_COUNTRIES:
         if results:
             pd.DataFrame(results).to_parquet(produces, index=False)
         else:
-            pd.DataFrame(columns=_PROBE_COLUMNS).to_parquet(produces, index=False)
+            pd.DataFrame(columns=pd.Index(_PROBE_COLUMNS)).to_parquet(produces, index=False)
         status_counts = Counter(r["status"] for r in results) if results else {}
         print(f"[Probe/eurostat/{country}] {dict(status_counts)}")
 
@@ -107,7 +108,7 @@ for _country in _ECB_COUNTRIES:
         if results:
             pd.DataFrame(results).to_parquet(produces, index=False)
         else:
-            pd.DataFrame(columns=_PROBE_COLUMNS).to_parquet(produces, index=False)
+            pd.DataFrame(columns=pd.Index(_PROBE_COLUMNS)).to_parquet(produces, index=False)
         status_counts = Counter(r["status"] for r in results) if results else {}
         print(f"[Probe/ecb/{country}] {dict(status_counts)}")
 
@@ -132,18 +133,22 @@ def _build_oecd_availability(
 
     Pure function: no I/O.
     """
-    fetched_ids = set(bulk["series_id"].unique()) if not bulk.empty else set()
+    row_counts = (
+        {str(k): int(v) for k, v in bulk["series_id"].value_counts().to_dict().items()}
+        if not bulk.empty
+        else {}
+    )
     country_series = oecd_series[oecd_series.country_iso2 == country]
 
-    rows = []
+    rows: list[dict[str, Any]] = []
     for _, row in country_series.iterrows():
-        sid = row["series_id"]
-        if sid in fetched_ids:
-            n_rows = len(bulk[bulk.series_id == sid])
+        sid = str(row["series_id"])
+        n_rows = int(row_counts.get(sid, 0))
+        if n_rows > 0:
             status = "ok" if n_rows >= _OK_THRESHOLD else "ok_short"
         else:
-            n_rows = 0
             status = "missing"
+
         rows.append(
             {
                 "series_id": sid,
@@ -155,7 +160,7 @@ def _build_oecd_availability(
                 "error_message": "",
             }
         )
-    return pd.DataFrame(rows, columns=_PROBE_COLUMNS)
+    return pd.DataFrame(rows, columns=pd.Index(_PROBE_COLUMNS))
 
 
 _OECD_AVAIL_DEPENDS = {
@@ -195,7 +200,7 @@ for _country in MEU_COUNTRIES:
         if results:
             pd.DataFrame(results).to_parquet(produces, index=False)
         else:
-            pd.DataFrame(columns=_PROBE_COLUMNS).to_parquet(produces, index=False)
+            pd.DataFrame(columns=pd.Index(_PROBE_COLUMNS)).to_parquet(produces, index=False)
         status_counts = Counter(r["status"] for r in results) if results else {}
         print(f"[Probe/bis/{country}] {dict(status_counts)}")
 
@@ -232,8 +237,8 @@ def task_combine_availability(
                 dfs.append(df)
 
     if not dfs:
-        print("WARNING: No probe results found — writing empty manifest")
-        pd.DataFrame(columns=_PROBE_COLUMNS).to_parquet(produces, index=False)
+        print("WARNING: No probe results found - writing empty manifest")
+        pd.DataFrame(columns=pd.Index(_PROBE_COLUMNS)).to_parquet(produces, index=False)
         return
 
     availability = pd.concat(dfs, ignore_index=True)

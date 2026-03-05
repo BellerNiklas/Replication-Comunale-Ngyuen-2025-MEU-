@@ -1,6 +1,7 @@
 """Pure functions for temporal coverage filtering."""
 
 import math
+from typing import Any
 
 import pandas as pd
 
@@ -24,7 +25,7 @@ def _build_expected_months(sample_start: str, sample_end: str) -> set[str]:
 def build_variants(
     windows: list[tuple[str, str, str]],
     thresholds: list[tuple[str, int]],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Build filter variant configs from windows x thresholds.
 
     Args:
@@ -79,15 +80,15 @@ def filter_by_temporal_coverage(
           variable_name, category_name, n_months, n_missing] for every
           series that was dropped due to insufficient coverage.
     """
-    drop_cols = [
+    drop_cols: tuple[str, ...] = (
         "series_id",
         "country_iso2",
         "variable_name",
         "category_name",
         "n_months",
         "n_missing",
-    ]
-    empty_drop = pd.DataFrame(columns=drop_cols)
+    )
+    empty_drop = pd.DataFrame(columns=pd.Index(drop_cols))
 
     if df.empty:
         return df.copy(), empty_drop
@@ -133,7 +134,7 @@ def filter_by_temporal_coverage(
 
 def run_all_filter_variants(
     panel: pd.DataFrame,
-    filter_variants: list[dict],
+    filter_variants: list[dict[str, Any]],
 ) -> dict[str, pd.DataFrame]:
     """Run all filter variants and return filtered panels.
 
@@ -147,7 +148,7 @@ def run_all_filter_variants(
     """
     return {
         v["key"]: filter_by_temporal_coverage(
-            panel, v["start"], v["end"], v["allowed_missing"]
+            panel, str(v["start"]), str(v["end"]), int(v["allowed_missing"])
         )[0]
         for v in filter_variants
     }

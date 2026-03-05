@@ -5,6 +5,7 @@ from meu_replication.data_fetch.standardize import (
     standardize_from_bis,
     standardize_from_ecb_like,
     standardize_from_eurostat,
+    standardize_oecd_bulk,
     validate_long,
 )
 
@@ -159,6 +160,68 @@ def test_standardize_from_bis_with_unit_measure_filter():
     assert len(result) == 2
     assert result["date"].iloc[0] == "2024-01"
     assert result["date"].iloc[1] == "2024-02"
+
+
+# --- OECD bulk ---
+
+
+def test_standardize_oecd_bulk_matches_and_drops_unmatched_rows():
+    raw = pd.DataFrame(
+        {
+            "dataset": ["MEI", "MEI", "MEI"],
+            "REF_AREA": ["DEU", "DEU", "XXX"],
+            "FREQ": ["M", "M", "M"],
+            "MEASURE": ["BCICP", "BCICP", "BCICP"],
+            "UNIT_MEASURE": ["PB", "PB", "PB"],
+            "ACTIVITY": ["F", "F", "F"],
+            "ADJUSTMENT": ["Y", "Y", "Y"],
+            "TRANSFORMATION": ["_Z", "_Z", "_Z"],
+            "TIME_HORIZ": ["_Z", "_Z", "_Z"],
+            "METHODOLOGY": ["N", "N", "N"],
+            "TIME_PERIOD": ["2024-01", "2024-02", "2024-01"],
+            "OBS_VALUE": [10.0, 11.0, 99.0],
+        }
+    )
+
+    registry = pd.DataFrame(
+        {
+            "source": ["oecd"],
+            "dataset": ["MEI"],
+            "key": ["DEU.M.BCICP.PB.F.Y._Z._Z.N"],
+            "series_id": ["DE_OECD_SENT_001"],
+            "country_iso2": ["DE"],
+            "variable_name": ["Sentiment"],
+            "category": [6],
+            "category_name": ["Sentiment"],
+        }
+    )
+    countries = pd.DataFrame({"country_iso2": ["DE"]})
+
+    result = standardize_oecd_bulk(raw, registry, countries)
+
+    assert len(result) == 2
+    assert set(result["series_id"]) == {"DE_OECD_SENT_001"}
+    assert list(result.columns) == _EXPECTED_COLUMNS
+
+
+def test_standardize_oecd_bulk_missing_dimension_raises():
+    raw = pd.DataFrame({"dataset": ["MEI"], "TIME_PERIOD": ["2024-01"], "OBS_VALUE": [1.0]})
+    registry = pd.DataFrame(
+        {
+            "source": ["oecd"],
+            "dataset": ["MEI"],
+            "key": ["DEU.M.BCICP.PB.F.Y._Z._Z.N"],
+            "series_id": ["DE_OECD_SENT_001"],
+            "country_iso2": ["DE"],
+            "variable_name": ["Sentiment"],
+            "category": [6],
+            "category_name": ["Sentiment"],
+        }
+    )
+    countries = pd.DataFrame({"country_iso2": ["DE"]})
+
+    with pytest.raises(ValueError, match="Missing OECD key dimensions"):
+        standardize_oecd_bulk(raw, registry, countries)
 
 
 # --- validate_long ---

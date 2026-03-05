@@ -157,7 +157,8 @@ def standardize_oecd_bulk(
     """Transform bulk OECD response to canonical long format (pure function).
 
     Reconstructs SDMX keys from dimension columns and matches each row
-    to its registry series_id. Follows EPP: constructs new DataFrame.
+    to its registry series_id using a vectorized merge (faster than
+    row-wise Python lookups).
 
     Args:
         raw: Concatenated bulk OECD CSV with 'dataset' column added.
@@ -167,70 +168,71 @@ def standardize_oecd_bulk(
     Returns:
         Canonical long DataFrame with standard schema.
     """
-    oecd_reg = registry[registry.source == "oecd"]
+    if countries.empty:
+        msg = "Countries table is empty - cannot standardize OECD bulk data"
+        raise ValueError(msg)
+
+    oecd_reg = registry[registry.source == "oecd"].copy()
 
     # SDMX dimension columns in key order (verified from OECD API response)
-    _KEY_DIMS = [
-        "REF_AREA", "FREQ", "MEASURE", "UNIT_MEASURE",
-        "ACTIVITY", "ADJUSTMENT", "TRANSFORMATION", "TIME_HORIZ", "METHODOLOGY",
-    ]
-
-    # Build lookup: (dataset, key) -> registry spec dict
-    key_lookup = {
-        (row["dataset"], row["key"]): row.to_dict()
-        for _, row in oecd_reg.iterrows()
-    }
-
-    # Reconstruct SDMX key per row and match to registry
-    keys = raw[_KEY_DIMS].apply(
-        lambda row: ".".join(str(v) for v in row), axis=1
+    key_dims: tuple[str, ...] = (
+        "REF_AREA",
+        "FREQ",
+        "MEASURE",
+        "UNIT_MEASURE",
+        "ACTIVITY",
+        "ADJUSTMENT",
+        "TRANSFORMATION",
+        "TIME_HORIZ",
+        "METHODOLOGY",
     )
-    datasets = raw["dataset"]
 
-    series_ids = []
-    country_iso2s = []
-    variable_names = []
-    categories = []
-    category_names = []
+    missing_dims = [dim for dim in key_dims if dim not in raw.columns]
+    if missing_dims:
+        msg = f"Missing OECD key dimensions in raw bulk response: {missing_dims}"
+        raise ValueError(msg)
 
-    for key, dataset in zip(keys, datasets):
-        spec = key_lookup.get((dataset, key))
-        if spec is not None:
-            series_ids.append(spec["series_id"])
-            country_iso2s.append(spec["country_iso2"])
-            variable_names.append(spec["variable_name"])
-            categories.append(spec["category"])
-            category_names.append(spec["category_name"])
-        else:
-            series_ids.append(None)
-            country_iso2s.append(None)
-            variable_names.append(None)
-            categories.append(None)
-            category_names.append(None)
+    # Build reconstructed key column once and merge to registry metadata.
+    working = raw.copy()
+    working["_reconstructed_key"] = working[list(key_dims)].astype(str).agg(".".join, axis=1)
 
-    time_col = _find_column(raw, ["TIME_PERIOD", "time_period", "TIME"])
-    value_col = _find_column(raw, ["OBS_VALUE", "obs_value", "VALUE"])
+    lookup = oecd_reg[
+        [
+            "dataset",
+            "key",
+            "series_id",
+            "country_iso2",
+            "variable_name",
+            "category",
+            "category_name",
+        ]
+    ].rename(columns={"key": "_reconstructed_key"})
+
+    merged = working.merge(
+        lookup,
+        on=["dataset", "_reconstructed_key"],
+        how="left",
+    )
+
+    time_col = _find_column(merged, ["TIME_PERIOD", "time_period", "TIME"])
+    value_col = _find_column(merged, ["OBS_VALUE", "obs_value", "VALUE"])
 
     # Construct new DataFrame (EPP: start empty, touch each column once)
     result = pd.DataFrame(
         {
-            "date": raw[time_col].astype(str),
-            "value": pd.to_numeric(raw[value_col], errors="coerce"),
-            "series_id": series_ids,
-            "country_iso2": country_iso2s,
-            "variable_name": variable_names,
-            "category": categories,
-            "category_name": category_names,
+            "date": merged[time_col].astype(str),
+            "value": pd.to_numeric(merged[value_col], errors="coerce"),
+            "series_id": merged["series_id"],
+            "country_iso2": merged["country_iso2"],
+            "variable_name": merged["variable_name"],
+            "category": merged["category"],
+            "category_name": merged["category_name"],
             "source": "oecd",
         }
     )
 
-    # Drop rows with no registry match and no value
-    return (
-        result
-        .dropna(subset=["series_id", "value"])
-        .reset_index(drop=True)
-    )
+    # Drop rows with no registry match and no value.
+    return result.dropna(subset=["series_id", "value"]).reset_index(drop=True)
 
 
 def validate_long(df: pd.DataFrame, series_id: str) -> None:

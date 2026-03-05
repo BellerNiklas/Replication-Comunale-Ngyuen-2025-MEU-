@@ -9,11 +9,11 @@ instead of per-series fetching to avoid rate-limit issues.
 
 Directory structure:
     bld/data/raw/
-    ├── eurostat/{AT,BE,...,SK}_snapshot.parquet   (19 files)
-    ├── ecb/{AT,BE,...,SK,U2}_snapshot.parquet     (20 files)
-    ├── oecd/bulk_snapshot.parquet                 (1 bulk file)
-    ├── oecd/{AT,BE,...,SK}_snapshot.parquet       (19 split files)
-    └── bis/{AT,BE,...,SK}_snapshot.parquet        (19 files)
+    |-- eurostat/{AT,BE,...,SK}_snapshot.parquet   (19 files)
+    |-- ecb/{AT,BE,...,SK,U2}_snapshot.parquet     (20 files)
+    |-- oecd/bulk_snapshot.parquet                 (1 bulk file)
+    |-- oecd/{AT,BE,...,SK}_snapshot.parquet       (19 split files)
+    `-- bis/{AT,BE,...,SK}_snapshot.parquet        (19 files)
 
 Task structure:
     - 19 Eurostat tasks (one per EA country)
@@ -33,7 +33,7 @@ import pytask
 from meu_replication.config import BLD, MEU_COUNTRIES, SRC
 
 # Standardized column schema for empty DataFrames
-_EMPTY_COLUMNS = [
+_EMPTY_COLUMNS: tuple[str, ...] = (
     "date",
     "value",
     "series_id",
@@ -42,7 +42,7 @@ _EMPTY_COLUMNS = [
     "category",
     "category_name",
     "source",
-]
+)
 
 # -- Shared dependencies for all fetch tasks --
 
@@ -78,7 +78,7 @@ def _fetch_source_country(
     ].series_id.tolist()
 
     if not available_series:
-        return pd.DataFrame(columns=_EMPTY_COLUMNS)
+        return pd.DataFrame(columns=pd.Index(_EMPTY_COLUMNS))
 
     return fetch_many(available_series, registry=registry)
 
@@ -139,10 +139,10 @@ def task_fetch_oecd_bulk(
     depends_on: dict = _OECD_BULK_DEPENDS,
     produces: Path = BLD / "data" / "raw" / "oecd" / "bulk_snapshot.parquet",
 ) -> None:
-    """Fetch all OECD data in 4 bulk API calls and standardise.
+    """Fetch all OECD data in 4 bulk API calls and standardize.
 
     Short and boring: load registry + countries, call bulk adapter,
-    standardise, write. Uses SDMX '+' syntax to combine all countries
+    standardize, write. Uses SDMX '+' syntax to combine all countries
     and indicator variants per dataset.
     """
     from meu_replication.data_fetch.adapters import fetch_oecd_bulk
@@ -181,8 +181,8 @@ def task_split_oecd_by_country(
     for country, path in produces.items():
         country_df = bulk[bulk.country_iso2 == country].reset_index(drop=True)
         if country_df.empty:
-            print(f"[Split/oecd/{country}] No data — writing empty file")
-            pd.DataFrame(columns=_EMPTY_COLUMNS).to_parquet(path, index=False)
+            print(f"[Split/oecd/{country}] No data - writing empty file")
+            pd.DataFrame(columns=pd.Index(_EMPTY_COLUMNS)).to_parquet(path, index=False)
         else:
             country_df.to_parquet(path, index=False)
             print(

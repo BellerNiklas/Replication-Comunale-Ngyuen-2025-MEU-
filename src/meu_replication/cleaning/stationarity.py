@@ -1,9 +1,9 @@
 """Pure functions for stationarity transformations (Comunale & Nguyen 2025).
 
 Each series in the macro panel has a transformationcode from the registry:
-    Code 1: x_t           (no transformation — sentiment indicators)
-    Code 2: x_t - x_{t-1} (first difference — rates, yields, unemployment)
-    Code 5: ln(x_t) - ln(x_{t-1}) (log first difference — indices, quantities, prices)
+    Code 1: x_t           (no transformation - sentiment indicators)
+    Code 2: x_t - x_{t-1} (first difference - rates, yields, unemployment)
+    Code 5: ln(x_t) - ln(x_{t-1}) (log first difference - indices, quantities, prices)
 
 Differencing (codes 2 and 5) loses the first observation per series.
 """
@@ -93,9 +93,8 @@ def apply_stationarity_transforms(
         (first observation after differencing) are dropped.
     """
     if panel.empty:
-        return pd.DataFrame(
-            columns=[*panel.columns, "transformationcode"],
-        )
+        empty_cols = [*panel.columns, "transformationcode"]
+        return pd.DataFrame(columns=pd.Index(empty_cols))
 
     merged = panel.merge(transform_map, on="series_id", how="left")
 
@@ -115,7 +114,9 @@ def apply_stationarity_transforms(
     transformed_parts = []
     for _, g in merged.groupby("series_id", sort=False):
         code = int(g["transformationcode"].iloc[0])
-        transformed_parts.append(_transform_series(g["value"].reset_index(drop=True), code))
+        transformed_parts.append(
+            _transform_series(g["value"].reset_index(drop=True), code)
+        )
     transformed_values = pd.concat(transformed_parts, ignore_index=True)
 
     return pd.DataFrame(

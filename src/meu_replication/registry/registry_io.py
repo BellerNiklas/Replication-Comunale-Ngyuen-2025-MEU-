@@ -9,6 +9,7 @@ from meu_replication.config import SRC
 REGISTRY_PATH = SRC / "registry" / "series_registry.csv"
 
 ALLOWED_SOURCES = {"eurostat", "ecb", "oecd", "bis"}
+SUPPORTED_TRANSFORMATION_CODES = {1, 2, 5}
 
 
 def load_registry() -> pd.DataFrame:
@@ -53,6 +54,7 @@ def validate_registry(df: pd.DataFrame) -> None:
         "unit_measure_filter",
         "frequency",
         "start_period",
+        "transformationcode",
     }
     missing_cols = required_cols - set(df.columns)
     if missing_cols:
@@ -74,7 +76,7 @@ def validate_registry(df: pd.DataFrame) -> None:
         raise ValueError(msg)
 
     # Check required fields per source
-    for idx, row in df.iterrows():
+    for _, row in df.iterrows():
         source = row["source"]
         series_id = row["series_id"]
 
@@ -110,5 +112,33 @@ def validate_registry(df: pd.DataFrame) -> None:
     ]
     if not invalid_countries.empty:
         invalid_vals = invalid_countries["country_iso2"].unique().tolist()
-        msg = f"Invalid country_iso2 codes (should be 2 uppercase letters/digits): {invalid_vals}"
+        msg = (
+            "Invalid country_iso2 codes (should be 2 uppercase letters/digits): "
+            f"{invalid_vals}"
+        )
+        raise ValueError(msg)
+
+    # Validate transformation code completeness and domain.
+    trans_raw = pd.to_numeric(df["transformationcode"], errors="coerce")
+    if trans_raw.isna().any():
+        invalid = df.loc[trans_raw.isna(), "series_id"].head(5).tolist()
+        msg = (
+            "Missing or non-numeric transformationcode for series_ids: "
+            f"{invalid}"
+        )
+        raise ValueError(msg)
+
+    int_mask = trans_raw == trans_raw.astype(int)
+    if not int_mask.all():
+        invalid = df.loc[~int_mask, "series_id"].head(5).tolist()
+        msg = f"Non-integer transformationcode for series_ids: {invalid}"
+        raise ValueError(msg)
+
+    trans = trans_raw.astype(int)
+    bad_codes = sorted(set(trans.unique()) - SUPPORTED_TRANSFORMATION_CODES)
+    if bad_codes:
+        msg = (
+            "Unsupported transformationcode values: "
+            f"{bad_codes}. Allowed: {sorted(SUPPORTED_TRANSFORMATION_CODES)}"
+        )
         raise ValueError(msg)

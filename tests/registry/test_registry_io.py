@@ -54,6 +54,7 @@ def test_load_registry_has_required_columns():
         "unit_measure_filter",
         "frequency",
         "start_period",
+        "transformationcode",
     }
     assert required_cols.issubset(set(registry.columns))
 
@@ -73,6 +74,7 @@ def test_validate_registry_unique_series_id():
             "unit_measure_filter": ["", ""],
             "frequency": ["M", "M"],
             "start_period": ["2003-01", "2003-01"],
+            "transformationcode": [5, 5],
         }
     )
     with pytest.raises(ValueError, match="Duplicate series_id found"):
@@ -94,6 +96,7 @@ def test_validate_registry_invalid_source_raises():
             "unit_measure_filter": [""],
             "frequency": ["M"],
             "start_period": ["2003-01"],
+            "transformationcode": [5],
         }
     )
     with pytest.raises(ValueError, match="Invalid source values"):
@@ -115,6 +118,7 @@ def test_validate_registry_eurostat_requires_filters_json():
             "unit_measure_filter": [""],
             "frequency": ["M"],
             "start_period": ["2003-01"],
+            "transformationcode": [5],
         }
     )
     with pytest.raises(ValueError, match="Eurostat series requires 'filters_json'"):
@@ -136,6 +140,7 @@ def test_validate_registry_ecb_requires_key():
             "unit_measure_filter": [""],
             "frequency": ["M"],
             "start_period": ["2003-01"],
+            "transformationcode": [2],
         }
     )
     with pytest.raises(ValueError, match="ECB series requires 'key'"):
@@ -157,6 +162,7 @@ def test_validate_registry_invalid_country_code_raises():
             "unit_measure_filter": [""],
             "frequency": ["M"],
             "start_period": ["2003-01"],
+            "transformationcode": [5],
         }
     )
     with pytest.raises(ValueError, match="Invalid country_iso2 codes"):
@@ -178,9 +184,75 @@ def test_validate_registry_missing_dataset_raises():
             "unit_measure_filter": [""],
             "frequency": ["M"],
             "start_period": ["2003-01"],
+            "transformationcode": [5],
         }
     )
     with pytest.raises(ValueError, match="Missing required field 'dataset'"):
+        validate_registry(df)
+
+
+def test_validate_registry_missing_transformationcode_raises():
+    df = pd.DataFrame(
+        {
+            "series_id": ["DE_IP_001"],
+            "source": ["eurostat"],
+            "category": [1],
+            "category_name": ["Industrial_production"],
+            "country_iso2": ["DE"],
+            "variable_name": ["Test variable"],
+            "dataset": ["STS_INPR_M"],
+            "key": [""],
+            "filters_json": ['{"geo": "DE"}'],
+            "unit_measure_filter": [""],
+            "frequency": ["M"],
+            "start_period": ["2003-01"],
+        }
+    )
+    with pytest.raises(ValueError, match="Registry missing required columns"):
+        validate_registry(df)
+
+
+def test_validate_registry_non_integer_transformationcode_raises():
+    df = pd.DataFrame(
+        {
+            "series_id": ["DE_IP_001"],
+            "source": ["eurostat"],
+            "category": [1],
+            "category_name": ["Industrial_production"],
+            "country_iso2": ["DE"],
+            "variable_name": ["Test variable"],
+            "dataset": ["STS_INPR_M"],
+            "key": [""],
+            "filters_json": ['{"geo": "DE"}'],
+            "unit_measure_filter": [""],
+            "frequency": ["M"],
+            "start_period": ["2003-01"],
+            "transformationcode": [1.5],
+        }
+    )
+    with pytest.raises(ValueError, match="Non-integer transformationcode"):
+        validate_registry(df)
+
+
+def test_validate_registry_unsupported_transformationcode_raises():
+    df = pd.DataFrame(
+        {
+            "series_id": ["DE_IP_001"],
+            "source": ["eurostat"],
+            "category": [1],
+            "category_name": ["Industrial_production"],
+            "country_iso2": ["DE"],
+            "variable_name": ["Test variable"],
+            "dataset": ["STS_INPR_M"],
+            "key": [""],
+            "filters_json": ['{"geo": "DE"}'],
+            "unit_measure_filter": [""],
+            "frequency": ["M"],
+            "start_period": ["2003-01"],
+            "transformationcode": [9],
+        }
+    )
+    with pytest.raises(ValueError, match="Unsupported transformationcode values"):
         validate_registry(df)
 
 
@@ -199,6 +271,7 @@ def test_validate_registry_valid_registry_passes():
             "unit_measure_filter": ["", ""],
             "frequency": ["M", "M"],
             "start_period": ["2003-01", "2003-01"],
+            "transformationcode": [5, 2],
         }
     )
     validate_registry(df)

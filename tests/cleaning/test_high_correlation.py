@@ -83,8 +83,8 @@ def test_correlated_pairs_finds_perfect_correlation():
 def test_correlated_pairs_sorted_descending():
     corr = pd.DataFrame(
         [[1.0, 0.99, 0.96], [0.99, 1.0, 0.97], [0.96, 0.97, 1.0]],
-        index=["A", "B", "C"],
-        columns=["A", "B", "C"],
+        index=pd.Index(("A", "B", "C")),
+        columns=pd.Index(("A", "B", "C")),
     )
     pairs = _correlated_pairs(corr, threshold=0.95)
     correlations = [c for _, _, c in pairs]

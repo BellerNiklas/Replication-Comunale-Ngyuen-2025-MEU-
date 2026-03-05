@@ -29,14 +29,19 @@ def remove_high_correlation(
         - drop_info has columns [country_iso2, dropped_series, kept_series,
           abs_correlation].
     """
-    drop_cols = ["country_iso2", "dropped_series", "kept_series", "abs_correlation"]
-    empty_drop = pd.DataFrame(columns=drop_cols)
+    drop_cols: tuple[str, ...] = (
+        "country_iso2",
+        "dropped_series",
+        "kept_series",
+        "abs_correlation",
+    )
+    empty_drop = pd.DataFrame(columns=pd.Index(drop_cols))
 
     if panel.empty:
         return panel.copy(), empty_drop
 
     kept_frames: list[pd.DataFrame] = []
-    drop_records: list[dict] = []
+    drop_records: list[dict[str, object]] = []
 
     for country, country_df in panel.groupby("country_iso2"):
         ids_to_drop, records = _find_redundant_series(
@@ -51,7 +56,7 @@ def remove_high_correlation(
         .reset_index(drop=True)
     )
 
-    drop_info = pd.DataFrame(drop_records, columns=drop_cols)
+    drop_info = pd.DataFrame(drop_records, columns=pd.Index(drop_cols))
 
     return filtered, drop_info
 
@@ -60,14 +65,14 @@ def _find_redundant_series(
     country_df: pd.DataFrame,
     threshold: float,
     country: str,
-) -> tuple[set[str], list[dict]]:
+) -> tuple[set[str], list[dict[str, object]]]:
     """Identify which series to drop for a single country.
 
     Uses a greedy maximum-independent-set approach: iterates through
     series in alphabetical order and keeps each series only if none of
     its high-correlation neighbours have already been kept. This
     guarantees that no two kept series are correlated above the
-    threshold and maximises the number of retained variables.
+    threshold and maximizes the number of retained variables.
 
     Args:
         country_df: Panel rows for one country.
@@ -82,7 +87,7 @@ def _find_redundant_series(
     pairs = _correlated_pairs(corr, threshold)
 
     # Build adjacency: series -> set of correlated neighbours
-    adj: dict[str, set[str]] = {s: set() for s in wide.columns}
+    adj: dict[str, set[str]] = {str(s): set() for s in wide.columns}
     pair_corr: dict[tuple[str, str], float] = {}
     for s1, s2, abs_corr in pairs:
         adj[s1].add(s2)
@@ -91,15 +96,15 @@ def _find_redundant_series(
 
     # Greedy independent set: alphabetical order, keep if no neighbour kept
     kept: set[str] = set()
-    for series in sorted(wide.columns):
+    for series in sorted(str(c) for c in wide.columns):
         if not adj[series] & kept:
             kept.add(series)
 
-    dropped = set(wide.columns) - kept
+    dropped = set(str(c) for c in wide.columns) - kept
 
     # Build drop records: for each dropped series, report its highest-
     # correlation kept neighbour as the reason
-    records: list[dict] = []
+    records: list[dict[str, object]] = []
     for drop in sorted(dropped):
         kept_neighbours = adj[drop] & kept
         if kept_neighbours:
