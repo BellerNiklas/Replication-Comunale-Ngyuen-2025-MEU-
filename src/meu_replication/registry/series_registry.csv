@@ -1660,6 +1660,7 @@ U2_FX_005,ecb,8,EA_Financial,U2,CHF/EUR exchange rate,EXR,M.CHF.EUR.SP00.A,,,M,2
 U2_BOND_001,ecb,8,EA_Financial,U2,EA 2Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_2Y.YLD,,,M,2003-01,2
 U2_BOND_002,ecb,8,EA_Financial,U2,EA 3Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_3Y.YLD,,,M,2003-01,2
 U2_BOND_003,ecb,8,EA_Financial,U2,EA 5Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_5Y.YLD,,,M,2003-01,2
+U2_BOND_006,ecb,8,EA_Financial,U2,EA 7Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_7Y.YLD,,,M,2003-01,2
 U2_BOND_004,ecb,8,EA_Financial,U2,EA 10Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_10Y.YLD,,,M,2003-01,2
 U2_BOND_005,ecb,8,EA_Financial,U2,EA real 10Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.R_U2_10Y.YLDA,,,M,2003-01,2
 U2_MMR_001,ecb,8,EA_Financial,U2,EURIBOR 1-month (hist. close avg.),FM,M.U2.EUR.RT.MM.EURIBOR1MD_.HSTA,,,M,2003-01,2
@@ -1792,63 +1793,63 @@ NL_FIN_DEP_003,ecb,7,Financial,NL,MFI Deposit liabilities – From households (S
 PT_FIN_DEP_003,ecb,7,Financial,PT,MFI Deposit liabilities – From households (S.14+S.15),BSI,M.PT.N.A.L20.A.1.U6.2250.Z01.E,,,M,2003-01,5
 SI_FIN_DEP_003,ecb,7,Financial,SI,MFI Deposit liabilities – From households (S.14+S.15),BSI,M.SI.N.A.L20.A.1.U6.2250.Z01.E,,,M,2003-01,5
 SK_FIN_DEP_003,ecb,7,Financial,SK,MFI Deposit liabilities – From households (S.14+S.15),BSI,M.SK.N.A.L20.A.1.U6.2250.Z01.E,,,M,2003-01,5
-AT_FIN_DSH_001,ecb,7,Financial,AT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.AT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-BE_FIN_DSH_001,ecb,7,Financial,BE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.BE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-CY_FIN_DSH_001,ecb,7,Financial,CY,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.CY.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-DE_FIN_DSH_001,ecb,7,Financial,DE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.DE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-EE_FIN_DSH_001,ecb,7,Financial,EE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.EE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-ES_FIN_DSH_001,ecb,7,Financial,ES,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.ES.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-FI_FIN_DSH_001,ecb,7,Financial,FI,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.FI.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-FR_FIN_DSH_001,ecb,7,Financial,FR,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.FR.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-GR_FIN_DSH_001,ecb,7,Financial,GR,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.GR.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-IE_FIN_DSH_001,ecb,7,Financial,IE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.IE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-IT_FIN_DSH_001,ecb,7,Financial,IT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.IT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-LT_FIN_DSH_001,ecb,7,Financial,LT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.LT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-LU_FIN_DSH_001,ecb,7,Financial,LU,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.LU.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-LV_FIN_DSH_001,ecb,7,Financial,LV,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.LV.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-MT_FIN_DSH_001,ecb,7,Financial,MT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.MT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-NL_FIN_DSH_001,ecb,7,Financial,NL,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.NL.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-PT_FIN_DSH_001,ecb,7,Financial,PT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.PT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-SI_FIN_DSH_001,ecb,7,Financial,SI,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.SI.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-SK_FIN_DSH_001,ecb,7,Financial,SK,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.SK.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,5
-AT_FIN_DSH_002,ecb,7,Financial,AT,MFI Debt securities held – MFIs (S.12),BSI,M.AT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-BE_FIN_DSH_002,ecb,7,Financial,BE,MFI Debt securities held – MFIs (S.12),BSI,M.BE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-CY_FIN_DSH_002,ecb,7,Financial,CY,MFI Debt securities held – MFIs (S.12),BSI,M.CY.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-DE_FIN_DSH_002,ecb,7,Financial,DE,MFI Debt securities held – MFIs (S.12),BSI,M.DE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-EE_FIN_DSH_002,ecb,7,Financial,EE,MFI Debt securities held – MFIs (S.12),BSI,M.EE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-ES_FIN_DSH_002,ecb,7,Financial,ES,MFI Debt securities held – MFIs (S.12),BSI,M.ES.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-FI_FIN_DSH_002,ecb,7,Financial,FI,MFI Debt securities held – MFIs (S.12),BSI,M.FI.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-FR_FIN_DSH_002,ecb,7,Financial,FR,MFI Debt securities held – MFIs (S.12),BSI,M.FR.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-GR_FIN_DSH_002,ecb,7,Financial,GR,MFI Debt securities held – MFIs (S.12),BSI,M.GR.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-IE_FIN_DSH_002,ecb,7,Financial,IE,MFI Debt securities held – MFIs (S.12),BSI,M.IE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-IT_FIN_DSH_002,ecb,7,Financial,IT,MFI Debt securities held – MFIs (S.12),BSI,M.IT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-LT_FIN_DSH_002,ecb,7,Financial,LT,MFI Debt securities held – MFIs (S.12),BSI,M.LT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-LU_FIN_DSH_002,ecb,7,Financial,LU,MFI Debt securities held – MFIs (S.12),BSI,M.LU.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-LV_FIN_DSH_002,ecb,7,Financial,LV,MFI Debt securities held – MFIs (S.12),BSI,M.LV.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-MT_FIN_DSH_002,ecb,7,Financial,MT,MFI Debt securities held – MFIs (S.12),BSI,M.MT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-NL_FIN_DSH_002,ecb,7,Financial,NL,MFI Debt securities held – MFIs (S.12),BSI,M.NL.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-PT_FIN_DSH_002,ecb,7,Financial,PT,MFI Debt securities held – MFIs (S.12),BSI,M.PT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-SI_FIN_DSH_002,ecb,7,Financial,SI,MFI Debt securities held – MFIs (S.12),BSI,M.SI.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-SK_FIN_DSH_002,ecb,7,Financial,SK,MFI Debt securities held – MFIs (S.12),BSI,M.SK.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,5
-AT_FIN_DSH_003,ecb,7,Financial,AT,MFI Debt securities held – General government (S.13),BSI,M.AT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-BE_FIN_DSH_003,ecb,7,Financial,BE,MFI Debt securities held – General government (S.13),BSI,M.BE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-CY_FIN_DSH_003,ecb,7,Financial,CY,MFI Debt securities held – General government (S.13),BSI,M.CY.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-DE_FIN_DSH_003,ecb,7,Financial,DE,MFI Debt securities held – General government (S.13),BSI,M.DE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-EE_FIN_DSH_003,ecb,7,Financial,EE,MFI Debt securities held – General government (S.13),BSI,M.EE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-ES_FIN_DSH_003,ecb,7,Financial,ES,MFI Debt securities held – General government (S.13),BSI,M.ES.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-FI_FIN_DSH_003,ecb,7,Financial,FI,MFI Debt securities held – General government (S.13),BSI,M.FI.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-FR_FIN_DSH_003,ecb,7,Financial,FR,MFI Debt securities held – General government (S.13),BSI,M.FR.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-GR_FIN_DSH_003,ecb,7,Financial,GR,MFI Debt securities held – General government (S.13),BSI,M.GR.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-IE_FIN_DSH_003,ecb,7,Financial,IE,MFI Debt securities held – General government (S.13),BSI,M.IE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-IT_FIN_DSH_003,ecb,7,Financial,IT,MFI Debt securities held – General government (S.13),BSI,M.IT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-LT_FIN_DSH_003,ecb,7,Financial,LT,MFI Debt securities held – General government (S.13),BSI,M.LT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-LU_FIN_DSH_003,ecb,7,Financial,LU,MFI Debt securities held – General government (S.13),BSI,M.LU.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-LV_FIN_DSH_003,ecb,7,Financial,LV,MFI Debt securities held – General government (S.13),BSI,M.LV.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-MT_FIN_DSH_003,ecb,7,Financial,MT,MFI Debt securities held – General government (S.13),BSI,M.MT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-NL_FIN_DSH_003,ecb,7,Financial,NL,MFI Debt securities held – General government (S.13),BSI,M.NL.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-PT_FIN_DSH_003,ecb,7,Financial,PT,MFI Debt securities held – General government (S.13),BSI,M.PT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-SI_FIN_DSH_003,ecb,7,Financial,SI,MFI Debt securities held – General government (S.13),BSI,M.SI.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
-SK_FIN_DSH_003,ecb,7,Financial,SK,MFI Debt securities held – General government (S.13),BSI,M.SK.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,5
+AT_FIN_DSH_001,ecb,7,Financial,AT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.AT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+BE_FIN_DSH_001,ecb,7,Financial,BE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.BE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+CY_FIN_DSH_001,ecb,7,Financial,CY,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.CY.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+DE_FIN_DSH_001,ecb,7,Financial,DE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.DE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+EE_FIN_DSH_001,ecb,7,Financial,EE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.EE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+ES_FIN_DSH_001,ecb,7,Financial,ES,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.ES.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+FI_FIN_DSH_001,ecb,7,Financial,FI,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.FI.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+FR_FIN_DSH_001,ecb,7,Financial,FR,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.FR.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+GR_FIN_DSH_001,ecb,7,Financial,GR,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.GR.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+IE_FIN_DSH_001,ecb,7,Financial,IE,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.IE.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+IT_FIN_DSH_001,ecb,7,Financial,IT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.IT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+LT_FIN_DSH_001,ecb,7,Financial,LT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.LT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+LU_FIN_DSH_001,ecb,7,Financial,LU,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.LU.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+LV_FIN_DSH_001,ecb,7,Financial,LV,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.LV.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+MT_FIN_DSH_001,ecb,7,Financial,MT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.MT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+NL_FIN_DSH_001,ecb,7,Financial,NL,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.NL.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+PT_FIN_DSH_001,ecb,7,Financial,PT,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.PT.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+SI_FIN_DSH_001,ecb,7,Financial,SI,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.SI.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+SK_FIN_DSH_001,ecb,7,Financial,SK,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.SK.N.A.A30.A.1.U6.2200.Z01.E,,,M,2003-01,2
+AT_FIN_DSH_002,ecb,7,Financial,AT,MFI Debt securities held – MFIs (S.12),BSI,M.AT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+BE_FIN_DSH_002,ecb,7,Financial,BE,MFI Debt securities held – MFIs (S.12),BSI,M.BE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+CY_FIN_DSH_002,ecb,7,Financial,CY,MFI Debt securities held – MFIs (S.12),BSI,M.CY.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+DE_FIN_DSH_002,ecb,7,Financial,DE,MFI Debt securities held – MFIs (S.12),BSI,M.DE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+EE_FIN_DSH_002,ecb,7,Financial,EE,MFI Debt securities held – MFIs (S.12),BSI,M.EE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+ES_FIN_DSH_002,ecb,7,Financial,ES,MFI Debt securities held – MFIs (S.12),BSI,M.ES.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+FI_FIN_DSH_002,ecb,7,Financial,FI,MFI Debt securities held – MFIs (S.12),BSI,M.FI.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+FR_FIN_DSH_002,ecb,7,Financial,FR,MFI Debt securities held – MFIs (S.12),BSI,M.FR.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+GR_FIN_DSH_002,ecb,7,Financial,GR,MFI Debt securities held – MFIs (S.12),BSI,M.GR.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+IE_FIN_DSH_002,ecb,7,Financial,IE,MFI Debt securities held – MFIs (S.12),BSI,M.IE.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+IT_FIN_DSH_002,ecb,7,Financial,IT,MFI Debt securities held – MFIs (S.12),BSI,M.IT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+LT_FIN_DSH_002,ecb,7,Financial,LT,MFI Debt securities held – MFIs (S.12),BSI,M.LT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+LU_FIN_DSH_002,ecb,7,Financial,LU,MFI Debt securities held – MFIs (S.12),BSI,M.LU.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+LV_FIN_DSH_002,ecb,7,Financial,LV,MFI Debt securities held – MFIs (S.12),BSI,M.LV.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+MT_FIN_DSH_002,ecb,7,Financial,MT,MFI Debt securities held – MFIs (S.12),BSI,M.MT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+NL_FIN_DSH_002,ecb,7,Financial,NL,MFI Debt securities held – MFIs (S.12),BSI,M.NL.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+PT_FIN_DSH_002,ecb,7,Financial,PT,MFI Debt securities held – MFIs (S.12),BSI,M.PT.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+SI_FIN_DSH_002,ecb,7,Financial,SI,MFI Debt securities held – MFIs (S.12),BSI,M.SI.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+SK_FIN_DSH_002,ecb,7,Financial,SK,MFI Debt securities held – MFIs (S.12),BSI,M.SK.N.A.A30.A.1.U6.1000.Z01.E,,,M,2003-01,2
+AT_FIN_DSH_003,ecb,7,Financial,AT,MFI Debt securities held – General government (S.13),BSI,M.AT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+BE_FIN_DSH_003,ecb,7,Financial,BE,MFI Debt securities held – General government (S.13),BSI,M.BE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+CY_FIN_DSH_003,ecb,7,Financial,CY,MFI Debt securities held – General government (S.13),BSI,M.CY.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+DE_FIN_DSH_003,ecb,7,Financial,DE,MFI Debt securities held – General government (S.13),BSI,M.DE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+EE_FIN_DSH_003,ecb,7,Financial,EE,MFI Debt securities held – General government (S.13),BSI,M.EE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+ES_FIN_DSH_003,ecb,7,Financial,ES,MFI Debt securities held – General government (S.13),BSI,M.ES.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+FI_FIN_DSH_003,ecb,7,Financial,FI,MFI Debt securities held – General government (S.13),BSI,M.FI.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+FR_FIN_DSH_003,ecb,7,Financial,FR,MFI Debt securities held – General government (S.13),BSI,M.FR.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+GR_FIN_DSH_003,ecb,7,Financial,GR,MFI Debt securities held – General government (S.13),BSI,M.GR.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+IE_FIN_DSH_003,ecb,7,Financial,IE,MFI Debt securities held – General government (S.13),BSI,M.IE.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+IT_FIN_DSH_003,ecb,7,Financial,IT,MFI Debt securities held – General government (S.13),BSI,M.IT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+LT_FIN_DSH_003,ecb,7,Financial,LT,MFI Debt securities held – General government (S.13),BSI,M.LT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+LU_FIN_DSH_003,ecb,7,Financial,LU,MFI Debt securities held – General government (S.13),BSI,M.LU.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+LV_FIN_DSH_003,ecb,7,Financial,LV,MFI Debt securities held – General government (S.13),BSI,M.LV.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+MT_FIN_DSH_003,ecb,7,Financial,MT,MFI Debt securities held – General government (S.13),BSI,M.MT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+NL_FIN_DSH_003,ecb,7,Financial,NL,MFI Debt securities held – General government (S.13),BSI,M.NL.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+PT_FIN_DSH_003,ecb,7,Financial,PT,MFI Debt securities held – General government (S.13),BSI,M.PT.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+SI_FIN_DSH_003,ecb,7,Financial,SI,MFI Debt securities held – General government (S.13),BSI,M.SI.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
+SK_FIN_DSH_003,ecb,7,Financial,SK,MFI Debt securities held – General government (S.13),BSI,M.SK.N.A.A30.A.1.U6.2100.Z01.E,,,M,2003-01,2
 U2_MON_001,ecb,8,EA_Financial,U2,M1 – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.M10.X.I.U2.2300.Z01.E,,,M,2003-01,5
 U2_MON_002,ecb,8,EA_Financial,U2,M3 – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.M30.X.I.U2.2300.Z01.E,,,M,2003-01,5
 U2_MON_003,ecb,8,EA_Financial,U2,Currency in circulation – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.L10.X.I.U2.2300.Z01.E,,,M,2003-01,5

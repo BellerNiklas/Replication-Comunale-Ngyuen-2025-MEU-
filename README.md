@@ -42,7 +42,7 @@ tests/                    # Unit and integration tests
 
 ## Data
 
-The replication requires a large monthly dataset of approximately **1,780 series** (before cleaning) covering **19 euro area countries** from **January 2003** to **December 2022** (240 months). The series registry defines up to 119 country-specific templates plus 29 euro area-level (U2) financial series (2,290 registry entries total), but not all templates yield data for every country — smaller economies have fewer available series (e.g., Germany: 119, Ireland: 60).
+The replication requires a large monthly dataset of approximately **1,780 series** (before cleaning) covering **19 euro area countries** from **January 2003** to **December 2022** (240 months). The series registry currently defines up to 119 country-specific templates plus 30 euro area-level (U2) financial series (2,291 registry entries total), but not all templates yield data for every country — smaller economies have fewer available series (e.g., Germany: 119, Ireland: 60).
 
 ### Data Sources and Availability
 
@@ -67,11 +67,11 @@ All data is fetched programmatically from public APIs. No manual downloads are r
 | 6 | Sentiment & Surveys | 12 | Economic sentiment, consumer/industrial/services/construction confidence |
 | 7 | Financial | 22 | MFI loans/deposits/debt securities, interest rates, NEER, share prices |
 
-### Euro Area-Level Variables (29 series, category 8)
+### Euro Area-Level Variables (30 series, category 8)
 
 | Group | # Series | Examples |
 |-------|----------|----------|
-| Government bond yields | 5 | 2Y, 3Y, 5Y, 10Y nominal; 10Y real |
+| Government bond yields | 6 | 2Y, 3Y, 5Y, 7Y, 10Y nominal; 10Y real |
 | Money market rates | 6 | EURIBOR 1m, 3m, 6m, 1Y; real EURIBOR 3m; EONIA |
 | Equity indices | 10 | DJ Euro Stoxx 50, Price Index, sector indices |
 | Exchange rates | 5 | USD, GBP, JPY, CNY, CHF vs EUR |
@@ -94,16 +94,16 @@ Following Comunale & Nguyen (2025), all series are transformed to achieve statio
 | Code | Transformation | Formula | # Templates | Applied to |
 |------|---------------|---------|-------------|------------|
 | 1 | No transformation | x_t | 12 | Sentiment and confidence indicators (already stationary, bounded survey data) |
-| 2 | First difference | x_t - x_{t-1} | 23 | Interest rates, bond yields, unemployment rate (can take negative values) |
-| 5 | Log first difference | ln(x_t) - ln(x_{t-1}) | 113 | Indices, quantities, price levels, nominal stocks, exchange rates (strictly positive) |
+| 2 | First difference | x_t - x_{t-1} | 27 | Interest rates, bond yields, unemployment rate, and debt-security stock series that can hit zero |
+| 5 | Log first difference | ln(x_t) - ln(x_{t-1}) | 110 | Indices, quantities, price levels, nominal stocks, and exchange rates that are expected to stay strictly positive |
 
 **Rationale for each code:**
 
 - **Code 1** (12 templates): Survey-based diffusion indices (e.g., Economic Sentiment Indicator, Consumer Confidence) are inherently stationary and mean-reverting. They are bounded by construction and do not exhibit unit roots. Additionally, several of these indicators take negative values, which rules out log transformation.
 
-- **Code 2** (23 templates): Interest rates, bond yields (e.g., EURIBOR, government bond yields), and the unemployment rate are persistent but already expressed in percentage points. They can take negative values (e.g., EURIBOR was -0.58% during the negative rate period), which rules out log transformation. First differencing renders them stationary.
+- **Code 2** (27 templates): Interest rates, bond yields (e.g., EURIBOR, government bond yields), the unemployment rate, and the `FIN_DSH_*` debt-security stock block are differenced in levels. Rates and yields can take negative values (e.g., EURIBOR was -0.58% during the negative rate period), while the debt-security stock series can legitimately hit zero in some countries, which rules out log transformation. First differencing renders these series usable without introducing invalid log observations.
 
-- **Code 5** (113 templates): The majority of variables are indices (e.g., industrial production, HICP, PPI with base year = 100), nominal aggregates (e.g., MFI deposits in millions EUR), or absolute counts (e.g., car registrations). All are strictly positive. Log first differencing converts them to approximate month-on-month growth rates, removing both level trends and multiplicative scaling.
+- **Code 5** (110 templates): The majority of variables are indices (e.g., industrial production, HICP, PPI with base year = 100), nominal aggregates (e.g., MFI deposits in millions EUR), or absolute counts (e.g., car registrations). These series are expected to remain strictly positive. Log first differencing converts them to approximate month-on-month growth rates, removing both level trends and multiplicative scaling.
 
 ### Stage 2: Temporal Coverage Filtering
 

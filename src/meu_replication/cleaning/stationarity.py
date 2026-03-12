@@ -2,7 +2,8 @@
 
 Each series in the macro panel has a transformationcode from the registry:
     Code 1: x_t           (no transformation - sentiment indicators)
-    Code 2: x_t - x_{t-1} (first difference - rates, yields, unemployment)
+    Code 2: x_t - x_{t-1} (first difference - rates, yields, unemployment,
+                           and stock variables that can legitimately hit zero)
     Code 5: ln(x_t) - ln(x_{t-1}) (log first difference - indices, quantities, prices)
 
 Differencing (codes 2 and 5) loses the first observation per series.

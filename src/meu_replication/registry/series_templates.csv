@@ -94,6 +94,7 @@ FX_005,ecb,8,EA_Financial,CHF/EUR exchange rate,EXR,M.CHF.EUR.SP00.A,,ea,,M,2003
 BOND_001,ecb,8,EA_Financial,EA 2Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_2Y.YLD,,ea,,M,2003-01,2
 BOND_002,ecb,8,EA_Financial,EA 3Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_3Y.YLD,,ea,,M,2003-01,2
 BOND_003,ecb,8,EA_Financial,EA 5Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_5Y.YLD,,ea,,M,2003-01,2
+BOND_006,ecb,8,EA_Financial,EA 7Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_7Y.YLD,,ea,,M,2003-01,2
 BOND_004,ecb,8,EA_Financial,EA 10Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.U2_10Y.YLD,,ea,,M,2003-01,2
 BOND_005,ecb,8,EA_Financial,EA real 10Y government benchmark bond yield,FM,M.U2.EUR.4F.BB.R_U2_10Y.YLDA,,ea,,M,2003-01,2
 MMR_001,ecb,8,EA_Financial,EURIBOR 1-month (hist. close avg.),FM,M.U2.EUR.RT.MM.EURIBOR1MD_.HSTA,,ea,,M,2003-01,2
@@ -118,9 +119,9 @@ FIN_LOAN_003,ecb,7,Financial,MFI Loans – To non-financial corporations (S.11),
 FIN_DEP_001,ecb,7,Financial,MFI Deposit liabilities – From domestic MFIs (S.12),BSI,M.{COUNTRY_ISO2}.N.A.L20.A.1.U6.1000.Z01.E,,country,,M,2003-01,5
 FIN_DEP_002,ecb,7,Financial,MFI Deposit liabilities – From NFCs (S.11),BSI,M.{COUNTRY_ISO2}.N.A.L20.A.1.U6.2240.Z01.E,,country,,M,2003-01,5
 FIN_DEP_003,ecb,7,Financial,MFI Deposit liabilities – From households (S.14+S.15),BSI,M.{COUNTRY_ISO2}.N.A.L20.A.1.U6.2250.Z01.E,,country,,M,2003-01,5
-FIN_DSH_001,ecb,7,Financial,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.{COUNTRY_ISO2}.N.A.A30.A.1.U6.2200.Z01.E,,country,,M,2003-01,5
-FIN_DSH_002,ecb,7,Financial,MFI Debt securities held – MFIs (S.12),BSI,M.{COUNTRY_ISO2}.N.A.A30.A.1.U6.1000.Z01.E,,country,,M,2003-01,5
-FIN_DSH_003,ecb,7,Financial,MFI Debt securities held – General government (S.13),BSI,M.{COUNTRY_ISO2}.N.A.A30.A.1.U6.2100.Z01.E,,country,,M,2003-01,5
+FIN_DSH_001,ecb,7,Financial,MFI Debt securities held – Non-MFIs excl. general government,BSI,M.{COUNTRY_ISO2}.N.A.A30.A.1.U6.2200.Z01.E,,country,,M,2003-01,2
+FIN_DSH_002,ecb,7,Financial,MFI Debt securities held – MFIs (S.12),BSI,M.{COUNTRY_ISO2}.N.A.A30.A.1.U6.1000.Z01.E,,country,,M,2003-01,2
+FIN_DSH_003,ecb,7,Financial,MFI Debt securities held – General government (S.13),BSI,M.{COUNTRY_ISO2}.N.A.A30.A.1.U6.2100.Z01.E,,country,,M,2003-01,2
 MON_001,ecb,8,EA_Financial,M1 – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.M10.X.I.U2.2300.Z01.E,,ea,,M,2003-01,5
 MON_002,ecb,8,EA_Financial,M3 – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.M30.X.I.U2.2300.Z01.E,,ea,,M,2003-01,5
 MON_003,ecb,8,EA_Financial,Currency in circulation – Index of Notional Stocks (SA+WDA),BSI,M.U2.Y.V.L10.X.I.U2.2300.Z01.E,,ea,,M,2003-01,5

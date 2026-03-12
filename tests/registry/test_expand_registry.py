@@ -275,3 +275,33 @@ def test_expand_real_templates():
     assert registry["series_id"].is_unique
 
     validate_registry(registry)
+
+
+def test_fin_dsh_templates_expand_with_first_difference():
+    from meu_replication.config import load_countries
+    from meu_replication.registry.expand_registry import load_templates
+
+    templates = load_templates()
+    countries = load_countries()
+    registry = expand_registry(templates, countries)
+
+    fin_dsh = registry[
+        registry["series_id"].isin(
+            ["DE_FIN_DSH_001", "DE_FIN_DSH_002", "DE_FIN_DSH_003"]
+        )
+    ]
+    assert set(fin_dsh["transformationcode"]) == {2}
+
+
+def test_bond_006_expands_for_u2():
+    from meu_replication.config import load_countries
+    from meu_replication.registry.expand_registry import load_templates
+
+    templates = load_templates()
+    countries = load_countries()
+    registry = expand_registry(templates, countries)
+
+    bond_006 = registry[registry["series_id"] == "U2_BOND_006"]
+    assert len(bond_006) == 1
+    assert bond_006.iloc[0]["country_iso2"] == "U2"
+    assert int(bond_006.iloc[0]["transformationcode"]) == 2

@@ -56,7 +56,7 @@ PANEL_VARIANTS: tuple[str, ...] = (
     "panel_2003_2021_strict",
     "panel_2003_2021_cov98",
 )
-PRIMARY_PANEL: str = "panel_2003_2022_strict_corr"
+PRIMARY_PANEL: str = "panel_2003_2022_cov98_corr"
 
 
 def load_countries():

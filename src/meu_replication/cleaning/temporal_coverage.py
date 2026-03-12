@@ -77,14 +77,15 @@ def filter_by_temporal_coverage(
         - filtered_panel: rows restricted to sample period, only for series
           with at most allowed_missing months absent.
         - drop_info: DataFrame with columns [series_id, country_iso2,
-          variable_name, category_name, n_months, n_missing] for every
-          series that was dropped due to insufficient coverage.
+          variable_name, category_name, source, n_months, n_missing]
+          for every series that was dropped due to insufficient coverage.
     """
     drop_cols: tuple[str, ...] = (
         "series_id",
         "country_iso2",
         "variable_name",
         "category_name",
+        "source",
         "n_months",
         "n_missing",
     )
@@ -119,6 +120,7 @@ def filter_by_temporal_coverage(
         country_iso2=("country_iso2", "first"),
         variable_name=("variable_name", "first"),
         category_name=("category_name", "first"),
+        source=("source", "first"),
     )
     drop_info = meta.loc[drop_ids].copy()
     drop_info["n_months"] = n_months.loc[drop_ids]
@@ -150,5 +152,18 @@ def run_all_filter_variants(
         v["key"]: filter_by_temporal_coverage(
             panel, str(v["start"]), str(v["end"]), int(v["allowed_missing"])
         )[0]
+        for v in filter_variants
+    }
+
+
+def run_all_filter_variants_with_drop_info(
+    panel: pd.DataFrame,
+    filter_variants: list[dict[str, Any]],
+) -> dict[str, tuple[pd.DataFrame, pd.DataFrame]]:
+    """Run all filter variants and retain both filtered panels and drop info."""
+    return {
+        v["key"]: filter_by_temporal_coverage(
+            panel, str(v["start"]), str(v["end"]), int(v["allowed_missing"])
+        )
         for v in filter_variants
     }
