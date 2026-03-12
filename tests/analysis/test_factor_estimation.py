@@ -21,7 +21,7 @@ def _make_balanced_panel() -> pd.DataFrame:
 
     rows = []
     for series_id, values in series_values.items():
-        for date, value in zip(dates, values):
+        for date, value in zip(dates, values, strict=True):
             rows.append(
                 {
                     "date": date,
@@ -94,6 +94,25 @@ def test_extract_static_factors_handles_t_less_than_n():
     assert fhat.shape == (5, 2)
     assert loadings.shape == (8, 2)
     assert eigenvalues.shape == (5,)
+
+
+def test_extract_static_factors_matches_matlab_pc_normalization():
+    rng = np.random.default_rng(11)
+    x = rng.normal(size=(5, 8))
+    standardized, _, _ = standardize_columns(x)
+
+    fhat, _, _ = extract_static_factors(standardized, n_factors=2)
+    left_singular, singular_values, _ = np.linalg.svd(
+        standardized,
+        full_matrices=False,
+    )
+    expected = left_singular[:, :2] * (singular_values[:2] / np.sqrt(8))
+
+    for idx in range(2):
+        if np.dot(fhat[:, idx], expected[:, idx]) < 0:
+            expected[:, idx] *= -1
+
+    np.testing.assert_allclose(fhat, expected)
 
 
 def test_extract_static_factors_produces_orthogonal_scores():

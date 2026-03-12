@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-
 FloatArray = NDArray[np.float64]
+_PENALTY_FORMULAS = tuple(range(1, 9))
 
 _REQUIRED_PANEL_COLUMNS: tuple[str, ...] = (
     "date",
@@ -52,7 +52,12 @@ def prepare_analysis_panel(
         raise ValueError(msg)
 
     wide = (
-        panel.pivot(index="date", columns="series_id", values="value")
+        panel.pivot_table(
+            index="date",
+            columns="series_id",
+            values="value",
+            aggfunc="first",
+        )
         .sort_index()
         .sort_index(axis=1)
     )
@@ -136,9 +141,7 @@ def select_factor_count(
     ic_values[0] = np.log(np.mean(values**2))
 
     for factor_count in range(1, kmax_eff + 1):
-        fitted = (
-            factor_space[:, :factor_count] @ loading_space[:, :factor_count].T
-        )
+        fitted = factor_space[:, :factor_count] @ loading_space[:, :factor_count].T
         sigma = np.mean((values - fitted) ** 2)
         ic_values[factor_count] = np.log(sigma) + penalties[factor_count - 1]
 
@@ -155,7 +158,7 @@ def extract_static_factors(
         msg = "At least one factor is required for extraction."
         raise ValueError(msg)
 
-    factor_space, loading_space, eigenvalues = _initial_factor_space(values)
+    factor_space, loading_space, eigenvalues = _pc_factor_space(values)
     if n_factors > factor_space.shape[1]:
         msg = "Requested more factors than are available in the factor space."
         raise ValueError(msg)
@@ -234,22 +237,18 @@ def _compute_penalty_terms(
     nt1 = float(n_obs + n_series)
     gct = float(min(n_obs, n_series))
 
-    if ic_criterion == 1:
-        return np.log(nt / nt1) * ii * nt1 / nt
-    if ic_criterion == 2:
-        return ii * (nt1 / nt) * np.log(gct)
-    if ic_criterion == 3:
-        return ii * np.log(gct) / gct
-    if ic_criterion == 4:
-        return 2 * ii / n_obs
-    if ic_criterion == 5:
-        return np.log(n_obs) * ii / n_obs
-    if ic_criterion == 6:
-        return 2 * ii * nt1 / nt
-    if ic_criterion == 7:
-        return np.log(nt) * ii * nt1 / nt
-    if ic_criterion == 8:
-        return 2 * ii * (np.sqrt(n_series) + np.sqrt(n_obs)) ** 2 / nt
+    penalties = {
+        _PENALTY_FORMULAS[0]: np.log(nt / nt1) * ii * nt1 / nt,
+        _PENALTY_FORMULAS[1]: ii * (nt1 / nt) * np.log(gct),
+        _PENALTY_FORMULAS[2]: ii * np.log(gct) / gct,
+        _PENALTY_FORMULAS[3]: 2 * ii / n_obs,
+        _PENALTY_FORMULAS[4]: np.log(n_obs) * ii / n_obs,
+        _PENALTY_FORMULAS[5]: 2 * ii * nt1 / nt,
+        _PENALTY_FORMULAS[6]: np.log(nt) * ii * nt1 / nt,
+        _PENALTY_FORMULAS[7]: 2 * ii * (np.sqrt(n_series) + np.sqrt(n_obs)) ** 2 / nt,
+    }
+    if ic_criterion in penalties:
+        return penalties[ic_criterion]
 
     msg = f"Unsupported Bai-Ng information criterion: {ic_criterion}"
     raise ValueError(msg)
@@ -258,7 +257,7 @@ def _compute_penalty_terms(
 def _initial_factor_space(
     x: FloatArray,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
-    """Construct the factor and loading spaces used by the MATLAB code."""
+    """Construct the IC-evaluation factor space used by MATLAB's nbplog helper."""
     n_obs, n_series = x.shape
 
     if n_obs < n_series:
@@ -278,4 +277,19 @@ def _initial_factor_space(
     eigenvectors = eigenvectors[:, order]
     loading_space = np.sqrt(n_series) * eigenvectors
     factor_space = x @ loading_space / n_series
+    return factor_space, loading_space, eigenvalues
+
+
+def _pc_factor_space(
+    x: FloatArray,
+) -> tuple[FloatArray, FloatArray, FloatArray]:
+    """Match the factor normalization used by MATLAB's pc() helper."""
+    n_series = x.shape[1]
+    left_singular, singular_values, right_singular_t = np.linalg.svd(
+        x,
+        full_matrices=False,
+    )
+    factor_space = left_singular * (singular_values / np.sqrt(n_series))
+    loading_space = right_singular_t.T * np.sqrt(n_series)
+    eigenvalues = singular_values**2
     return factor_space, loading_space, eigenvalues
