@@ -26,7 +26,6 @@ def _build_depends() -> dict[str, Path]:
         "availability": BLD / "meta" / "series_availability.parquet",
         "raw": BLD / "data" / "clean" / "macro_panel.parquet",
         "transformed": BLD / "data" / "clean" / "transformed_panel.parquet",
-        "sentiment_audit": BLD / "meta" / "sentiment_overlap_audit.csv",
     }
     for label in _VARIANT_LABELS:
         deps[label] = BLD / "data" / "clean" / f"panel_2003_{label}.parquet"
@@ -184,32 +183,10 @@ def _paper_totals_rows(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     )
 
 
-def _summarize_sentiment_audit(audit: pd.DataFrame) -> pd.DataFrame:
-    exact = audit[audit["all_values_equal"]]
-    eurostat_dropped = audit[
-        audit["recommended_replication_action"] == "drop_oecd_duplicate"
-    ]
-    return pd.DataFrame(
-        [
-            {"metric": "audited_pairs", "value": int(len(audit))},
-            {"metric": "exact_duplicate_pairs", "value": int(len(exact))},
-            {
-                "metric": "countries_with_exact_duplicates",
-                "value": int(exact["country_iso2"].nunique()),
-            },
-            {
-                "metric": "pairs_flagged_as_duplicate_source_overlap",
-                "value": int(len(eurostat_dropped)),
-            },
-        ]
-    )
-
-
 def _generate_cleaning_audit_markdown(tables: dict[str, pd.DataFrame]) -> str:
     stage_summary = _stage_summary_rows(tables)
     paper_totals = _paper_totals_rows(tables)
     country_compare = _country_compare_rows(tables)
-    sentiment_summary = _summarize_sentiment_audit(tables["sentiment_audit"])
 
     lines = [
         "# Cleaning Audit Report",
@@ -226,14 +203,9 @@ def _generate_cleaning_audit_markdown(tables: dict[str, pd.DataFrame]) -> str:
         "",
         country_compare.to_markdown(index=False),
         "",
-        "## Sentiment Overlap Summary",
-        "",
-        sentiment_summary.to_markdown(index=False),
-        "",
         "## Notes",
         "",
         "- `raw_fetched` counts are taken from the clean raw panel, not from coverage-filtered panels.",
-        "- The current high-correlation filter is deterministic but source-agnostic, so exact Eurostat/OECD sentiment duplicates are currently resolved by alphabetical `series_id` ordering.",
         "- `2021_cov98` remains the explicit car-registration sensitivity panel because the 2022 car-registration series do not survive the 2022 window.",
     ]
     return "\n".join(lines)
