@@ -4,7 +4,7 @@
 
 This repository replicates the MacroEconomic Uncertainty (MEU) measure for the euro area developed by Comunale and Nguyen (2025, *Journal of International Money and Finance*). The measure follows the Jurado, Ludvigson, and Ng (2015) framework: forecast a large panel of macroeconomic series, isolate the unforecastable component of each series, estimate the stochastic volatility of those forecast errors, and then aggregate horizon-specific uncertainty into a common euro-area measure.
 
-The codebase currently implements the pipeline through **Milestone 3**: data preparation, factor extraction, forecast-error estimation, stochastic-volatility estimation, and stochastic-volatility validation. The final uncertainty calculation and euro-area MEU aggregation (**Milestones 4 and 5**) are still planned.
+The codebase currently implements the pipeline through **Milestone 4**: data preparation, factor extraction, forecast-error estimation, stochastic-volatility estimation, stochastic-volatility validation, and horizon-specific uncertainty calculation. The final euro-area MEU aggregation (**Milestone 5**) is still planned.
 
 ## Getting Started
 
@@ -109,11 +109,11 @@ Main outputs include:
 - `sv_validation_summary.parquet`
 - `sv_validation_subset_metrics.parquet`
 
-### 4. Horizon-Specific Uncertainty Calculation - Planned
+### 4. Horizon-Specific Uncertainty Calculation - Implemented
 
-The next stage will combine the forecasting system and the stochastic-volatility outputs to compute expected variance for each series and horizon `h = 1, ..., 12`, following the JLN/Comunale-Nguyen uncertainty construction.
+The uncertainty stage combines the forecast-system coefficients with the stochastic-volatility outputs to compute expected variance for each series and horizon `h = 1, ..., 12`, following the JLN/Comunale-Nguyen uncertainty construction. The production implementation uses a Python IRF-based scalar variance engine aligned to the MATLAB recursion in the JLN reference files and writes the result in deterministic long format.
 
-Planned output:
+Main output:
 
 - `uncertainty_variance.parquet`
 
@@ -128,8 +128,8 @@ Planned outputs:
 
 ## Current Status and Limitations
 
-- The repository currently implements **Milestones 1-3** and validates the stochastic-volatility stage.
-- **Milestones 4-5 are not implemented yet**, so the final MEU series and paper-style outputs are still pending.
+- The repository currently implements **Milestones 1-4**, including the horizon-specific uncertainty stage.
+- **Milestone 5 is not implemented yet**, so the final aggregated euro-area MEU series and paper-style outputs are still pending.
 - Full pipeline runtime is dominated by the reference-aligned full-mode stochastic-volatility estimation, which is slower than a chunked or parallelized approximation.
 - Public data providers can revise historical observations, so exact row counts and values may drift over time.
 - The replication uses the current public-data panel available through the programmed fetch pipeline, which may differ slightly from the paper authors' original source snapshot.
