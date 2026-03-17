@@ -2,168 +2,139 @@
 
 ## Project Overview
 
-This project replicates the MacroEconomic Uncertainty (MEU) measure for the euro area developed by Comunale and Nguyen (2025, Journal of International Money and Finance). The MEU follows the methodology of Jurado, Ludvigson, and Ng (AER 2015), measuring uncertainty as the conditional volatility of unforecastable components of macroeconomic time series.
+This repository replicates the MacroEconomic Uncertainty (MEU) measure for the euro area developed by Comunale and Nguyen (2025, *Journal of International Money and Finance*). The measure follows the Jurado, Ludvigson, and Ng (2015) framework: forecast a large panel of macroeconomic series, isolate the unforecastable component of each series, estimate the stochastic volatility of those forecast errors, and then aggregate horizon-specific uncertainty into a common euro-area measure.
+
+The codebase currently implements the pipeline through **Milestone 3**: data preparation, factor extraction, forecast-error estimation, stochastic-volatility estimation, and stochastic-volatility validation. The final uncertainty calculation and euro-area MEU aggregation (**Milestones 4 and 5**) are still planned.
 
 ## Getting Started
 
 ### Prerequisites
 
 - [Pixi](https://pixi.sh/) for environment and dependency management
-- Network access for API calls to Eurostat, ECB, OECD, and BIS
+- Network access for Eurostat, ECB, OECD, and BIS API calls
 
 ### Installation and Execution
 
 ```bash
-pixi install              # Install all dependencies (pinned via pixi.lock)
-pixi run pytask           # Run the full computational pipeline
-pixi run pytask -n 8      # Same, but with 8 parallel workers (recommended)
+pixi install              # Install the pinned environment
+pixi run pytask           # Run the full pipeline
+pixi run pytask-parallel  # Run pytask with 8 workers where task parallelism is available
 pixi run pytest           # Run the test suite
 pixi run prek             # Run pre-commit checks
 ```
 
 ### Expected Runtime
 
-The full data fetch (`pixi run pytask`) takes approximately **15-30 minutes** depending on network speed and API responsiveness. The OECD bulk fetch uses batched API calls with rate-limiting delays.
+Data fetching and cleaning typically finish much faster than the analysis stage and depend on API responsiveness. The factor and forecast-error stages are moderate local computations, while the current full-mode stochastic-volatility stage is the main runtime bottleneck because it is run in a **reference-aligned serial panel loop**. In practice, a full end-to-end run can therefore take **hours**, not just a short fetch/clean cycle.
+
+If outputs already exist, `pytask` will skip unchanged tasks and reruns will be much faster.
 
 ## Directory Layout
 
-```
-src/meu_replication/      # Source code (hand-written, version controlled)
-  config.py               # Central path definitions (SRC, BLD, ROOT)
-  cleaning/               # Pure functions: stationarity, temporal coverage, correlation
+```text
+src/meu_replication/      # Source code
+  config.py               # Central path definitions
+  cleaning/               # Pure cleaning helpers
   data_fetch/             # API adapters for Eurostat, ECB, OECD, BIS
-  data_management/        # pytask tasks: fetch, probe, clean, transform, filter
-  registry/               # Series registry, templates, country definitions (CSV)
-  analysis/               # MEU estimation tasks (template)
-  final/                  # Figure and table generation (template)
-bld/                      # Generated outputs (NOT committed, safe to delete)
+  data_management/        # pytask data ingestion and cleaning tasks
+  registry/               # Series registry, templates, country definitions
+  analysis/               # Implemented MEU stages: factors, forecast errors, SV, validation
+  final/                  # Final figures/tables stage (still a template)
+bld/                      # Generated outputs (not committed)
 tests/                    # Unit and integration tests
 ```
 
-## Data
+## Data and Preprocessing
 
-The replication requires a large monthly dataset of approximately **1,780 series** (before cleaning) covering **19 euro area countries** from **January 2003** to **December 2022** (240 months). The series registry currently defines up to 119 country-specific templates plus 30 euro area-level (U2) financial series (2,291 registry entries total), but not all templates yield data for every country — smaller economies have fewer available series (e.g., Germany: 119, Ireland: 60).
+The replication builds a large monthly macro-financial panel for the 19 euro-area countries, plus euro-area aggregate financial series, over the 2003-2022 sample window. Data are fetched programmatically from **Eurostat**, **ECB SDW**, **OECD**, and **BIS**. No manual downloads are required.
 
-### Data Sources and Availability
+The analysis input is produced by a short three-stage preprocessing pipeline:
 
-All data is fetched programmatically from public APIs. No manual downloads are required.
+1. **Stationarity transformations**  
+   Each registry series is transformed according to the paper's transformation codes: no transform, first difference, or log first difference.
+2. **Temporal coverage filtering**  
+   The transformed panel is filtered into strict and 98%-coverage variants for 2022 and 2021 sample windows.
+3. **High-correlation filtering**  
+   Within each country, highly correlated series are filtered using a deterministic alphabetical tie-break rule and a `|corr| > 0.95` threshold.
 
-| Source | Access | Rate Limits | Fetch Strategy |
-|--------|--------|-------------|----------------|
-| Eurostat | Public REST API | Moderate | Per-country direct fetch |
-| ECB SDW | Public SDMX API | Moderate (1s delay) | Per-country direct fetch |
-| OECD | Public SDMX API | Strict (429 errors) | Bulk fetch via SDMX `+` syntax (4 calls) |
-| BIS | Public CSV API | Moderate (1s delay) | Per-country direct fetch |
+The current baseline analysis input is the correlation-filtered strict 2022 panel:
 
-### Country-Specific Variables (up to 119 per country)
+- `bld/data/clean/panel_2003_2022_strict_corr.parquet`
 
-| Cat. | Category | # Templates | Examples |
-|------|----------|-------------|----------|
-| 1 | Industrial Production | 12 | Total industry, manufacturing, capital goods, consumer goods, energy |
-| 2 | Labor Market | 25 | Employment indices, unemployment rate, hours worked, wages |
-| 3 | Prices | 25 | PPI, HICP (overall, energy, food, services), import price indices |
-| 4 | Activity Indicators | 21 | Car registrations, turnover indices, building permits, retail |
-| 5 | Trade | 2 | Total imports and exports (world, million EUR) |
-| 6 | Sentiment & Surveys | 12 | Economic sentiment, consumer/industrial/services/construction confidence |
-| 7 | Financial | 22 | MFI loans/deposits/debt securities, interest rates, NEER, share prices |
+Because differencing removes the first observation for transformed series, the cleaned transformed sample starts in **2003-02**.
 
-### Euro Area-Level Variables (30 series, category 8)
+## MEU Estimation Pipeline
 
-| Group | # Series | Examples |
-|-------|----------|----------|
-| Government bond yields | 6 | 2Y, 3Y, 5Y, 7Y, 10Y nominal; 10Y real |
-| Money market rates | 6 | EURIBOR 1m, 3m, 6m, 1Y; real EURIBOR 3m; EONIA |
-| Equity indices | 10 | DJ Euro Stoxx 50, Price Index, sector indices |
-| Exchange rates | 5 | USD, GBP, JPY, CNY, CHF vs EUR |
-| Monetary aggregates | 3 | M1, M3, currency in circulation |
+Plain-language summary: MEU is built by first forecasting each macro series as well as the common factors, then treating the remaining forecast error as the unpredictable component of that series. The volatility of those unpredictable components is modeled over time, and later stages convert those one-step uncertainty objects into horizon-specific expected variances and finally into an aggregate euro-area uncertainty index.
 
-### Missing variables, not available anymore (relative to Comunale & Nguyen)
-| Cat.| Category | # Variable | Comment | 
-|------|-------|----------|----------|
-|1 | Industrial production | Total Industry no construction | series code not available | 
-| 7 | Financial indicators | Lending spreads for new NFC loans and the swap rate | data-set not available |
-| 7 | Financial indicators | Lending spreads for new loans to households and the swap rate | data-set not available | 
-## Data Cleaning Pipeline
+### 1. Factor Extraction - Implemented
 
-The raw data undergoes three sequential cleaning stages before it is used for MEU estimation. Each stage is implemented as a separate pytask task with pure functions (no mutations), following the project's EPP functional rules.
+The cleaned long panel is pivoted once into a deterministic wide matrix, standardized, and used to estimate static factors using the Bai-Ng IC2 criterion on both `X` and `X^2`. The resulting predictor set follows the JLN-style structure used downstream.
 
-### Stage 1: Stationarity Transformations
+Main outputs include:
 
-Following Comunale & Nguyen (2025), all series are transformed to achieve stationarity before further processing. Each variable in the series registry (`series_registry.csv`) has a `transformationcode` column specifying its transformation:
+- `panel_wide.parquet`
+- `series_order.parquet`
+- `fhat.parquet`
+- `ghat.parquet`
+- `predictor_set.parquet`
+- `factor_metadata.parquet`
 
-| Code | Transformation | Formula | # Templates | Applied to |
-|------|---------------|---------|-------------|------------|
-| 1 | No transformation | x_t | 12 | Sentiment and confidence indicators (already stationary, bounded survey data) |
-| 2 | First difference | x_t - x_{t-1} | 27 | Interest rates, bond yields, unemployment rate, and debt-security stock series that can hit zero |
-| 5 | Log first difference | ln(x_t) - ln(x_{t-1}) | 110 | Indices, quantities, price levels, nominal stocks, and exchange rates that are expected to stay strictly positive |
+### 2. Forecast-Error Estimation - Implemented
 
-**Rationale for each code:**
+Each macro series is regressed on its own lags and the factor-based predictor set using MATLAB/JLN-style conventions: lag construction, Newey-West HAC standard errors, and coefficient-level hard thresholding. Separate AR forecasts are also estimated for the predictor block.
 
-- **Code 1** (12 templates): Survey-based diffusion indices (e.g., Economic Sentiment Indicator, Consumer Confidence) are inherently stationary and mean-reverting. They are bounded by construction and do not exhibit unit roots. Additionally, several of these indicators take negative values, which rules out log transformation.
+Main outputs include:
 
-- **Code 2** (27 templates): Interest rates, bond yields (e.g., EURIBOR, government bond yields), the unemployment rate, and the `FIN_DSH_*` debt-security stock block are differenced in levels. Rates and yields can take negative values (e.g., EURIBOR was -0.58% during the negative rate period), while the debt-security stock series can legitimately hit zero in some countries, which rules out log transformation. First differencing renders these series usable without introducing invalid log observations.
+- `forecast_errors_y.parquet`
+- `forecast_errors_f.parquet`
+- `regression_coefs_y.parquet`
+- `regression_coefs_f.parquet`
+- `predictor_selection_masks.parquet`
+- `forecast_metadata.parquet`
 
-- **Code 5** (110 templates): The majority of variables are indices (e.g., industrial production, HICP, PPI with base year = 100), nominal aggregates (e.g., MFI deposits in millions EUR), or absolute counts (e.g., car registrations). These series are expected to remain strictly positive. Log first differencing converts them to approximate month-on-month growth rates, removing both level trends and multiplicative scaling.
+The effective downstream forecast-error sample begins in **2003-06**.
 
-### Stage 2: Temporal Coverage Filtering
+### 3. Stochastic Volatility - Implemented
 
-After transformation, series are filtered based on their temporal coverage within the sample period. This produces **four panel variants** from the cross-product of two sample windows and two missing-data thresholds:
+The forecast-error panels are passed to **R `stochvol::svsample()`**, which estimates an AR(1) stochastic-volatility model for each target series and each predictor residual series. The current production path is intentionally aligned with the reference JLN-style R workflow: one seed per panel, deterministic series order, and full-mode posterior means plus Geweke diagnostics. A validation stage then checks split-Rhat on sentinel series, full-panel diagnostics, and fast-vs-doubled-fast stability.
 
-| Panel | Sample period | Missing rule | Allowed missing months | Output file |
-|-------|--------------|-------------|----------------------|-------------|
-| 2022 strict | 2003-02 to 2022-12 (239 months) | 100% coverage | 0 | `panel_2003_2022_strict.parquet` |
-| 2022 cov98 | 2003-02 to 2022-12 (239 months) | 98% coverage | 4 | `panel_2003_2022_cov98.parquet` |
-| 2021 strict | 2003-02 to 2021-12 (227 months) | 100% coverage | 0 | `panel_2003_2021_strict.parquet` |
-| 2021 cov98 | 2003-02 to 2021-12 (227 months) | 98% coverage | 4 | `panel_2003_2021_cov98.parquet` |
+Main outputs include:
 
-The 98% threshold allows up to `floor(0.02 * n_months)` missing observations. The 2021 alternative window includes additional car registration series (CARS_002-004) that are not available through 2022.
-> Note: filtering is applied after stationarity transforms. Since differencing
-> removes 2003-01 for code 2/5 series, the effective transformed sample starts
-> in **2003-02**.
+- `sv_params_y.parquet`
+- `sv_latent_y.parquet`
+- `sv_params_f.parquet`
+- `sv_latent_f.parquet`
+- `sv_diagnostics.parquet`
+- `sv_validation_summary.parquet`
+- `sv_validation_subset_metrics.parquet`
 
-**Implementation:** `temporal_coverage.py` contains the pure filtering functions. For each series, the number of distinct months present in the sample period is counted. Series falling below the threshold are dropped and documented in a drop-info DataFrame.
+### 4. Horizon-Specific Uncertainty Calculation - Planned
 
-### Stage 3: High-Correlation Filtering
+The next stage will combine the forecasting system and the stochastic-volatility outputs to compute expected variance for each series and horizon `h = 1, ..., 12`, following the JLN/Comunale-Nguyen uncertainty construction.
 
-Following Comunale & Nguyen (2025): "for each country, if two variables are highly correlated variables (with a correlation larger than 0.95 in absolute term), only one of them will be kept."
+Planned output:
 
-This step operates on the **temporal-coverage filtered** panels (after Stage 2), ensuring correlations are computed on stationary, coverage-complete data rather than raw levels with common trends. For each country independently:
+- `uncertainty_variance.parquet`
 
-1. The panel is pivoted to wide format (rows = dates, columns = series)
-2. The pairwise Pearson correlation matrix is computed
-3. All pairs with |correlation| > 0.95 are identified
-4. A greedy maximum-independent-set algorithm selects which series to keep:
-   - Series are considered in alphabetical order by `series_id`
-   - A series is kept only if none of its already-kept neighbours exceed the correlation threshold
-   - This maximises the number of retained variables while guaranteeing no two kept series are correlated above 0.95
+### 5. Euro-Area Aggregation - Planned
 
-The alphabetical tie-breaking rule ensures full determinism and reproducibility across runs and platforms.
+The final stage will aggregate the series-level uncertainty objects into the baseline euro-area MEU measure, beginning with the simple average of `sqrt(variance)` across all series for each date and horizon.
 
-**Implementation:** `high_correlation.py` contains the pure functions. The pytask task reads the filtered panel, applies the correlation filter, and writes both the filtered panel (`*_corr.parquet`) and a metadata CSV (`high_corr_drop_info.csv`) documenting every dropped series, its highest-correlation kept neighbour, and the correlation value.
+Planned outputs:
 
-**Output files** (in `bld/data/clean/`):
+- `meu_ea.parquet`
+- final figures and tables under `src/meu_replication/final/`
 
-| File | Description |
-|------|-------------|
-| `macro_panel.parquet` | Combined raw panel (all sources, all countries, no filtering) |
-| `panel_2003_2022_strict.parquet` | After Stage 2: strict coverage, 2022 horizon |
-| `panel_2003_2022_cov98.parquet` | After Stage 2: 98% coverage, 2022 horizon |
-| `panel_2003_2021_strict.parquet` | After Stage 2: strict coverage, 2021 horizon |
-| `panel_2003_2021_cov98.parquet` | After Stage 2: 98% coverage, 2021 horizon |
-| `panel_2003_2022_cov98_corr.parquet` | After Stage 3: correlation-filtered (cov98, 2022) |
-| `panel_2003_2021_strict_corr.parquet` | After Stage 3: correlation-filtered (strict, 2021) |
-| `panel_2003_2021_cov98_corr.parquet` | After Stage 3: correlation-filtered (cov98, 2021) |
-| `panel_*_corr_drop_info.csv` | Metadata for each panel variant: dropped series and reason |
+## Current Status and Limitations
 
-## Limitations and Known Deviations
-
-- This repository currently focuses on data ingestion and cleaning; MEU
-  estimation and final figure/table tasks are still placeholders.
-- Full pipeline runtime depends on external APIs (availability/rate limits).
-- The replication uses public API snapshots at run-time; exact row counts can
-  shift if providers revise historical observations.
+- The repository currently implements **Milestones 1-3** and validates the stochastic-volatility stage.
+- **Milestones 4-5 are not implemented yet**, so the final MEU series and paper-style outputs are still pending.
+- Full pipeline runtime is dominated by the reference-aligned full-mode stochastic-volatility estimation, which is slower than a chunked or parallelized approximation.
+- Public data providers can revise historical observations, so exact row counts and values may drift over time.
+- The replication uses the current public-data panel available through the programmed fetch pipeline, which may differ slightly from the paper authors' original source snapshot.
 
 ## References
 
-- Jurado, K., Ludvigson, S.C., & Ng, S. (2015). Measuring Uncertainty. *American Economic Review*, 105(3), 1177-1216.
-- Comunale, M., & Nguyen, A.D.M. (2025). A comprehensive MacroEconomic uncertainty measure for the euro area. *Journal of International Money and Finance*, 157, 103370. [DOI: 10.1016/j.jimonfin.2025.103370](https://doi.org/10.1016/j.jimonfin.2025.103370)
+- Jurado, K., Ludvigson, S. C., & Ng, S. (2015). Measuring Uncertainty. *American Economic Review*, 105(3), 1177-1216.
+- Comunale, M., & Nguyen, A. D. M. (2025). A comprehensive MacroEconomic uncertainty measure for the euro area. *Journal of International Money and Finance*, 157, 103370. [DOI: 10.1016/j.jimonfin.2025.103370](https://doi.org/10.1016/j.jimonfin.2025.103370)
