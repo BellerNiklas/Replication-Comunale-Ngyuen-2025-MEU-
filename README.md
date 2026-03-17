@@ -4,7 +4,7 @@
 
 This repository replicates the MacroEconomic Uncertainty (MEU) measure for the euro area developed by Comunale and Nguyen (2025, *Journal of International Money and Finance*). The measure follows the Jurado, Ludvigson, and Ng (2015) framework: forecast a large panel of macroeconomic series, isolate the unforecastable component of each series, estimate the stochastic volatility of those forecast errors, and then aggregate horizon-specific uncertainty into a common euro-area measure.
 
-The codebase currently implements the pipeline through **Milestone 4**: data preparation, factor extraction, forecast-error estimation, stochastic-volatility estimation, stochastic-volatility validation, and horizon-specific uncertainty calculation. The final euro-area MEU aggregation (**Milestone 5**) is still planned.
+The codebase currently implements the full baseline pipeline through **Milestone 5**: data preparation, factor extraction, forecast-error estimation, stochastic-volatility estimation, stochastic-volatility validation, horizon-specific uncertainty calculation, and euro-area MEU aggregation.
 
 ## Getting Started
 
@@ -117,19 +117,19 @@ Main output:
 
 - `uncertainty_variance.parquet`
 
-### 5. Euro-Area Aggregation - Planned
+### 5. Euro-Area Aggregation - Implemented
 
-The final stage will aggregate the series-level uncertainty objects into the baseline euro-area MEU measure, beginning with the simple average of `sqrt(variance)` across all series for each date and horizon.
+The final baseline stage aggregates the series-level uncertainty objects into the euro-area MEU measure using the replication-package cross-sectional mean path, `mean(sqrt(variance))`, across all series for each date and horizon.
 
-Planned outputs:
+Main output:
 
 - `meu_ea.parquet`
 - final figures and tables under `src/meu_replication/final/`
 
 ## Current Status and Limitations
 
-- The repository currently implements **Milestones 1-4**, including the horizon-specific uncertainty stage.
-- **Milestone 5 is not implemented yet**, so the final aggregated euro-area MEU series and paper-style outputs are still pending.
+- The repository currently implements the baseline **Milestones 1-5** pipeline, including euro-area aggregation.
+- The current public output is the baseline EA-wide simple-mean MEU; country MEUs, PCA aggregation, and paper-style final figures/tables are still follow-on work.
 - Full pipeline runtime is dominated by the reference-aligned full-mode stochastic-volatility estimation, which is slower than a chunked or parallelized approximation.
 - Public data providers can revise historical observations, so exact row counts and values may drift over time.
 - The replication uses the current public-data panel available through the programmed fetch pipeline, which may differ slightly from the paper authors' original source snapshot.

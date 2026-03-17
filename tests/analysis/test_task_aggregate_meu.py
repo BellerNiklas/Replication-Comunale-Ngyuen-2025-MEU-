@@ -2,8 +2,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pytest
 
+from meu_replication.analysis.task_aggregate_meu import run_meu_aggregation_stage
 from meu_replication.analysis.task_compute_uncertainty import run_uncertainty_stage
 from meu_replication.analysis.task_estimate_factors import task_estimate_factors
 from meu_replication.analysis.task_forecast_errors import task_forecast_errors
@@ -12,12 +12,12 @@ from tests.analysis.test_task_forecast_errors import _make_panel
 from tests.analysis.test_task_stochastic_volatility import FAST_TASK_CONFIG
 
 EXPECTED_FIRST_DATE = "2020-05"
-EXPECTED_SERIES = 4
 EXPECTED_FORECAST_OBS = 32
-EXPECTED_ROWS = EXPECTED_FORECAST_OBS * EXPECTED_SERIES * FAST_TASK_CONFIG.h_max
+EXPECTED_HORIZONS = FAST_TASK_CONFIG.h_max
+EXPECTED_AGGREGATE_ROWS = EXPECTED_FORECAST_OBS * EXPECTED_HORIZONS
 
 
-def test_run_uncertainty_stage_writes_expected_outputs(tmp_path: Path):
+def test_run_meu_aggregation_stage_writes_expected_outputs(tmp_path: Path):
     panel_path = tmp_path / "panel.parquet"
     _make_panel().to_parquet(panel_path, index=False)
 
@@ -73,46 +73,34 @@ def test_run_uncertainty_stage_writes_expected_outputs(tmp_path: Path):
         config=FAST_TASK_CONFIG,
     )
 
-    result = pd.read_parquet(uncertainty_output)
-    series_order = pd.read_parquet(factor_outputs["series_order"]).sort_values(
-        "series_position"
+    meu_output = tmp_path / "meu_ea.parquet"
+    run_meu_aggregation_stage(
+        depends_on={
+            "uncertainty_variance": uncertainty_output,
+            "series_order": factor_outputs["series_order"],
+        },
+        produces={"meu_ea": meu_output},
     )
 
-    assert result.columns.tolist() == ["date", "series_id", "horizon", "variance"]
-    assert len(result) == EXPECTED_ROWS
-    assert str(result.iloc[0]["date"]) == EXPECTED_FIRST_DATE
-    assert int(result["horizon"].min()) == 1
-    assert int(result["horizon"].max()) == FAST_TASK_CONFIG.h_max
-    assert np.isfinite(result["variance"]).all()
-    assert (result["variance"] > 0.0).all()
-
-    first_block = result[
-        (result["date"].astype(str) == EXPECTED_FIRST_DATE) & (result["horizon"] == 1)
-    ]
-    assert first_block["series_id"].astype(str).tolist() == series_order[
-        "series_id"
-    ].astype(str).tolist()
-
-
-def test_run_uncertainty_stage_stops_when_sv_validation_failed(tmp_path: Path):
-    summary_path = tmp_path / "sv_validation_summary.parquet"
-    pd.DataFrame(
-        [{"validation_passed": False, "failed_metrics": "subset_y_rhat"}]
-    ).to_parquet(summary_path, index=False)
-
-    with pytest.raises(RuntimeError, match="subset_y_rhat"):
-        run_uncertainty_stage(
-            depends_on={
-                "series_order": tmp_path / "missing_series_order.parquet",
-                "forecast_metadata": tmp_path / "missing_forecast_metadata.parquet",
-                "regression_coefs_y": tmp_path / "missing_regression_coefs_y.parquet",
-                "regression_coefs_f": tmp_path / "missing_regression_coefs_f.parquet",
-                "sv_params_y": tmp_path / "missing_sv_params_y.parquet",
-                "sv_latent_y": tmp_path / "missing_sv_latent_y.parquet",
-                "sv_params_f": tmp_path / "missing_sv_params_f.parquet",
-                "sv_latent_f": tmp_path / "missing_sv_latent_f.parquet",
-                "sv_validation_summary": summary_path,
-            },
-            produces={"uncertainty_variance": tmp_path / "unused.parquet"},
-            config=FAST_TASK_CONFIG,
+    meu_ea = pd.read_parquet(meu_output)
+    uncertainty = pd.read_parquet(uncertainty_output)
+    direct = (
+        uncertainty.assign(
+            meu=np.sqrt(uncertainty["variance"].to_numpy(dtype=np.float64))
         )
+        .groupby(["date", "horizon"], as_index=False, observed=True)["meu"]
+        .mean()
+        .sort_values(["date", "horizon"])
+        .reset_index(drop=True)
+    )
+    direct["date"] = direct["date"].astype(str)
+    direct["horizon"] = direct["horizon"].astype("int16")
+    direct["meu"] = direct["meu"].astype("float64")
+
+    assert meu_ea.columns.tolist() == ["date", "horizon", "meu"]
+    assert len(meu_ea) == EXPECTED_AGGREGATE_ROWS
+    assert meu_ea.loc[0, "date"] == EXPECTED_FIRST_DATE
+    assert int(meu_ea["horizon"].min()) == 1
+    assert int(meu_ea["horizon"].max()) == EXPECTED_HORIZONS
+    assert np.isfinite(meu_ea["meu"]).all()
+    pd.testing.assert_frame_equal(meu_ea, direct)
