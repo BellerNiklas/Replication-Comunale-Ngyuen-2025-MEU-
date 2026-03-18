@@ -39,10 +39,11 @@ MEU_COUNTRIES: tuple[str, ...] = (
     "SK",
 )
 
-# Replication sample period (Comunale & Nguyen 2025: 2003-01 to 2022-12)
+# Replication sample periods for the strict cleaned panels.
 SAMPLE_START: str = "2003-01"
-SAMPLE_END: str = "2022-12"
-SAMPLE_END_ALT: str = "2021-12"  # Alternative window (includes CARS_002-004)
+SAMPLE_END_2021: str = "2021-12"
+SAMPLE_END_2022: str = "2022-12"
+SAMPLE_END_2025: str = "2025-12"
 
 # After differencing (codes 2/5), the first observation (2003-01) is lost.
 SAMPLE_START_TRANSFORMED: str = "2003-02"
@@ -57,12 +58,11 @@ ANALYSIS_PANEL_STRICT_2022: Path = (
 
 # Panel variant keys (used by temporal coverage + correlation tasks)
 PANEL_VARIANTS: tuple[str, ...] = (
-    "panel_2003_2022_strict",
-    "panel_2003_2022_cov98",
     "panel_2003_2021_strict",
-    "panel_2003_2021_cov98",
+    "panel_2003_2022_strict",
+    "panel_2003_2025_strict",
 )
-PRIMARY_PANEL: str = "panel_2003_2022_cov98_corr"
+PRIMARY_PANEL: str = "panel_2003_2022_strict_corr"
 
 
 def load_countries():

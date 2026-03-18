@@ -1,11 +1,7 @@
 """Pure functions for temporal coverage filtering."""
-
-import math
 from typing import Any
 
 import pandas as pd
-
-_COVERAGE_THRESHOLD = 0.02  # 98% coverage -> 2% missing allowed
 
 
 def _build_expected_months(sample_start: str, sample_end: str) -> set[str]:
@@ -46,12 +42,6 @@ def build_variants(
         for wlabel, start, end in windows
         for tlabel, missing in thresholds
     ]
-
-
-def compute_allowed_missing(sample_start: str, sample_end: str) -> int:
-    """Compute allowed missing months for the 98% coverage threshold."""
-    n_months = len(_build_expected_months(sample_start, sample_end))
-    return math.floor(_COVERAGE_THRESHOLD * n_months)
 
 
 def filter_by_temporal_coverage(

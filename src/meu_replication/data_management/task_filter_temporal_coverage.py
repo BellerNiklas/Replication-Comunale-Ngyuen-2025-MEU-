@@ -1,4 +1,4 @@
-"""Filter clean macro panel to series with full temporal coverage."""
+"""Filter the transformed macro panel to strict endpoint-specific panels."""
 
 from pathlib import Path
 
@@ -6,42 +6,24 @@ import pandas as pd
 
 from meu_replication.cleaning.temporal_coverage import (
     build_variants,
-    compute_allowed_missing,
     run_all_filter_variants_with_drop_info,
 )
 from meu_replication.config import (
     BLD,
-    SAMPLE_END,
-    SAMPLE_END_ALT,
+    SAMPLE_END_2021,
+    SAMPLE_END_2022,
+    SAMPLE_END_2025,
     SAMPLE_START_TRANSFORMED,
 )
 
 _FILTER_VARIANTS = build_variants(
     windows=[
-        ("2022", SAMPLE_START_TRANSFORMED, SAMPLE_END),
-        ("2021", SAMPLE_START_TRANSFORMED, SAMPLE_END_ALT),
+        ("2021", SAMPLE_START_TRANSFORMED, SAMPLE_END_2021),
+        ("2022", SAMPLE_START_TRANSFORMED, SAMPLE_END_2022),
+        ("2025", SAMPLE_START_TRANSFORMED, SAMPLE_END_2025),
     ],
-    thresholds=[
-        ("strict", 0),
-    ],
-) + [
-    {
-        "label": "2022_cov98",
-        "key": "panel_2022_cov98",
-        "start": SAMPLE_START_TRANSFORMED,
-        "end": SAMPLE_END,
-        "allowed_missing": compute_allowed_missing(SAMPLE_START_TRANSFORMED, SAMPLE_END),
-    },
-    {
-        "label": "2021_cov98",
-        "key": "panel_2021_cov98",
-        "start": SAMPLE_START_TRANSFORMED,
-        "end": SAMPLE_END_ALT,
-        "allowed_missing": compute_allowed_missing(
-            SAMPLE_START_TRANSFORMED, SAMPLE_END_ALT
-        ),
-    },
-]
+    thresholds=[("strict", 0)],
+)
 
 
 def build_filter_variants(prefix: str = "panel") -> list[dict[str, object]]:
@@ -80,10 +62,7 @@ def task_filter_temporal_coverage(
     depends_on: Path = BLD / "data" / "clean" / "transformed_panel.parquet",
     produces: dict[str, Path] = _build_filter_outputs(_FILTER_VARIANTS),
 ) -> None:
-    """Filter macro panel to series with sufficient temporal coverage.
-
-    Produces 4 filtered panels (2 windows x 2 thresholds).
-    """
+    """Filter the transformed panel to the strict 2021, 2022, and 2025 windows."""
     panel = pd.read_parquet(depends_on)
     print(f"Input: {len(panel)} rows, {panel['series_id'].nunique()} series")
 

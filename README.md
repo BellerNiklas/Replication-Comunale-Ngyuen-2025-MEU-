@@ -46,20 +46,25 @@ tests/                    # Unit and integration tests
 
 ## Data and Preprocessing
 
-The replication builds a large monthly macro-financial panel for the 19 euro-area countries, plus euro-area aggregate financial series, over the 2003-2022 sample window. Data are fetched programmatically from **Eurostat**, **ECB SDW**, **OECD**, and **BIS**. No manual downloads are required.
+The replication builds a large monthly macro-financial panel for the 19 euro-area countries, plus euro-area aggregate financial series. Data are fetched programmatically from **Eurostat**, **ECB SDW**, **OECD**, and **BIS**. No manual downloads are required.
 
 The analysis input is produced by a short three-stage preprocessing pipeline:
 
 1. **Stationarity transformations**  
    Each registry series is transformed according to the paper's transformation codes: no transform, first difference, or log first difference.
 2. **Temporal coverage filtering**  
-   The transformed panel is filtered into strict and 98%-coverage variants for 2022 and 2021 sample windows.
+   The transformed panel is filtered into strict endpoint windows for 2021, 2022, and 2025.
 3. **High-correlation filtering**  
    Within each country, highly correlated series are filtered using a deterministic alphabetical tie-break rule and a `|corr| > 0.95` threshold.
 
 The current baseline analysis input is the correlation-filtered strict 2022 panel:
 
 - `bld/data/clean/panel_2003_2022_strict_corr.parquet`
+
+Additional strict cleaned panels are generated for:
+
+- `bld/data/clean/panel_2003_2021_strict_corr.parquet`
+- `bld/data/clean/panel_2003_2025_strict_corr.parquet`
 
 Because differencing removes the first observation for transformed series, the cleaned transformed sample starts in **2003-02**.
 
@@ -128,11 +133,12 @@ Main output:
 
 ## Current Status and Limitations
 
-- The repository currently implements the baseline **Milestones 1-5** pipeline, including euro-area aggregation.
+- The repository currently implements the baseline **Milestones 1-5** pipeline, including euro-area aggregation, on the strict 2022 cleaned panel.
 - The current public output is the baseline EA-wide simple-mean MEU; country MEUs, PCA aggregation, and paper-style final figures/tables are still follow-on work.
 - Full pipeline runtime is dominated by the reference-aligned full-mode stochastic-volatility estimation, which is slower than a chunked or parallelized approximation.
 - Public data providers can revise historical observations, so exact row counts and values may drift over time.
 - The replication uses the current public-data panel available through the programmed fetch pipeline, which may differ slightly from the paper authors' original source snapshot.
+- The relaxed `98%` coverage path and the generated coverage audit report have been removed; preprocessing is strict-only.
 
 ## References
 

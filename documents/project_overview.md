@@ -5,13 +5,12 @@
 This repository already implements the baseline MacroEconomic Uncertainty
 (MEU) pipeline for the euro area. The core analysis workflow is now mostly in
 place, from cleaned panel input through uncertainty estimation and final
-aggregation. At this stage, the main open questions are less about the MEU
-method itself and more about the data-cleaning choices that define the final
-input panels.
+aggregation. The cleaning-rule decision has now been fixed: the project uses
+strict endpoint-specific panels as its supported preprocessing path.
 
 In practical terms, the project has moved beyond building the baseline MEU
-engine. The next phase is about deciding which cleaned datasets should be
-treated as the main specification, extending the endpoint to 2025, and then
+engine. The next phase is about extending the strict endpoint to 2025,
+investigating the remaining correlation gap with the paper, and then
 broadening the outputs from one euro-area series to a full set of euro-area
 and country-level MEUs.
 
@@ -21,7 +20,7 @@ The current repository already covers the main steps of the baseline
 replication workflow:
 
 - raw-data processing and variable transformations
-- completeness filtering for the 2021 and 2022 endpoint versions
+- strict completeness filtering for the 2021 and 2022 endpoint versions
 - correlation filtering within countries
 - factor estimation
 - forecast-error estimation
@@ -29,20 +28,17 @@ replication workflow:
 - uncertainty computation
 - baseline euro-area MEU aggregation
 
-As a result, the repo already produces an EA-wide MEU for a cleaned 2022 panel.
+As a result, the repo already produces an EA-wide MEU for a cleaned strict 2022
+panel.
 The root [README](../README.md) remains the main technical entry point for the
 implemented pipeline and the current analysis outputs.
 
 ## Current Open Data Questions
 
-The biggest unresolved question is which completeness rule should define the
-main cleaned datasets. There are currently two candidate approaches:
-
-- a strict rule that drops variables unless the full window is complete
-- a relaxed rule that allows a 98% coverage version
-
-That choice matters because it determines which final panels will feed all
-later MEU calculations.
+The completeness rule is no longer an open question. The project now uses a
+strict rule that drops variables unless the full endpoint window is complete,
+and the relaxed 98% coverage variant is no longer part of the supported
+pipeline.
 
 The second unresolved question is the relatively large number of
 correlation-based drops compared with the paper. The appendix suggests a
@@ -55,7 +51,7 @@ itself, but also the underlying variable registry and source overlap.
 ## Target Cleaning Structure
 
 The cleaning pipeline should ultimately expose six key data frames built around
-the three target endpoint windows, 2021, 2022, and 2025:
+the three strict target endpoint windows, 2021, 2022, and 2025:
 
 - three data frames listing the variables dropped at the completeness stage
 - three fully cleaned data frames after completeness filtering and correlation
@@ -86,12 +82,11 @@ single baseline replication into a broader uncertainty framework.
 
 ## Priority Order
 
-1. choose the main cleaning rule
-2. extend the endpoint to 2025
-3. investigate the high correlation drops
-4. finalize the three cleaned panels
-5. compute EA MEUs for all three panels
-6. compute country MEUs for all countries
+1. extend the strict endpoint to 2025
+2. investigate the high correlation drops
+3. finalize the three cleaned panels
+4. compute EA MEUs for all three panels
+5. compute country MEUs for all countries
 
 ## Closing Note
 
