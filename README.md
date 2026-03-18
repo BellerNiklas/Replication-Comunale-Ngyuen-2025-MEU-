@@ -66,6 +66,10 @@ Additional strict cleaned panels are generated for:
 - `bld/data/clean/panel_2003_2021_strict_corr.parquet`
 - `bld/data/clean/panel_2003_2025_strict_corr.parquet`
 
+A reproducible correlation-audit stage now writes pair-level and decision-level
+review outputs under `bld/analysis/correlation_audit/`, plus a ranked review
+report at `bld/documents/correlation_cleaning_review.md`.
+
 Because differencing removes the first observation for transformed series, the cleaned transformed sample starts in **2003-02**.
 
 ## MEU Estimation Pipeline
