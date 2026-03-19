@@ -60,3 +60,8 @@ def test_meu_config_full_mode_properties():
 
 def test_meu_config_is_frozen():
     assert MEUConfig.__dataclass_params__.frozen is True
+
+
+def test_meu_config_accepts_non_default_panel_name():
+    config = MEUConfig(panel_name="panel_2003_2025_strict_corr")
+    assert config.panel_name == "panel_2003_2025_strict_corr"

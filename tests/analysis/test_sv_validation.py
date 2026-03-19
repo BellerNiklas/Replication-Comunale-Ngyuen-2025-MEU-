@@ -129,8 +129,96 @@ def test_build_validation_subset_metrics_runs_batched_r_backend(tmp_path: Path):
     )
     assert {"f", "y"} <= set(subset_metrics["series_type"])
     assert subset_metrics["n_chains"].eq(FAST_VALIDATION_CONFIG.sv_validation_chains).all()
-    assert subset_metrics["n_draws_per_chain"].eq(EXPECTED_PARAM_DRAWS).all()
+    assert subset_metrics["n_draws_per_chain"].ge(EXPECTED_PARAM_DRAWS).all()
     assert np.isfinite(subset_metrics[["rhat_mu", "rhat_phi", "rhat_sigma"]]).all().all()
+
+
+def test_build_validation_subset_metrics_retries_failed_subset_rows(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    forecast_errors_y_path = tmp_path / "forecast_errors_y.parquet"
+    forecast_errors_f_path = tmp_path / "forecast_errors_f.parquet"
+    _make_forecast_errors_y()[["date", "a"]].to_parquet(forecast_errors_y_path, index=False)
+    _make_forecast_errors_f()[["date", "factor_1"]].to_parquet(
+        forecast_errors_f_path,
+        index=False,
+    )
+
+    config = MEUConfig(
+        sv_mode="fast",
+        sv_draws_fast=120,
+        sv_burnin_fast=100,
+        sv_thin_para_fast=2,
+        sv_thin_latent_fast=2,
+        sv_validation_chains=2,
+        sv_validation_subset_size=1,
+    )
+    calls: list[dict[str, int]] = []
+
+    def fake_run_validation_batch(
+        *,
+        forecast_errors_y_path: Path,
+        forecast_errors_f_path: Path,
+        jobs: list[dict[str, int | str]],
+        config: MEUConfig,
+    ) -> pd.DataFrame:
+        calls.append({"n_jobs": len(jobs), "sv_draws": config.sv_draws})
+        return pd.DataFrame({"attempt": [len(calls)]})
+
+    def fake_summarize_validation_draws(*, draws: pd.DataFrame, config: MEUConfig) -> pd.DataFrame:
+        attempt = int(draws.loc[0, "attempt"])
+        if attempt == 1:
+            return pd.DataFrame(
+                {
+                    "series_type": ["y", "f"],
+                    "series_position": [0, 0],
+                    "series_key": ["a", "factor_1"],
+                    "n_chains": [2, 2],
+                    "n_draws_per_chain": [60, 60],
+                    "rhat_mu": [1.0, 1.0],
+                    "rhat_phi": [1.01, 1.20],
+                    "rhat_sigma": [1.01, 1.20],
+                    "passes_mu_rhat": [True, True],
+                    "passes_phi_sigma_rhat": [True, False],
+                }
+            )
+        return pd.DataFrame(
+            {
+                "series_type": ["f"],
+                "series_position": [0],
+                "series_key": ["factor_1"],
+                "n_chains": [2],
+                "n_draws_per_chain": [240],
+                "rhat_mu": [1.0],
+                "rhat_phi": [1.01],
+                "rhat_sigma": [1.01],
+                "passes_mu_rhat": [True],
+                "passes_phi_sigma_rhat": [True],
+            }
+        )
+
+    monkeypatch.setattr(
+        "meu_replication.analysis.sv_validation._run_validation_batch",
+        fake_run_validation_batch,
+    )
+    monkeypatch.setattr(
+        "meu_replication.analysis.sv_validation._summarize_validation_draws",
+        fake_summarize_validation_draws,
+    )
+
+    subset_metrics = build_validation_subset_metrics(
+        forecast_errors_y_path=forecast_errors_y_path,
+        forecast_errors_f_path=forecast_errors_f_path,
+        series_order=pd.DataFrame({"series_position": [0], "series_id": ["a"]}),
+        config=config,
+    )
+
+    assert len(calls) == 2
+    assert calls[0]["n_jobs"] == 4
+    assert calls[1]["n_jobs"] == 2
+    assert calls[1]["sv_draws"] == calls[0]["sv_draws"] * 4
+    assert subset_metrics["passes_phi_sigma_rhat"].all()
 
 
 def test_build_stability_metrics_runs_batched_r_backend(tmp_path: Path):

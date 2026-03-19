@@ -8,8 +8,11 @@ import pandas as pd
 from pytask import mark, task
 
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.panel_specs import (
+    ANALYSIS_PANELS,
+    DEFAULT_ANALYSIS_PANEL,
+)
 from meu_replication.analysis.sv_r_bridge import SV_R_SCRIPT, run_sv_r_script
-from meu_replication.config import ANALYSIS
 
 _CORE_SUBDIR = "_sv_r"
 _PARAM_COLUMNS_GENERIC = [
@@ -46,27 +49,27 @@ _SV_DIAGNOSTIC_COLUMNS = [
 ]
 
 
-def _production_config() -> MEUConfig:
+def _production_config(panel_name: str = DEFAULT_ANALYSIS_PANEL.panel_name) -> MEUConfig:
     # Production keeps the reference one-seed-per-panel behavior, even though
     # that gives up the previous chunked-Y speedup.
-    return MEUConfig(sv_mode="full")
+    return MEUConfig(panel_name=panel_name, sv_mode="full")
 
 
-def _sv_public_dependencies() -> dict[str, Path]:
+def _sv_public_dependencies(base_dir: Path) -> dict[str, Path]:
     return {
-        "forecast_metadata": ANALYSIS / "forecast_metadata.parquet",
-        "series_order": ANALYSIS / "series_order.parquet",
-        **_sv_core_dependencies(ANALYSIS),
+        "forecast_metadata": base_dir / "forecast_metadata.parquet",
+        "series_order": base_dir / "series_order.parquet",
+        **_sv_core_dependencies(base_dir),
     }
 
 
-def _sv_public_outputs() -> dict[str, Path]:
+def _sv_public_outputs(base_dir: Path) -> dict[str, Path]:
     return {
-        "sv_params_y": ANALYSIS / "sv_params_y.parquet",
-        "sv_latent_y": ANALYSIS / "sv_latent_y.parquet",
-        "sv_params_f": ANALYSIS / "sv_params_f.parquet",
-        "sv_latent_f": ANALYSIS / "sv_latent_f.parquet",
-        "sv_diagnostics": ANALYSIS / "sv_diagnostics.parquet",
+        "sv_params_y": base_dir / "sv_params_y.parquet",
+        "sv_latent_y": base_dir / "sv_latent_y.parquet",
+        "sv_params_f": base_dir / "sv_params_f.parquet",
+        "sv_latent_f": base_dir / "sv_latent_f.parquet",
+        "sv_diagnostics": base_dir / "sv_diagnostics.parquet",
     }
 
 
@@ -105,19 +108,22 @@ def _sv_core_dependencies(base_dir: Path) -> dict[str, Path]:
     }
 
 
-def _panel_dependencies(series_type: str) -> dict[str, Path]:
+def _panel_dependencies(base_dir: Path, series_type: str) -> dict[str, Path]:
     if series_type == "y":
         return {
-            "forecast_errors": ANALYSIS / "forecast_errors_y.parquet",
-            "series_order": ANALYSIS / "series_order.parquet",
+            "forecast_errors": base_dir / "forecast_errors_y.parquet",
+            "series_order": base_dir / "series_order.parquet",
         }
     return {
-        "forecast_errors": ANALYSIS / "forecast_errors_f.parquet",
+        "forecast_errors": base_dir / "forecast_errors_f.parquet",
     }
 
 
-def _panel_task_kwargs(series_type: str) -> dict[str, object]:
-    config = _production_config()
+def _panel_task_kwargs(
+    series_type: str,
+    config: MEUConfig | None = None,
+) -> dict[str, object]:
+    config = _production_config() if config is None else config
     seed = config.sv_seed_y if series_type == "y" else config.sv_seed_f
     options: dict[str, object] = {
         "task_kind": "panel",
@@ -130,39 +136,6 @@ def _panel_task_kwargs(series_type: str) -> dict[str, object]:
         "sv_thin_para": config.sv_thin_para,
     }
     return options
-
-
-@task(kwargs=_panel_task_kwargs("y"))
-@mark.r(script=SV_R_SCRIPT)
-def task_sv_estimate_y(
-    depends_on: dict[str, Path] = _panel_dependencies("y"),
-    produces: dict[str, Path] = _sv_y_core_outputs(ANALYSIS),
-) -> None:
-    """Estimate stochastic volatility for the Y residual panel in R."""
-    pass
-
-
-@task(kwargs=_panel_task_kwargs("f"))
-@mark.r(script=SV_R_SCRIPT)
-def task_sv_estimate_f(
-    depends_on: dict[str, Path] = _panel_dependencies("f"),
-    produces: dict[str, Path] = _sv_f_core_outputs(ANALYSIS),
-) -> None:
-    """Estimate stochastic volatility for the factor residual panel in R."""
-    pass
-
-
-def task_sv_consolidate(
-    depends_on: dict[str, Path] = _sv_public_dependencies(),
-    produces: dict[str, Path] = _sv_public_outputs(),
-    config: MEUConfig | None = None,
-) -> None:
-    """Normalize R outputs to the public SV parquet contract."""
-    _consolidate_sv_outputs(
-        depends_on=depends_on,
-        produces=produces,
-        config=_production_config() if config is None else config,
-    )
 
 
 def run_stochastic_volatility_stage(
@@ -344,9 +317,51 @@ def _consolidate_sv_outputs(
     diagnostics.to_parquet(produces["sv_diagnostics"], index=False)
 
     print(
-        "Stochastic-volatility stage complete: "
+        f"[{config.panel_name}] Stochastic-volatility stage complete: "
         f"{len(params_y)} y-series, "
         f"{len(params_f)} factor series, "
         f"mode={config.sv_mode}, "
         f"draws={config.sv_draws}, burn_in={config.sv_burnin}."
     )
+
+
+for _spec in ANALYSIS_PANELS:
+
+    @task(
+        name="sv_y",
+        id=_spec.task_id,
+        kwargs=_panel_task_kwargs("y", config=_production_config(_spec.panel_name)),
+    )
+    @mark.r(script=SV_R_SCRIPT)
+    def sv_y(
+        depends_on: dict[str, Path] = _panel_dependencies(_spec.output_dir, "y"),
+        produces: dict[str, Path] = _sv_y_core_outputs(_spec.output_dir),
+    ) -> None:
+        """Estimate stochastic volatility for one Y residual panel."""
+        pass
+
+    @task(
+        name="sv_f",
+        id=_spec.task_id,
+        kwargs=_panel_task_kwargs("f", config=_production_config(_spec.panel_name)),
+    )
+    @mark.r(script=SV_R_SCRIPT)
+    def sv_f(
+        depends_on: dict[str, Path] = _panel_dependencies(_spec.output_dir, "f"),
+        produces: dict[str, Path] = _sv_f_core_outputs(_spec.output_dir),
+    ) -> None:
+        """Estimate stochastic volatility for one factor residual panel."""
+        pass
+
+    @task(id=_spec.task_id)
+    def task_sv_consolidate(
+        depends_on: dict[str, Path] = _sv_public_dependencies(_spec.output_dir),
+        produces: dict[str, Path] = _sv_public_outputs(_spec.output_dir),
+        panel_name: str = _spec.panel_name,
+    ) -> None:
+        """Normalize SV outputs for one cleaned panel."""
+        _consolidate_sv_outputs(
+            depends_on=depends_on,
+            produces=produces,
+            config=_production_config(panel_name),
+        )

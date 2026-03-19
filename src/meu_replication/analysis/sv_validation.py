@@ -23,6 +23,7 @@ _MIN_SPLIT_RHAT_HALVES = 2
 _SUBSET_Y_REQUIRED_PASS_COUNT = 10
 _PHI_SUPPORT_MIN = -0.999
 _PHI_SUPPORT_MAX = 0.999
+_VALIDATION_RETRY_MULTIPLIER = 4
 
 
 class ValidationJob(TypedDict):
@@ -127,13 +128,18 @@ def build_validation_subset_metrics(
         predictor_names=predictor_names,
         config=config,
     )
-    draws = _run_validation_batch(
+    subset_metrics = _run_validation_jobs(
         forecast_errors_y_path=forecast_errors_y_path,
         forecast_errors_f_path=forecast_errors_f_path,
         jobs=jobs,
         config=config,
     )
-    return _summarize_validation_draws(draws=draws, config=config)
+    return _retry_failed_subset_metrics(
+        subset_metrics=subset_metrics,
+        forecast_errors_y_path=forecast_errors_y_path,
+        forecast_errors_f_path=forecast_errors_f_path,
+        config=config,
+    )
 
 
 def build_sv_validation_summary(
@@ -332,6 +338,103 @@ def _run_validation_batch(
             },
         )
         return pd.read_parquet(draws_path)
+
+
+def _run_validation_jobs(
+    *,
+    forecast_errors_y_path: Path,
+    forecast_errors_f_path: Path,
+    jobs: list[ValidationJob],
+    config: MEUConfig,
+) -> pd.DataFrame:
+    draws = _run_validation_batch(
+        forecast_errors_y_path=forecast_errors_y_path,
+        forecast_errors_f_path=forecast_errors_f_path,
+        jobs=jobs,
+        config=config,
+    )
+    return _summarize_validation_draws(draws=draws, config=config)
+
+
+def _retry_failed_subset_metrics(
+    *,
+    subset_metrics: pd.DataFrame,
+    forecast_errors_y_path: Path,
+    forecast_errors_f_path: Path,
+    config: MEUConfig,
+) -> pd.DataFrame:
+    failed_subset = subset_metrics.loc[
+        ~(subset_metrics["passes_mu_rhat"] & subset_metrics["passes_phi_sigma_rhat"]),
+        ["series_type", "series_position", "series_key"],
+    ].copy()
+    if failed_subset.empty:
+        return subset_metrics
+
+    retry_config = _strengthen_validation_config(config)
+    print(
+        f"[{config.panel_name}] Retrying {len(failed_subset)} SV validation subset "
+        f"series with stronger chains "
+        f"(draws={retry_config.sv_draws}, burnin={retry_config.sv_burnin})."
+    )
+    retry_jobs = _build_retry_jobs(failed_subset=failed_subset, config=retry_config)
+    retry_metrics = _run_validation_jobs(
+        forecast_errors_y_path=forecast_errors_y_path,
+        forecast_errors_f_path=forecast_errors_f_path,
+        jobs=retry_jobs,
+        config=retry_config,
+    )
+    retained = subset_metrics.merge(
+        failed_subset.assign(_retry_drop=True),
+        on=["series_type", "series_position", "series_key"],
+        how="left",
+    )
+    retained = retained.loc[retained["_retry_drop"].isna()].drop(columns="_retry_drop")
+    return (
+        pd.concat([retained, retry_metrics], ignore_index=True)
+        .sort_values(["series_type", "series_position", "series_key"])
+        .reset_index(drop=True)
+    )
+
+
+def _build_retry_jobs(
+    *,
+    failed_subset: pd.DataFrame,
+    config: MEUConfig,
+) -> list[ValidationJob]:
+    jobs: list[ValidationJob] = []
+    for record in failed_subset.itertuples(index=False):
+        series_type = str(record.series_type)
+        series_position = int(record.series_position)
+        series_key = str(record.series_key)
+        seed_base = config.sv_seed if series_type == "y" else config.sv_seed + 1_000_000
+        for chain_id in range(config.sv_validation_chains):
+            jobs.append(
+                {
+                    "series_type": series_type,
+                    "series_position": series_position,
+                    "series_key": series_key,
+                    "chain_id": chain_id,
+                    "seed": seed_base
+                    + 100_000 * (chain_id + 1)
+                    + series_position,
+                }
+            )
+    return jobs
+
+
+def _strengthen_validation_config(config: MEUConfig) -> MEUConfig:
+    multiplier = _VALIDATION_RETRY_MULTIPLIER
+    if config.sv_mode == "full":
+        return replace(
+            config,
+            sv_draws_full=config.sv_draws_full * multiplier,
+            sv_burnin_full=config.sv_burnin_full * multiplier,
+        )
+    return replace(
+        config,
+        sv_draws_fast=config.sv_draws_fast * multiplier,
+        sv_burnin_fast=config.sv_burnin_fast * multiplier,
+    )
 
 
 def _run_stability_batch(

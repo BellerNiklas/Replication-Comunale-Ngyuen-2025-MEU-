@@ -5,34 +5,39 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytask
 
 from meu_replication.analysis.factor_estimation import (
     estimate_predictor_set,
     prepare_analysis_panel,
 )
 from meu_replication.analysis.model_config import MEUConfig
-from meu_replication.config import ANALYSIS, ANALYSIS_PANEL_STRICT_2022
+from meu_replication.analysis.panel_specs import (
+    ANALYSIS_PANELS,
+    DEFAULT_ANALYSIS_PANEL,
+)
 
 
-def _factor_outputs() -> dict[str, Path]:
+def _factor_outputs(base_dir: Path) -> dict[str, Path]:
     return {
-        "panel_wide": ANALYSIS / "panel_wide.parquet",
-        "series_order": ANALYSIS / "series_order.parquet",
-        "date_index": ANALYSIS / "date_index.parquet",
-        "series_standardization": ANALYSIS / "series_standardization.parquet",
-        "fhat": ANALYSIS / "fhat.parquet",
-        "ghat": ANALYSIS / "ghat.parquet",
-        "predictor_set": ANALYSIS / "predictor_set.parquet",
-        "factor_metadata": ANALYSIS / "factor_metadata.parquet",
+        "panel_wide": base_dir / "panel_wide.parquet",
+        "series_order": base_dir / "series_order.parquet",
+        "date_index": base_dir / "date_index.parquet",
+        "series_standardization": base_dir / "series_standardization.parquet",
+        "fhat": base_dir / "fhat.parquet",
+        "ghat": base_dir / "ghat.parquet",
+        "predictor_set": base_dir / "predictor_set.parquet",
+        "factor_metadata": base_dir / "factor_metadata.parquet",
     }
 
 
-def task_estimate_factors(
-    depends_on: Path = ANALYSIS_PANEL_STRICT_2022,
-    produces: dict[str, Path] = _factor_outputs(),
+def run_factor_estimation_stage(
+    *,
+    depends_on: Path,
+    produces: dict[str, Path],
+    config: MEUConfig,
 ) -> None:
-    """Pivot the analysis panel, estimate factors, and persist the outputs."""
-    config = MEUConfig()
+    """Execute the factor stage for one cleaned panel."""
     panel = pd.read_parquet(depends_on)
     wide, series_order, date_index = prepare_analysis_panel(panel)
     result = estimate_predictor_set(
@@ -109,7 +114,7 @@ def task_estimate_factors(
     metadata.to_parquet(produces["factor_metadata"], index=False)
 
     print(
-        "Factor stage complete: "
+        f"[{config.panel_name}] Factor stage complete: "
         f"{wide.shape[0]} dates, {wide.shape[1]} series, "
         f"{result.factor_count} X factors, "
         f"{result.squared_factor_count} X^2 factors, "
@@ -127,3 +132,40 @@ def _matrix_frame(
     matrix.columns = [f"{prefix}{idx}" for idx in range(1, matrix.shape[1] + 1)]
     matrix.insert(0, "date", dates.astype(str))
     return matrix
+
+
+for _spec in ANALYSIS_PANELS:
+
+    @pytask.task(id=_spec.task_id)
+    def task_estimate_factors(
+        depends_on: Path = _spec.cleaned_panel_path,
+        produces: dict[str, Path] = _factor_outputs(_spec.output_dir),
+        panel_name: str = _spec.panel_name,
+    ) -> None:
+        """Run the factor stage for one cleaned panel."""
+        run_factor_estimation_stage(
+            depends_on=depends_on,
+            produces=produces,
+            config=MEUConfig(panel_name=panel_name),
+        )
+
+
+class _TaskEstimateFactorsCallable:
+    """Provide a direct-call interface without participating in pytask collection."""
+
+    def __call__(
+        self,
+        depends_on: Path = DEFAULT_ANALYSIS_PANEL.cleaned_panel_path,
+        produces: dict[str, Path] = _factor_outputs(DEFAULT_ANALYSIS_PANEL.output_dir),
+        config: MEUConfig | None = None,
+    ) -> None:
+        run_factor_estimation_stage(
+            depends_on=depends_on,
+            produces=produces,
+            config=MEUConfig(panel_name=DEFAULT_ANALYSIS_PANEL.panel_name)
+            if config is None
+            else config,
+        )
+
+
+task_estimate_factors = _TaskEstimateFactorsCallable()

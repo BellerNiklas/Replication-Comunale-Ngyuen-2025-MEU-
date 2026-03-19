@@ -51,18 +51,12 @@ SAMPLE_START_TRANSFORMED: str = "2003-02"
 # High-correlation filter threshold (Comunale & Nguyen 2025)
 HIGH_CORR_THRESHOLD: float = 0.95
 
-# Analysis input for the first MEU pass.
-ANALYSIS_PANEL_STRICT_2022: Path = (
-    BLD / "data" / "clean" / "panel_2003_2022_strict_corr.parquet"
-)
-
 # Panel variant keys (used by temporal coverage + correlation tasks)
 PANEL_VARIANTS: tuple[str, ...] = (
     "panel_2003_2021_strict",
     "panel_2003_2022_strict",
     "panel_2003_2025_strict",
 )
-PRIMARY_PANEL: str = "panel_2003_2022_strict_corr"
 
 
 def load_countries():

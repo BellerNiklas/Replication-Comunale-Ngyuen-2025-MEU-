@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from meu_replication.analysis.model_config import MEUConfig
 from meu_replication.analysis.task_estimate_factors import task_estimate_factors
 
 
@@ -46,7 +47,8 @@ def test_task_estimate_factors_writes_expected_outputs(tmp_path: Path):
         "factor_metadata": tmp_path / "factor_metadata.parquet",
     }
 
-    task_estimate_factors(depends_on=panel_path, produces=produces)
+    config = MEUConfig(panel_name="panel_2003_2025_strict_corr")
+    task_estimate_factors(depends_on=panel_path, produces=produces, config=config)
 
     metadata = pd.read_parquet(produces["factor_metadata"])
     wide = pd.read_parquet(produces["panel_wide"])
@@ -55,6 +57,7 @@ def test_task_estimate_factors_writes_expected_outputs(tmp_path: Path):
 
     assert metadata.loc[0, "n_obs"] == 8
     assert metadata.loc[0, "n_series"] == 4
+    assert metadata.loc[0, "panel_name"] == config.panel_name
     assert list(series_order["series_id"]) == ["A_SER", "B_SER", "C_SER", "D_SER"]
     assert wide.columns.tolist()[0] == "date"
     assert predictors.columns.tolist()[0] == "date"

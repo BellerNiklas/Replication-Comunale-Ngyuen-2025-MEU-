@@ -6,42 +6,47 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytask
 from numpy.typing import NDArray
 
 from meu_replication.analysis.forecast_errors import generate_forecast_errors
 from meu_replication.analysis.model_config import MEUConfig
-from meu_replication.config import ANALYSIS
+from meu_replication.analysis.panel_specs import (
+    ANALYSIS_PANELS,
+    DEFAULT_ANALYSIS_PANEL,
+)
 
 FloatArray = NDArray[np.float64]
 
 
-def _forecast_dependencies() -> dict[str, Path]:
+def _forecast_dependencies(base_dir: Path) -> dict[str, Path]:
     return {
-        "panel_wide": ANALYSIS / "panel_wide.parquet",
-        "series_order": ANALYSIS / "series_order.parquet",
-        "series_standardization": ANALYSIS / "series_standardization.parquet",
-        "predictor_set": ANALYSIS / "predictor_set.parquet",
-        "factor_metadata": ANALYSIS / "factor_metadata.parquet",
+        "panel_wide": base_dir / "panel_wide.parquet",
+        "series_order": base_dir / "series_order.parquet",
+        "series_standardization": base_dir / "series_standardization.parquet",
+        "predictor_set": base_dir / "predictor_set.parquet",
+        "factor_metadata": base_dir / "factor_metadata.parquet",
     }
 
 
-def _forecast_outputs() -> dict[str, Path]:
+def _forecast_outputs(base_dir: Path) -> dict[str, Path]:
     return {
-        "forecast_errors_y": ANALYSIS / "forecast_errors_y.parquet",
-        "forecast_errors_f": ANALYSIS / "forecast_errors_f.parquet",
-        "regression_coefs_y": ANALYSIS / "regression_coefs_y.parquet",
-        "regression_coefs_f": ANALYSIS / "regression_coefs_f.parquet",
-        "predictor_selection_masks": ANALYSIS / "predictor_selection_masks.parquet",
-        "forecast_metadata": ANALYSIS / "forecast_metadata.parquet",
+        "forecast_errors_y": base_dir / "forecast_errors_y.parquet",
+        "forecast_errors_f": base_dir / "forecast_errors_f.parquet",
+        "regression_coefs_y": base_dir / "regression_coefs_y.parquet",
+        "regression_coefs_f": base_dir / "regression_coefs_f.parquet",
+        "predictor_selection_masks": base_dir / "predictor_selection_masks.parquet",
+        "forecast_metadata": base_dir / "forecast_metadata.parquet",
     }
 
 
-def task_forecast_errors(
-    depends_on: dict[str, Path] = _forecast_dependencies(),
-    produces: dict[str, Path] = _forecast_outputs(),
+def run_forecast_error_stage(
+    *,
+    depends_on: dict[str, Path],
+    produces: dict[str, Path],
+    config: MEUConfig,
 ) -> None:
-    """Estimate the Milestone 2 forecast equations and persist the outputs."""
-    config = MEUConfig()
+    """Execute the forecast-error stage for one cleaned panel."""
     panel_wide = pd.read_parquet(depends_on["panel_wide"])
     series_order = pd.read_parquet(depends_on["series_order"])
     series_stats = pd.read_parquet(depends_on["series_standardization"])
@@ -155,7 +160,7 @@ def task_forecast_errors(
     ).to_parquet(produces["forecast_metadata"], index=False)
 
     print(
-        "Forecast-error stage complete: "
+        f"[{config.panel_name}] Forecast-error stage complete: "
         f"{len(series_ids)} series, "
         f"{len(predictor_names)} predictors, "
         f"{len(result.y_dates)} y residual dates, "
@@ -177,3 +182,42 @@ def _standardize_panel(
     means = series_stats["mean"].to_numpy(dtype=float)
     stds = series_stats["std"].to_numpy(dtype=float)
     return np.asarray((panel_values - means) / stds, dtype=np.float64)
+
+
+for _spec in ANALYSIS_PANELS:
+
+    @pytask.task(id=_spec.task_id)
+    def task_forecast_errors(
+        depends_on: dict[str, Path] = _forecast_dependencies(_spec.output_dir),
+        produces: dict[str, Path] = _forecast_outputs(_spec.output_dir),
+        panel_name: str = _spec.panel_name,
+    ) -> None:
+        """Run the forecast-error stage for one cleaned panel."""
+        run_forecast_error_stage(
+            depends_on=depends_on,
+            produces=produces,
+            config=MEUConfig(panel_name=panel_name),
+        )
+
+
+class _TaskForecastErrorsCallable:
+    """Provide a direct-call interface without participating in pytask collection."""
+
+    def __call__(
+        self,
+        depends_on: dict[str, Path] = _forecast_dependencies(
+            DEFAULT_ANALYSIS_PANEL.output_dir
+        ),
+        produces: dict[str, Path] = _forecast_outputs(DEFAULT_ANALYSIS_PANEL.output_dir),
+        config: MEUConfig | None = None,
+    ) -> None:
+        run_forecast_error_stage(
+            depends_on=depends_on,
+            produces=produces,
+            config=MEUConfig(panel_name=DEFAULT_ANALYSIS_PANEL.panel_name)
+            if config is None
+            else config,
+        )
+
+
+task_forecast_errors = _TaskForecastErrorsCallable()

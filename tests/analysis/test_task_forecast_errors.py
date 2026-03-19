@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from meu_replication.analysis.model_config import MEUConfig
 from meu_replication.analysis.task_estimate_factors import task_estimate_factors
 from meu_replication.analysis.task_forecast_errors import task_forecast_errors
 
@@ -55,7 +56,8 @@ def test_task_forecast_errors_writes_expected_outputs(tmp_path: Path):
         "predictor_set": tmp_path / "predictor_set.parquet",
         "factor_metadata": tmp_path / "factor_metadata.parquet",
     }
-    task_estimate_factors(depends_on=panel_path, produces=factor_outputs)
+    config = MEUConfig(panel_name="panel_2003_2021_strict_corr")
+    task_estimate_factors(depends_on=panel_path, produces=factor_outputs, config=config)
 
     forecast_outputs = {
         "forecast_errors_y": tmp_path / "forecast_errors_y.parquet",
@@ -65,7 +67,11 @@ def test_task_forecast_errors_writes_expected_outputs(tmp_path: Path):
         "predictor_selection_masks": tmp_path / "predictor_selection_masks.parquet",
         "forecast_metadata": tmp_path / "forecast_metadata.parquet",
     }
-    task_forecast_errors(depends_on=factor_outputs, produces=forecast_outputs)
+    task_forecast_errors(
+        depends_on=factor_outputs,
+        produces=forecast_outputs,
+        config=config,
+    )
 
     y_residuals = pd.read_parquet(forecast_outputs["forecast_errors_y"])
     f_residuals = pd.read_parquet(forecast_outputs["forecast_errors_f"])
@@ -79,5 +85,6 @@ def test_task_forecast_errors_writes_expected_outputs(tmp_path: Path):
     assert f_residuals.loc[0, "date"] == "2020-05"
     assert y_coefs.shape[0] == EXPECTED_SERIES
     assert masks.shape[0] == EXPECTED_SERIES
+    assert metadata.loc[0, "panel_name"] == config.panel_name
     assert metadata.loc[0, "n_obs_forecast_errors_y"] == EXPECTED_EFFECTIVE_OBS
     assert metadata.loc[0, "y_sample_start"] == "2020-05"

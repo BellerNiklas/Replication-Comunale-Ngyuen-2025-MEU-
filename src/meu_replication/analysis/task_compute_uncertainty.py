@@ -5,47 +5,37 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytask
 
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.panel_specs import (
+    ANALYSIS_PANELS,
+)
 from meu_replication.analysis.sv_validation import assert_sv_validation_passed
 from meu_replication.analysis.uncertainty import (
     compute_uncertainty,
     uncertainty_result_to_long_frame,
 )
-from meu_replication.config import ANALYSIS
 
 
-def _uncertainty_dependencies() -> dict[str, Path]:
+def _uncertainty_dependencies(base_dir: Path) -> dict[str, Path]:
     return {
-        "series_order": ANALYSIS / "series_order.parquet",
-        "forecast_metadata": ANALYSIS / "forecast_metadata.parquet",
-        "regression_coefs_y": ANALYSIS / "regression_coefs_y.parquet",
-        "regression_coefs_f": ANALYSIS / "regression_coefs_f.parquet",
-        "sv_params_y": ANALYSIS / "sv_params_y.parquet",
-        "sv_latent_y": ANALYSIS / "sv_latent_y.parquet",
-        "sv_params_f": ANALYSIS / "sv_params_f.parquet",
-        "sv_latent_f": ANALYSIS / "sv_latent_f.parquet",
-        "sv_validation_summary": ANALYSIS / "sv_validation_summary.parquet",
+        "series_order": base_dir / "series_order.parquet",
+        "forecast_metadata": base_dir / "forecast_metadata.parquet",
+        "regression_coefs_y": base_dir / "regression_coefs_y.parquet",
+        "regression_coefs_f": base_dir / "regression_coefs_f.parquet",
+        "sv_params_y": base_dir / "sv_params_y.parquet",
+        "sv_latent_y": base_dir / "sv_latent_y.parquet",
+        "sv_params_f": base_dir / "sv_params_f.parquet",
+        "sv_latent_f": base_dir / "sv_latent_f.parquet",
+        "sv_validation_summary": base_dir / "sv_validation_summary.parquet",
     }
 
 
-def _uncertainty_outputs() -> dict[str, Path]:
+def _uncertainty_outputs(base_dir: Path) -> dict[str, Path]:
     return {
-        "uncertainty_variance": ANALYSIS / "uncertainty_variance.parquet",
+        "uncertainty_variance": base_dir / "uncertainty_variance.parquet",
     }
-
-
-def task_compute_uncertainty(
-    depends_on: dict[str, Path] = _uncertainty_dependencies(),
-    produces: dict[str, Path] = _uncertainty_outputs(),
-    config: MEUConfig | None = None,
-) -> None:
-    """Run the public Milestone 4 uncertainty stage."""
-    run_uncertainty_stage(
-        depends_on=depends_on,
-        produces=produces,
-        config=MEUConfig() if config is None else config,
-    )
 
 
 def run_uncertainty_stage(
@@ -76,9 +66,25 @@ def run_uncertainty_stage(
     uncertainty_long.to_parquet(produces["uncertainty_variance"], index=False)
 
     print(
-        "Uncertainty stage complete: "
+        f"[{config.panel_name}] Uncertainty stage complete: "
         f"{len(result.dates)} dates, "
         f"{len(result.series_ids)} series, "
         f"{len(result.horizons)} horizons, "
         f"{len(uncertainty_long)} rows."
     )
+
+
+for _spec in ANALYSIS_PANELS:
+
+    @pytask.task(id=_spec.task_id)
+    def task_compute_uncertainty(
+        depends_on: dict[str, Path] = _uncertainty_dependencies(_spec.output_dir),
+        produces: dict[str, Path] = _uncertainty_outputs(_spec.output_dir),
+        panel_name: str = _spec.panel_name,
+    ) -> None:
+        """Run the uncertainty stage for one cleaned panel."""
+        run_uncertainty_stage(
+            depends_on=depends_on,
+            produces=produces,
+            config=MEUConfig(panel_name=panel_name),
+        )

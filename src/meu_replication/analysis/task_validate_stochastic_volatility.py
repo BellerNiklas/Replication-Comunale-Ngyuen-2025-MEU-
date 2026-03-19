@@ -5,47 +5,37 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytask
 
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.panel_specs import (
+    ANALYSIS_PANELS,
+)
 from meu_replication.analysis.sv_validation import (
     assert_sv_validation_passed,
     build_stability_metrics,
     build_sv_validation_summary,
     build_validation_subset_metrics,
 )
-from meu_replication.config import ANALYSIS
 
 
-def _validation_dependencies() -> dict[str, Path]:
+def _validation_dependencies(base_dir: Path) -> dict[str, Path]:
     return {
-        "forecast_errors_y": ANALYSIS / "forecast_errors_y.parquet",
-        "forecast_errors_f": ANALYSIS / "forecast_errors_f.parquet",
-        "series_order": ANALYSIS / "series_order.parquet",
-        "sv_params_y": ANALYSIS / "sv_params_y.parquet",
-        "sv_params_f": ANALYSIS / "sv_params_f.parquet",
-        "sv_diagnostics": ANALYSIS / "sv_diagnostics.parquet",
+        "forecast_errors_y": base_dir / "forecast_errors_y.parquet",
+        "forecast_errors_f": base_dir / "forecast_errors_f.parquet",
+        "series_order": base_dir / "series_order.parquet",
+        "sv_params_y": base_dir / "sv_params_y.parquet",
+        "sv_params_f": base_dir / "sv_params_f.parquet",
+        "sv_diagnostics": base_dir / "sv_diagnostics.parquet",
     }
 
 
-def _validation_outputs() -> dict[str, Path]:
+def _validation_outputs(base_dir: Path) -> dict[str, Path]:
     return {
-        "sv_validation_summary": ANALYSIS / "sv_validation_summary.parquet",
-        "sv_validation_subset_metrics": ANALYSIS
+        "sv_validation_summary": base_dir / "sv_validation_summary.parquet",
+        "sv_validation_subset_metrics": base_dir
         / "sv_validation_subset_metrics.parquet",
     }
-
-
-def task_validate_stochastic_volatility(
-    depends_on: dict[str, Path] = _validation_dependencies(),
-    produces: dict[str, Path] = _validation_outputs(),
-    config: MEUConfig | None = None,
-) -> None:
-    """Run stochastic-volatility validation on sentinel y-series and factors."""
-    run_stochastic_volatility_validation(
-        depends_on=depends_on,
-        produces=produces,
-        config=MEUConfig(sv_mode="fast") if config is None else config,
-    )
 
 
 def run_stochastic_volatility_validation(
@@ -87,7 +77,23 @@ def run_stochastic_volatility_validation(
     assert_sv_validation_passed(summary)
 
     print(
-        "SV validation complete: "
+        f"[{config.panel_name}] SV validation complete: "
         f"passed={bool(summary.loc[0, 'validation_passed'])}, "
         f"failed_metrics={summary.loc[0, 'failed_metrics'] or 'none'}."
     )
+
+
+for _spec in ANALYSIS_PANELS:
+
+    @pytask.task(id=_spec.task_id)
+    def task_validate_stochastic_volatility(
+        depends_on: dict[str, Path] = _validation_dependencies(_spec.output_dir),
+        produces: dict[str, Path] = _validation_outputs(_spec.output_dir),
+        panel_name: str = _spec.panel_name,
+    ) -> None:
+        """Run SV validation for one cleaned panel."""
+        run_stochastic_volatility_validation(
+            depends_on=depends_on,
+            produces=produces,
+            config=MEUConfig(panel_name=panel_name, sv_mode="fast"),
+        )

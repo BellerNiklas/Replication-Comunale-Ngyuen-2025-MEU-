@@ -110,7 +110,7 @@ requests = ">=2.28"
 
 [tool.pixi.tasks]
 ty = { cmd = "ty check", description = "Check typing" }
-pytask-parallel = { cmd = "pytask build -n 8", description = "Run pytask with 8 workers." }
+pytask-parallel = { cmd = "pytask build -n 2", description = "Run pytask with 2 workers." }
 
 [tool.pixi.feature.docs.dependencies]
 jupyter-book = ">=2.0"

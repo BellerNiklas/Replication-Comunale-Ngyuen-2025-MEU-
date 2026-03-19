@@ -18,14 +18,15 @@ The codebase currently implements the full baseline pipeline through **Milestone
 ```bash
 pixi install              # Install the pinned environment
 pixi run pytask           # Run the full pipeline
-pixi run pytask-parallel  # Run pytask with 8 workers where task parallelism is available
+pixi run pytask-parallel  # Run all panel branches with a safer 2-worker default
+pixi run pytask -k analysis_2025  # Re-run only the 2025 analysis branch
 pixi run pytest           # Run the test suite
 pixi run prek             # Run pre-commit checks
 ```
 
 ### Expected Runtime
 
-Data fetching and cleaning typically finish much faster than the analysis stage and depend on API responsiveness. The factor and forecast-error stages are moderate local computations, while the current full-mode stochastic-volatility stage is the main runtime bottleneck because it is run in a **reference-aligned serial panel loop**. In practice, a full end-to-end run can therefore take **hours**, not just a short fetch/clean cycle.
+Data fetching and cleaning typically finish much faster than the analysis stage and depend on API responsiveness. The factor and forecast-error stages are moderate local computations, while the current full-mode stochastic-volatility stage is the main runtime bottleneck because it is run in a **reference-aligned serial panel loop** within each panel branch. In practice, a full end-to-end run can therefore take **hours**, not just a short fetch/clean cycle, although `pytask-parallel` can now schedule the 2021, 2022, and 2025 analysis branches concurrently. The default Pixi task uses `2` workers because three simultaneous full `sv_y` runs can overrun Windows/R memory on this machine; if a stronger workstation handles it comfortably, you can still raise `-n` manually. The task-selection keys use short ids such as `analysis_2025` so they remain Windows-safe for the R-backed `pytask-r` tasks.
 
 If outputs already exist, `pytask` will skip unchanged tasks and reruns will be much faster.
 
@@ -57,13 +58,10 @@ The analysis input is produced by a short three-stage preprocessing pipeline:
 3. **High-correlation filtering**  
    Within each country, highly correlated series are filtered using a deterministic alphabetical tie-break rule and a `|corr| > 0.95` threshold.
 
-The current baseline analysis input is the correlation-filtered strict 2022 panel:
-
-- `bld/data/clean/panel_2003_2022_strict_corr.parquet`
-
-Additional strict cleaned panels are generated for:
+The supported analysis inputs are the correlation-filtered strict panels for:
 
 - `bld/data/clean/panel_2003_2021_strict_corr.parquet`
+- `bld/data/clean/panel_2003_2022_strict_corr.parquet`
 - `bld/data/clean/panel_2003_2025_strict_corr.parquet`
 
 A reproducible correlation-audit stage now writes pair-level and decision-level
@@ -80,6 +78,12 @@ Plain-language summary: MEU is built by first forecasting each macro series as w
 
 The cleaned long panel is pivoted once into a deterministic wide matrix, standardized, and used to estimate static factors using the Bai-Ng IC2 criterion on both `X` and `X^2`. The resulting predictor set follows the JLN-style structure used downstream.
 
+Each full analysis branch writes its stage outputs under its own directory:
+
+- `bld/analysis/panel_2003_2021_strict_corr/`
+- `bld/analysis/panel_2003_2022_strict_corr/`
+- `bld/analysis/panel_2003_2025_strict_corr/`
+
 Main outputs include:
 
 - `panel_wide.parquet`
@@ -88,6 +92,8 @@ Main outputs include:
 - `ghat.parquet`
 - `predictor_set.parquet`
 - `factor_metadata.parquet`
+
+The filenames below refer to files within one panel-specific analysis directory.
 
 ### 2. Forecast-Error Estimation - Implemented
 
@@ -137,9 +143,9 @@ Main output:
 
 ## Current Status and Limitations
 
-- The repository currently implements the baseline **Milestones 1-5** pipeline, including euro-area aggregation, on the strict 2022 cleaned panel.
+- The repository currently implements the baseline **Milestones 1-5** pipeline, including euro-area aggregation, on the strict 2021, 2022, and 2025 cleaned panels.
 - The current public output is the baseline EA-wide simple-mean MEU; country MEUs, PCA aggregation, and paper-style final figures/tables are still follow-on work.
-- Full pipeline runtime is dominated by the reference-aligned full-mode stochastic-volatility estimation, which is slower than a chunked or parallelized approximation.
+- Full pipeline runtime is dominated by the reference-aligned full-mode stochastic-volatility estimation, which is still slow within each panel even though panel branches can now be scheduled in parallel.
 - Public data providers can revise historical observations, so exact row counts and values may drift over time.
 - The replication uses the current public-data panel available through the programmed fetch pipeline, which may differ slightly from the paper authors' original source snapshot.
 - The relaxed `98%` coverage path and the generated coverage audit report have been removed; preprocessing is strict-only.

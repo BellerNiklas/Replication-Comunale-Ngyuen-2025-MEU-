@@ -9,10 +9,11 @@ aggregation. The cleaning-rule decision has now been fixed: the project uses
 strict endpoint-specific panels as its supported preprocessing path.
 
 In practical terms, the project has moved beyond building the baseline MEU
-engine. The next phase is about extending the strict endpoint to 2025,
-investigating the remaining correlation gap with the paper, and then
-broadening the outputs from one euro-area series to a full set of euro-area
-and country-level MEUs.
+engine. The core workflow now runs on the three strict cleaned endpoints, 2021,
+2022, and 2025, with panel-specific outputs under `bld/analysis/<panel_name>/`.
+The next phase is about investigating the remaining correlation gap with the
+paper and then broadening the outputs from euro-area series to a full set of
+euro-area and country-level MEUs.
 
 ## What Has Already Been Done
 
@@ -20,7 +21,7 @@ The current repository already covers the main steps of the baseline
 replication workflow:
 
 - raw-data processing and variable transformations
-- strict completeness filtering for the 2021 and 2022 endpoint versions
+- strict completeness filtering for the 2021, 2022, and 2025 endpoint versions
 - correlation filtering within countries
 - factor estimation
 - forecast-error estimation
@@ -28,8 +29,8 @@ replication workflow:
 - uncertainty computation
 - baseline euro-area MEU aggregation
 
-As a result, the repo already produces an EA-wide MEU for a cleaned strict 2022
-panel.
+As a result, the repo now produces EA-wide MEUs for all three cleaned strict
+panels.
 The root [README](../README.md) remains the main technical entry point for the
 implemented pipeline and the current analysis outputs.
 
@@ -64,14 +65,13 @@ estimation.
 
 ## Next Analytical Deliverables
 
-Once the cleaned panels are finalized, the next euro-area goal is to calculate
-the MEU for all three fully cleaned panels:
+The cleaned panels are now wired into the full analysis DAG, and `pixi run
+pytask-parallel` can schedule the 2021, 2022, and 2025 branches concurrently
+with a safer two-worker default on Windows. Single-panel reruns can be targeted
+with `pytask -k analysis_2025` and the analogous `analysis_2021` and
+`analysis_2022` keys.
 
-- 2021
-- 2022
-- 2025
-
-The most important next extension, however, is to calculate country-level MEUs
+The most important next extension is now to calculate country-level MEUs
 using the same method. This should not require a new uncertainty model. The
 existing pipeline should be reused, with the main change happening at the final
 aggregation step, where the series included in the average are restricted to a
@@ -82,11 +82,9 @@ single baseline replication into a broader uncertainty framework.
 
 ## Priority Order
 
-1. extend the strict endpoint to 2025
-2. investigate the high correlation drops
-3. finalize the three cleaned panels
-4. compute EA MEUs for all three panels
-5. compute country MEUs for all countries
+1. investigate the high correlation drops
+2. compute country MEUs for all countries
+3. add alternative aggregation choices if needed for the paper comparison
 
 ## Closing Note
 
