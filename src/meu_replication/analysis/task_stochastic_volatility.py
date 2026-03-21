@@ -8,6 +8,10 @@ import pandas as pd
 from pytask import mark, task
 
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.output_layout import (
+    AnalysisOutputLayout,
+    build_panel_output_layout,
+)
 from meu_replication.analysis.panel_specs import (
     ANALYSIS_PANELS,
     DEFAULT_ANALYSIS_PANEL,
@@ -55,30 +59,30 @@ def _production_config(panel_name: str = DEFAULT_ANALYSIS_PANEL.panel_name) -> M
     return MEUConfig(panel_name=panel_name, sv_mode="full")
 
 
-def _sv_public_dependencies(base_dir: Path) -> dict[str, Path]:
+def _sv_public_dependencies(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "forecast_metadata": base_dir / "forecast_metadata.parquet",
-        "series_order": base_dir / "series_order.parquet",
-        **_sv_core_dependencies(base_dir),
+        "forecast_metadata": layout.forecasts_dir / "forecast_metadata.parquet",
+        "series_order": layout.factors_dir / "series_order.parquet",
+        **_sv_core_dependencies(layout),
     }
 
 
-def _sv_public_outputs(base_dir: Path) -> dict[str, Path]:
+def _sv_public_outputs(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "sv_params_y": base_dir / "sv_params_y.parquet",
-        "sv_latent_y": base_dir / "sv_latent_y.parquet",
-        "sv_params_f": base_dir / "sv_params_f.parquet",
-        "sv_latent_f": base_dir / "sv_latent_f.parquet",
-        "sv_diagnostics": base_dir / "sv_diagnostics.parquet",
+        "sv_params_y": layout.sv_dir / "sv_params_y.parquet",
+        "sv_latent_y": layout.sv_dir / "sv_latent_y.parquet",
+        "sv_params_f": layout.sv_dir / "sv_params_f.parquet",
+        "sv_latent_f": layout.sv_dir / "sv_latent_f.parquet",
+        "sv_diagnostics": layout.sv_diagnostics_dir / "sv_diagnostics.parquet",
     }
 
 
-def _sv_core_dir(base_dir: Path) -> Path:
-    return base_dir / _CORE_SUBDIR
+def _sv_core_dir(layout: AnalysisOutputLayout) -> Path:
+    return layout.sv_r_dir
 
 
-def _sv_y_core_outputs(base_dir: Path) -> dict[str, Path]:
-    core_dir = _sv_core_dir(base_dir)
+def _sv_y_core_outputs(layout: AnalysisOutputLayout) -> dict[str, Path]:
+    core_dir = _sv_core_dir(layout)
     return {
         "params": core_dir / "sv_params_y_core.parquet",
         "latent": core_dir / "sv_latent_y_core.parquet",
@@ -86,8 +90,8 @@ def _sv_y_core_outputs(base_dir: Path) -> dict[str, Path]:
     }
 
 
-def _sv_f_core_outputs(base_dir: Path) -> dict[str, Path]:
-    core_dir = _sv_core_dir(base_dir)
+def _sv_f_core_outputs(layout: AnalysisOutputLayout) -> dict[str, Path]:
+    core_dir = _sv_core_dir(layout)
     return {
         "params": core_dir / "sv_params_f_core.parquet",
         "latent": core_dir / "sv_latent_f_core.parquet",
@@ -95,9 +99,9 @@ def _sv_f_core_outputs(base_dir: Path) -> dict[str, Path]:
     }
 
 
-def _sv_core_dependencies(base_dir: Path) -> dict[str, Path]:
-    y_outputs = _sv_y_core_outputs(base_dir)
-    factor_outputs = _sv_f_core_outputs(base_dir)
+def _sv_core_dependencies(layout: AnalysisOutputLayout) -> dict[str, Path]:
+    y_outputs = _sv_y_core_outputs(layout)
+    factor_outputs = _sv_f_core_outputs(layout)
     return {
         "sv_params_y_core": y_outputs["params"],
         "sv_latent_y_core": y_outputs["latent"],
@@ -108,14 +112,14 @@ def _sv_core_dependencies(base_dir: Path) -> dict[str, Path]:
     }
 
 
-def _panel_dependencies(base_dir: Path, series_type: str) -> dict[str, Path]:
+def _panel_dependencies(layout: AnalysisOutputLayout, series_type: str) -> dict[str, Path]:
     if series_type == "y":
         return {
-            "forecast_errors": base_dir / "forecast_errors_y.parquet",
-            "series_order": base_dir / "series_order.parquet",
+            "forecast_errors": layout.forecasts_dir / "forecast_errors_y.parquet",
+            "series_order": layout.factors_dir / "series_order.parquet",
         }
     return {
-        "forecast_errors": base_dir / "forecast_errors_f.parquet",
+        "forecast_errors": layout.forecasts_dir / "forecast_errors_f.parquet",
     }
 
 
@@ -144,20 +148,20 @@ def run_stochastic_volatility_stage(
     config: MEUConfig,
 ) -> None:
     """Run the SV stage directly from Python for tests and checkpoints."""
-    base_dir = produces["sv_diagnostics"].parent
+    layout = _layout_from_outputs(produces)
 
     _run_panel_estimation(
         depends_on={
             "forecast_errors": depends_on["forecast_errors_y"],
             "series_order": depends_on["series_order"],
         },
-        produces=_sv_y_core_outputs(base_dir),
+        produces=_sv_y_core_outputs(layout),
         config=config,
         series_type="y",
     )
     _run_panel_estimation(
         depends_on={"forecast_errors": depends_on["forecast_errors_f"]},
-        produces=_sv_f_core_outputs(base_dir),
+        produces=_sv_f_core_outputs(layout),
         config=config,
         series_type="f",
     )
@@ -165,7 +169,7 @@ def run_stochastic_volatility_stage(
         depends_on={
             "forecast_metadata": depends_on["forecast_metadata"],
             "series_order": depends_on["series_order"],
-            **_sv_core_dependencies(base_dir),
+            **_sv_core_dependencies(layout),
         },
         produces=produces,
         config=config,
@@ -261,6 +265,12 @@ def _normalize_diagnostics_frame(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def _layout_from_outputs(produces: dict[str, Path]) -> AnalysisOutputLayout:
+    sv_dir = produces["sv_params_y"].parent
+    panel_root = sv_dir.parent.parent
+    return build_panel_output_layout(panel_root.name, panels_dir=panel_root.parent)
+
+
 def _consolidate_sv_outputs(
     *,
     depends_on: dict[str, Path],
@@ -334,8 +344,8 @@ for _spec in ANALYSIS_PANELS:
     )
     @mark.r(script=SV_R_SCRIPT)
     def sv_y(
-        depends_on: dict[str, Path] = _panel_dependencies(_spec.output_dir, "y"),
-        produces: dict[str, Path] = _sv_y_core_outputs(_spec.output_dir),
+        depends_on: dict[str, Path] = _panel_dependencies(_spec.layout, "y"),
+        produces: dict[str, Path] = _sv_y_core_outputs(_spec.layout),
     ) -> None:
         """Estimate stochastic volatility for one Y residual panel."""
         pass
@@ -347,16 +357,16 @@ for _spec in ANALYSIS_PANELS:
     )
     @mark.r(script=SV_R_SCRIPT)
     def sv_f(
-        depends_on: dict[str, Path] = _panel_dependencies(_spec.output_dir, "f"),
-        produces: dict[str, Path] = _sv_f_core_outputs(_spec.output_dir),
+        depends_on: dict[str, Path] = _panel_dependencies(_spec.layout, "f"),
+        produces: dict[str, Path] = _sv_f_core_outputs(_spec.layout),
     ) -> None:
         """Estimate stochastic volatility for one factor residual panel."""
         pass
 
     @task(id=_spec.task_id)
     def task_sv_consolidate(
-        depends_on: dict[str, Path] = _sv_public_dependencies(_spec.output_dir),
-        produces: dict[str, Path] = _sv_public_outputs(_spec.output_dir),
+        depends_on: dict[str, Path] = _sv_public_dependencies(_spec.layout),
+        produces: dict[str, Path] = _sv_public_outputs(_spec.layout),
         panel_name: str = _spec.panel_name,
     ) -> None:
         """Normalize SV outputs for one cleaned panel."""

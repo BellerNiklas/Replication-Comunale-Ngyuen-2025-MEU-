@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.output_layout import build_panel_output_layout
 from meu_replication.analysis.task_estimate_factors import task_estimate_factors
 
 
@@ -35,16 +36,20 @@ def _make_panel() -> pd.DataFrame:
 def test_task_estimate_factors_writes_expected_outputs(tmp_path: Path):
     panel_path = tmp_path / "panel.parquet"
     _make_panel().to_parquet(panel_path, index=False)
+    layout = build_panel_output_layout(
+        "panel_2003_2025_strict_corr",
+        panels_dir=tmp_path / "analysis" / "panels",
+    )
 
     produces = {
-        "panel_wide": tmp_path / "panel_wide.parquet",
-        "series_order": tmp_path / "series_order.parquet",
-        "date_index": tmp_path / "date_index.parquet",
-        "series_standardization": tmp_path / "series_standardization.parquet",
-        "fhat": tmp_path / "fhat.parquet",
-        "ghat": tmp_path / "ghat.parquet",
-        "predictor_set": tmp_path / "predictor_set.parquet",
-        "factor_metadata": tmp_path / "factor_metadata.parquet",
+        "panel_wide": layout.factors_dir / "panel_wide.parquet",
+        "series_order": layout.factors_dir / "series_order.parquet",
+        "date_index": layout.factors_dir / "date_index.parquet",
+        "series_standardization": layout.factors_dir / "series_standardization.parquet",
+        "fhat": layout.factors_dir / "fhat.parquet",
+        "ghat": layout.factors_dir / "ghat.parquet",
+        "predictor_set": layout.factors_dir / "predictor_set.parquet",
+        "factor_metadata": layout.factors_dir / "factor_metadata.parquet",
     }
 
     config = MEUConfig(panel_name="panel_2003_2025_strict_corr")

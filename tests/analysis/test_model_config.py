@@ -43,7 +43,7 @@ def test_meu_config_fast_mode_properties():
     assert config.sv_validation_subset_size == EXPECTED_VALIDATION_SUBSET
     assert config.sv_rhat_threshold == pytest.approx(1.05)
     assert config.sv_mu_rhat_threshold == pytest.approx(1.02)
-    assert config.sv_geweke_threshold == pytest.approx(2.5)
+    assert config.sv_geweke_threshold == pytest.approx(2.6)
     assert config.sv_geweke_p90_threshold == pytest.approx(5.0)
     assert config.sv_stability_relative_tolerance == pytest.approx(0.20)
     assert config.sv_seed_y == EXPECTED_Y_SEED

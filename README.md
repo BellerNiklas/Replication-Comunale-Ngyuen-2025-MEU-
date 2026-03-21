@@ -65,7 +65,7 @@ The supported analysis inputs are the correlation-filtered strict panels for:
 - `bld/data/clean/panel_2003_2025_strict_corr.parquet`
 
 A reproducible correlation-audit stage now writes pair-level and decision-level
-review outputs under `bld/analysis/correlation_audit/`, plus a ranked review
+review outputs under `bld/analysis/audits/correlation/`, plus a ranked review
 report at `bld/documents/correlation_cleaning_review.md`.
 
 Because differencing removes the first observation for transformed series, the cleaned transformed sample starts in **2003-02**.
@@ -78,11 +78,18 @@ Plain-language summary: MEU is built by first forecasting each macro series as w
 
 The cleaned long panel is pivoted once into a deterministic wide matrix, standardized, and used to estimate static factors using the Bai-Ng IC2 criterion on both `X` and `X^2`. The resulting predictor set follows the JLN-style structure used downstream.
 
-Each full analysis branch writes its stage outputs under its own directory:
+Each full analysis branch now writes into a results-first panel directory:
 
-- `bld/analysis/panel_2003_2021_strict_corr/`
-- `bld/analysis/panel_2003_2022_strict_corr/`
-- `bld/analysis/panel_2003_2025_strict_corr/`
+- `bld/analysis/panels/panel_2003_2021_strict_corr/`
+- `bld/analysis/panels/panel_2003_2022_strict_corr/`
+- `bld/analysis/panels/panel_2003_2025_strict_corr/`
+
+Within each panel, outputs are grouped as:
+
+- `results/` for public MEU deliverables
+- `diagnostics/` for validation summaries
+- `artifacts/` for stage outputs consumed downstream
+- `internal/` for implementation-specific caches such as raw SV intermediates
 
 Main outputs include:
 
@@ -93,7 +100,9 @@ Main outputs include:
 - `predictor_set.parquet`
 - `factor_metadata.parquet`
 
-The filenames below refer to files within one panel-specific analysis directory.
+The filenames below refer to files within one panel-specific analysis directory,
+under the appropriate `results/`, `diagnostics/`, `artifacts/`, or `internal/`
+subfolder.
 
 ### 2. Forecast-Error Estimation - Implemented
 
@@ -130,7 +139,7 @@ The uncertainty stage combines the forecast-system coefficients with the stochas
 
 Main output:
 
-- `uncertainty_variance.parquet`
+- `artifacts/uncertainty/uncertainty_variance.parquet`
 
 ### 5. Euro-Area Aggregation - Implemented
 
@@ -138,13 +147,24 @@ The final baseline stage aggregates the series-level uncertainty objects into th
 
 Main output:
 
-- `meu_ea.parquet`
+- `results/euro_area/meu_ea.parquet`
 - final figures and tables under `src/meu_replication/final/`
+
+### 6. Country-Level MEU Aggregation - Implemented
+
+Country MEUs are derived from the same common euro-area model outputs, not estimated in isolated country reruns. For each of the 19 EA member countries, the aggregation restricts to that country's retained series plus the shared `U2_FX_*` bilateral exchange-rate series and computes `mean(sqrt(variance))` per date-horizon pair.
+
+The choice to include only the FX block as the shared common component is a project assumption. The paper text is ambiguous between "euro area-wide common variables" and "bilateral exchange rates"; the current implementation uses the narrower FX-only rule.
+
+Main outputs (per panel, under `results/countries/`):
+
+- `all_countries_meu.parquet` — consolidated country MEUs (`country_iso2`, `date`, `horizon`, `meu`)
+- `basket_membership.parquet` — audit table showing which series enter each country's basket
 
 ## Current Status and Limitations
 
 - The repository currently implements the baseline **Milestones 1-5** pipeline, including euro-area aggregation, on the strict 2021, 2022, and 2025 cleaned panels.
-- The current public output is the baseline EA-wide simple-mean MEU; country MEUs, PCA aggregation, and paper-style final figures/tables are still follow-on work.
+- Country-level MEUs for all 19 EA members are now implemented as a lightweight aggregation stage on top of the common model outputs. PCA aggregation and paper-style final figures/tables are still follow-on work.
 - Full pipeline runtime is dominated by the reference-aligned full-mode stochastic-volatility estimation, which is still slow within each panel even though panel branches can now be scheduled in parallel.
 - Public data providers can revise historical observations, so exact row counts and values may drift over time.
 - The replication uses the current public-data panel available through the programmed fetch pipeline, which may differ slightly from the paper authors' original source snapshot.

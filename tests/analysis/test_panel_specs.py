@@ -27,7 +27,20 @@ def test_analysis_panel_specs_resolve_supported_inputs_and_output_dirs():
         assert spec.cleaned_panel_path == (
             BLD / "data" / "clean" / f"{spec.panel_name}.parquet"
         )
-        assert spec.output_dir == ANALYSIS / spec.panel_name
+        assert spec.output_dir == ANALYSIS / "panels" / spec.panel_name
+        assert spec.layout.output_dir == spec.output_dir
+        assert spec.layout.euro_area_results_dir == (
+            spec.output_dir / "results" / "euro_area"
+        )
+        assert spec.layout.country_results_dir == spec.output_dir / "results" / "countries"
+        assert spec.layout.sv_diagnostics_dir == spec.output_dir / "diagnostics" / "sv"
+        assert spec.layout.factors_dir == spec.output_dir / "artifacts" / "factors"
+        assert spec.layout.forecasts_dir == spec.output_dir / "artifacts" / "forecasts"
+        assert spec.layout.sv_dir == spec.output_dir / "artifacts" / "sv"
+        assert spec.layout.uncertainty_dir == (
+            spec.output_dir / "artifacts" / "uncertainty"
+        )
+        assert spec.layout.sv_r_dir == spec.output_dir / "internal" / "sv_r"
 
 
 def test_get_analysis_panel_spec_raises_for_unknown_panel():

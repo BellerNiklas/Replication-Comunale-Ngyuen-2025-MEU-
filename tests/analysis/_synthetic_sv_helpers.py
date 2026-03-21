@@ -11,6 +11,7 @@ def write_synthetic_sv_outputs(
     regression_coefs_f_path: Path,
     forecast_errors_y_path: Path,
     forecast_errors_f_path: Path,
+    sv_dir: Path | None = None,
 ) -> dict[str, Path]:
     series_order = pd.read_parquet(series_order_path).sort_values("series_position")
     regression_coefs_f = pd.read_parquet(regression_coefs_f_path).sort_values(
@@ -19,11 +20,13 @@ def write_synthetic_sv_outputs(
     forecast_errors_y = pd.read_parquet(forecast_errors_y_path)
     forecast_errors_f = pd.read_parquet(forecast_errors_f_path)
 
+    output_dir = tmp_path if sv_dir is None else sv_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
     sv_outputs = {
-        "sv_params_y": tmp_path / "sv_params_y.parquet",
-        "sv_latent_y": tmp_path / "sv_latent_y.parquet",
-        "sv_params_f": tmp_path / "sv_params_f.parquet",
-        "sv_latent_f": tmp_path / "sv_latent_f.parquet",
+        "sv_params_y": output_dir / "sv_params_y.parquet",
+        "sv_latent_y": output_dir / "sv_latent_y.parquet",
+        "sv_params_f": output_dir / "sv_params_f.parquet",
+        "sv_latent_f": output_dir / "sv_latent_f.parquet",
     }
 
     pd.DataFrame(

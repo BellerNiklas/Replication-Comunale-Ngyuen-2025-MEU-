@@ -11154,8 +11154,8 @@ packages:
   timestamp: 1733255681319
 - pypi: ./
   name: meu-replication
-  version: 0.1.dev52+gefb2b2780.d20260316
-  sha256: 690ee413585ea2416d281db9be29d33b932bf46252812734d7d6612a3e129640
+  version: 0.1.dev61+g7b0ef1ef9.d20260318
+  sha256: 4807794fdbea19cd0c99ebdcb610e4ad3b12adfb9032dbd6dc38ecb444c751e1
   requires_python: ==3.14
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/mingw-w64-ucrt-x86_64-crt-git-12.0.0.r4.gg4f2fc60ca-hd8ed1ab_10.conda

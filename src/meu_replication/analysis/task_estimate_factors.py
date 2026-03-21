@@ -12,22 +12,23 @@ from meu_replication.analysis.factor_estimation import (
     prepare_analysis_panel,
 )
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.output_layout import AnalysisOutputLayout
 from meu_replication.analysis.panel_specs import (
     ANALYSIS_PANELS,
     DEFAULT_ANALYSIS_PANEL,
 )
 
 
-def _factor_outputs(base_dir: Path) -> dict[str, Path]:
+def _factor_outputs(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "panel_wide": base_dir / "panel_wide.parquet",
-        "series_order": base_dir / "series_order.parquet",
-        "date_index": base_dir / "date_index.parquet",
-        "series_standardization": base_dir / "series_standardization.parquet",
-        "fhat": base_dir / "fhat.parquet",
-        "ghat": base_dir / "ghat.parquet",
-        "predictor_set": base_dir / "predictor_set.parquet",
-        "factor_metadata": base_dir / "factor_metadata.parquet",
+        "panel_wide": layout.factors_dir / "panel_wide.parquet",
+        "series_order": layout.factors_dir / "series_order.parquet",
+        "date_index": layout.factors_dir / "date_index.parquet",
+        "series_standardization": layout.factors_dir / "series_standardization.parquet",
+        "fhat": layout.factors_dir / "fhat.parquet",
+        "ghat": layout.factors_dir / "ghat.parquet",
+        "predictor_set": layout.factors_dir / "predictor_set.parquet",
+        "factor_metadata": layout.factors_dir / "factor_metadata.parquet",
     }
 
 
@@ -139,7 +140,7 @@ for _spec in ANALYSIS_PANELS:
     @pytask.task(id=_spec.task_id)
     def task_estimate_factors(
         depends_on: Path = _spec.cleaned_panel_path,
-        produces: dict[str, Path] = _factor_outputs(_spec.output_dir),
+        produces: dict[str, Path] = _factor_outputs(_spec.layout),
         panel_name: str = _spec.panel_name,
     ) -> None:
         """Run the factor stage for one cleaned panel."""
@@ -156,7 +157,7 @@ class _TaskEstimateFactorsCallable:
     def __call__(
         self,
         depends_on: Path = DEFAULT_ANALYSIS_PANEL.cleaned_panel_path,
-        produces: dict[str, Path] = _factor_outputs(DEFAULT_ANALYSIS_PANEL.output_dir),
+        produces: dict[str, Path] = _factor_outputs(DEFAULT_ANALYSIS_PANEL.layout),
         config: MEUConfig | None = None,
     ) -> None:
         run_factor_estimation_stage(

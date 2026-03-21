@@ -8,6 +8,7 @@ from meu_replication.analysis.aggregate_meu import (
     build_basket_membership,
     build_country_baskets,
 )
+from meu_replication.analysis.output_layout import build_panel_output_layout
 from meu_replication.analysis.task_aggregate_country_meu import (
     run_country_meu_aggregation_stage,
 )
@@ -277,18 +278,25 @@ def _full_series_order() -> pd.DataFrame:
 def test_run_country_meu_aggregation_stage(tmp_path):
     so = _full_series_order()
     uv = _uncertainty_panel(so)
-    so.to_parquet(tmp_path / "series_order.parquet", index=False)
-    uv.to_parquet(tmp_path / "uncertainty_variance.parquet", index=False)
+    layout = build_panel_output_layout(
+        "panel_2003_2025_strict_corr",
+        panels_dir=tmp_path / "analysis" / "panels",
+    )
+
+    layout.factors_dir.mkdir(parents=True, exist_ok=True)
+    layout.uncertainty_dir.mkdir(parents=True, exist_ok=True)
+    so.to_parquet(layout.factors_dir / "series_order.parquet", index=False)
+    uv.to_parquet(layout.uncertainty_dir / "uncertainty_variance.parquet", index=False)
 
     produces = {
-        "all_countries_meu": tmp_path / "countries" / "all_countries_meu.parquet",
-        "basket_membership": tmp_path / "countries" / "basket_membership.parquet",
+        "all_countries_meu": layout.country_results_dir / "all_countries_meu.parquet",
+        "basket_membership": layout.country_results_dir / "basket_membership.parquet",
     }
 
     run_country_meu_aggregation_stage(
         depends_on={
-            "uncertainty_variance": tmp_path / "uncertainty_variance.parquet",
-            "series_order": tmp_path / "series_order.parquet",
+            "uncertainty_variance": layout.uncertainty_dir / "uncertainty_variance.parquet",
+            "series_order": layout.factors_dir / "series_order.parquet",
         },
         produces=produces,
         panel_name="test_panel",

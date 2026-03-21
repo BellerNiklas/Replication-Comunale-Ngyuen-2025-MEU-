@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 
 from meu_replication.analysis.forecast_errors import generate_forecast_errors
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.output_layout import AnalysisOutputLayout
 from meu_replication.analysis.panel_specs import (
     ANALYSIS_PANELS,
     DEFAULT_ANALYSIS_PANEL,
@@ -19,24 +20,24 @@ from meu_replication.analysis.panel_specs import (
 FloatArray = NDArray[np.float64]
 
 
-def _forecast_dependencies(base_dir: Path) -> dict[str, Path]:
+def _forecast_dependencies(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "panel_wide": base_dir / "panel_wide.parquet",
-        "series_order": base_dir / "series_order.parquet",
-        "series_standardization": base_dir / "series_standardization.parquet",
-        "predictor_set": base_dir / "predictor_set.parquet",
-        "factor_metadata": base_dir / "factor_metadata.parquet",
+        "panel_wide": layout.factors_dir / "panel_wide.parquet",
+        "series_order": layout.factors_dir / "series_order.parquet",
+        "series_standardization": layout.factors_dir / "series_standardization.parquet",
+        "predictor_set": layout.factors_dir / "predictor_set.parquet",
+        "factor_metadata": layout.factors_dir / "factor_metadata.parquet",
     }
 
 
-def _forecast_outputs(base_dir: Path) -> dict[str, Path]:
+def _forecast_outputs(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "forecast_errors_y": base_dir / "forecast_errors_y.parquet",
-        "forecast_errors_f": base_dir / "forecast_errors_f.parquet",
-        "regression_coefs_y": base_dir / "regression_coefs_y.parquet",
-        "regression_coefs_f": base_dir / "regression_coefs_f.parquet",
-        "predictor_selection_masks": base_dir / "predictor_selection_masks.parquet",
-        "forecast_metadata": base_dir / "forecast_metadata.parquet",
+        "forecast_errors_y": layout.forecasts_dir / "forecast_errors_y.parquet",
+        "forecast_errors_f": layout.forecasts_dir / "forecast_errors_f.parquet",
+        "regression_coefs_y": layout.forecasts_dir / "regression_coefs_y.parquet",
+        "regression_coefs_f": layout.forecasts_dir / "regression_coefs_f.parquet",
+        "predictor_selection_masks": layout.forecasts_dir / "predictor_selection_masks.parquet",
+        "forecast_metadata": layout.forecasts_dir / "forecast_metadata.parquet",
     }
 
 
@@ -188,8 +189,8 @@ for _spec in ANALYSIS_PANELS:
 
     @pytask.task(id=_spec.task_id)
     def task_forecast_errors(
-        depends_on: dict[str, Path] = _forecast_dependencies(_spec.output_dir),
-        produces: dict[str, Path] = _forecast_outputs(_spec.output_dir),
+        depends_on: dict[str, Path] = _forecast_dependencies(_spec.layout),
+        produces: dict[str, Path] = _forecast_outputs(_spec.layout),
         panel_name: str = _spec.panel_name,
     ) -> None:
         """Run the forecast-error stage for one cleaned panel."""
@@ -205,10 +206,8 @@ class _TaskForecastErrorsCallable:
 
     def __call__(
         self,
-        depends_on: dict[str, Path] = _forecast_dependencies(
-            DEFAULT_ANALYSIS_PANEL.output_dir
-        ),
-        produces: dict[str, Path] = _forecast_outputs(DEFAULT_ANALYSIS_PANEL.output_dir),
+        depends_on: dict[str, Path] = _forecast_dependencies(DEFAULT_ANALYSIS_PANEL.layout),
+        produces: dict[str, Path] = _forecast_outputs(DEFAULT_ANALYSIS_PANEL.layout),
         config: MEUConfig | None = None,
     ) -> None:
         run_forecast_error_stage(

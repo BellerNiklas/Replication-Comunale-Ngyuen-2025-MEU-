@@ -7,6 +7,8 @@ ROOT: Path = SRC.joinpath("..", "..").resolve()
 
 BLD: Path = ROOT.joinpath("bld").resolve()
 ANALYSIS: Path = BLD.joinpath("analysis").resolve()
+FINAL: Path = BLD.joinpath("final").resolve()
+FINAL_PLOTS: Path = FINAL.joinpath("plots").resolve()
 
 
 DOCUMENTS: Path = ROOT.joinpath("documents").resolve()

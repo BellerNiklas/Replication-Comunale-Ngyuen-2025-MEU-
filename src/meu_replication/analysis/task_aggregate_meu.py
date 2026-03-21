@@ -8,22 +8,23 @@ import pandas as pd
 import pytask
 
 from meu_replication.analysis.aggregate_meu import aggregate_ea_meu
+from meu_replication.analysis.output_layout import AnalysisOutputLayout
 from meu_replication.analysis.panel_specs import (
     ANALYSIS_PANELS,
     DEFAULT_ANALYSIS_PANEL,
 )
 
 
-def _aggregation_dependencies(base_dir: Path) -> dict[str, Path]:
+def _aggregation_dependencies(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "uncertainty_variance": base_dir / "uncertainty_variance.parquet",
-        "series_order": base_dir / "series_order.parquet",
+        "uncertainty_variance": layout.uncertainty_dir / "uncertainty_variance.parquet",
+        "series_order": layout.factors_dir / "series_order.parquet",
     }
 
 
-def _aggregation_outputs(base_dir: Path) -> dict[str, Path]:
+def _aggregation_outputs(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "meu_ea": base_dir / "meu_ea.parquet",
+        "meu_ea": layout.euro_area_results_dir / "meu_ea.parquet",
     }
 
 
@@ -56,8 +57,8 @@ for _spec in ANALYSIS_PANELS:
 
     @pytask.task(id=_spec.task_id)
     def task_aggregate_meu(
-        depends_on: dict[str, Path] = _aggregation_dependencies(_spec.output_dir),
-        produces: dict[str, Path] = _aggregation_outputs(_spec.output_dir),
+        depends_on: dict[str, Path] = _aggregation_dependencies(_spec.layout),
+        produces: dict[str, Path] = _aggregation_outputs(_spec.layout),
         panel_name: str = _spec.panel_name,
     ) -> None:
         """Run EA aggregation for one cleaned panel."""

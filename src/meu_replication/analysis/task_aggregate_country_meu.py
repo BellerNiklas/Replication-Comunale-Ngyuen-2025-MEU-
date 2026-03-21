@@ -12,23 +12,24 @@ from meu_replication.analysis.aggregate_meu import (
     build_basket_membership,
     build_country_baskets,
 )
+from meu_replication.analysis.output_layout import AnalysisOutputLayout
 from meu_replication.analysis.panel_specs import (
     ANALYSIS_PANELS,
     DEFAULT_ANALYSIS_PANEL,
 )
 
 
-def _country_aggregation_dependencies(base_dir: Path) -> dict[str, Path]:
+def _country_aggregation_dependencies(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "uncertainty_variance": base_dir / "uncertainty_variance.parquet",
-        "series_order": base_dir / "series_order.parquet",
+        "uncertainty_variance": layout.uncertainty_dir / "uncertainty_variance.parquet",
+        "series_order": layout.factors_dir / "series_order.parquet",
     }
 
 
-def _country_aggregation_outputs(base_dir: Path) -> dict[str, Path]:
+def _country_aggregation_outputs(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "all_countries_meu": base_dir / "countries" / "all_countries_meu.parquet",
-        "basket_membership": base_dir / "countries" / "basket_membership.parquet",
+        "all_countries_meu": layout.country_results_dir / "all_countries_meu.parquet",
+        "basket_membership": layout.country_results_dir / "basket_membership.parquet",
     }
 
 
@@ -70,9 +71,9 @@ for _spec in ANALYSIS_PANELS:
     @pytask.task(id=f"country_{_spec.task_id}")
     def task_aggregate_country_meu(
         depends_on: dict[str, Path] = _country_aggregation_dependencies(
-            _spec.output_dir,
+            _spec.layout,
         ),
-        produces: dict[str, Path] = _country_aggregation_outputs(_spec.output_dir),
+        produces: dict[str, Path] = _country_aggregation_outputs(_spec.layout),
         panel_name: str = _spec.panel_name,
     ) -> None:
         """Run country aggregation for one cleaned panel."""

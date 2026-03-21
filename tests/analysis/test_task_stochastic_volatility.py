@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.output_layout import build_panel_output_layout
 from meu_replication.analysis.task_estimate_factors import task_estimate_factors
 from meu_replication.analysis.task_forecast_errors import task_forecast_errors
 from meu_replication.analysis.task_stochastic_volatility import (
@@ -24,35 +25,40 @@ EXPECTED_SERIES = 4
 def test_run_stochastic_volatility_stage_writes_expected_outputs(tmp_path: Path):
     panel_path = tmp_path / "panel.parquet"
     _make_panel().to_parquet(panel_path, index=False)
+    layout = build_panel_output_layout(
+        "panel_2003_2022_strict_corr",
+        panels_dir=tmp_path / "analysis" / "panels",
+    )
 
     factor_outputs = {
-        "panel_wide": tmp_path / "panel_wide.parquet",
-        "series_order": tmp_path / "series_order.parquet",
-        "date_index": tmp_path / "date_index.parquet",
-        "series_standardization": tmp_path / "series_standardization.parquet",
-        "fhat": tmp_path / "fhat.parquet",
-        "ghat": tmp_path / "ghat.parquet",
-        "predictor_set": tmp_path / "predictor_set.parquet",
-        "factor_metadata": tmp_path / "factor_metadata.parquet",
+        "panel_wide": layout.factors_dir / "panel_wide.parquet",
+        "series_order": layout.factors_dir / "series_order.parquet",
+        "date_index": layout.factors_dir / "date_index.parquet",
+        "series_standardization": layout.factors_dir / "series_standardization.parquet",
+        "fhat": layout.factors_dir / "fhat.parquet",
+        "ghat": layout.factors_dir / "ghat.parquet",
+        "predictor_set": layout.factors_dir / "predictor_set.parquet",
+        "factor_metadata": layout.factors_dir / "factor_metadata.parquet",
     }
     task_estimate_factors(depends_on=panel_path, produces=factor_outputs)
 
     forecast_outputs = {
-        "forecast_errors_y": tmp_path / "forecast_errors_y.parquet",
-        "forecast_errors_f": tmp_path / "forecast_errors_f.parquet",
-        "regression_coefs_y": tmp_path / "regression_coefs_y.parquet",
-        "regression_coefs_f": tmp_path / "regression_coefs_f.parquet",
-        "predictor_selection_masks": tmp_path / "predictor_selection_masks.parquet",
-        "forecast_metadata": tmp_path / "forecast_metadata.parquet",
+        "forecast_errors_y": layout.forecasts_dir / "forecast_errors_y.parquet",
+        "forecast_errors_f": layout.forecasts_dir / "forecast_errors_f.parquet",
+        "regression_coefs_y": layout.forecasts_dir / "regression_coefs_y.parquet",
+        "regression_coefs_f": layout.forecasts_dir / "regression_coefs_f.parquet",
+        "predictor_selection_masks": layout.forecasts_dir
+        / "predictor_selection_masks.parquet",
+        "forecast_metadata": layout.forecasts_dir / "forecast_metadata.parquet",
     }
     task_forecast_errors(depends_on=factor_outputs, produces=forecast_outputs)
 
     sv_outputs = {
-        "sv_params_y": tmp_path / "sv_params_y.parquet",
-        "sv_latent_y": tmp_path / "sv_latent_y.parquet",
-        "sv_params_f": tmp_path / "sv_params_f.parquet",
-        "sv_latent_f": tmp_path / "sv_latent_f.parquet",
-        "sv_diagnostics": tmp_path / "sv_diagnostics.parquet",
+        "sv_params_y": layout.sv_dir / "sv_params_y.parquet",
+        "sv_latent_y": layout.sv_dir / "sv_latent_y.parquet",
+        "sv_params_f": layout.sv_dir / "sv_params_f.parquet",
+        "sv_latent_f": layout.sv_dir / "sv_latent_f.parquet",
+        "sv_diagnostics": layout.sv_diagnostics_dir / "sv_diagnostics.parquet",
     }
     run_stochastic_volatility_stage(
         depends_on={
@@ -82,4 +88,4 @@ def test_run_stochastic_volatility_stage_writes_expected_outputs(tmp_path: Path)
     assert "acceptance_phi" in diagnostics.columns
     assert diagnostics["acceptance_phi"].isna().all()
     assert "acceptance_sigma" not in diagnostics.columns
-    assert (tmp_path / "_sv_r" / "sv_params_y_core.parquet").exists()
+    assert (layout.sv_r_dir / "sv_params_y_core.parquet").exists()

@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from meu_replication.config import ANALYSIS, BLD
+from meu_replication.analysis.output_layout import (
+    AnalysisOutputLayout,
+    build_panel_output_layout,
+)
+from meu_replication.config import BLD
 
 
 @dataclass(frozen=True)
@@ -16,6 +20,7 @@ class AnalysisPanelSpec:
     panel_name: str
     cleaned_panel_path: Path
     output_dir: Path
+    layout: AnalysisOutputLayout
 
 
 _SUPPORTED_PANELS: tuple[tuple[str, str], ...] = (
@@ -29,9 +34,11 @@ ANALYSIS_PANELS: tuple[AnalysisPanelSpec, ...] = tuple(
         task_id=task_id,
         panel_name=panel_name,
         cleaned_panel_path=BLD / "data" / "clean" / f"{panel_name}.parquet",
-        output_dir=ANALYSIS / panel_name,
+        output_dir=layout.output_dir,
+        layout=layout,
     )
     for task_id, panel_name in _SUPPORTED_PANELS
+    for layout in [build_panel_output_layout(panel_name)]
 )
 
 ANALYSIS_PANELS_BY_NAME: dict[str, AnalysisPanelSpec] = {

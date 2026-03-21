@@ -8,6 +8,7 @@ import pandas as pd
 import pytask
 
 from meu_replication.analysis.model_config import MEUConfig
+from meu_replication.analysis.output_layout import AnalysisOutputLayout
 from meu_replication.analysis.panel_specs import (
     ANALYSIS_PANELS,
 )
@@ -18,23 +19,24 @@ from meu_replication.analysis.uncertainty import (
 )
 
 
-def _uncertainty_dependencies(base_dir: Path) -> dict[str, Path]:
+def _uncertainty_dependencies(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "series_order": base_dir / "series_order.parquet",
-        "forecast_metadata": base_dir / "forecast_metadata.parquet",
-        "regression_coefs_y": base_dir / "regression_coefs_y.parquet",
-        "regression_coefs_f": base_dir / "regression_coefs_f.parquet",
-        "sv_params_y": base_dir / "sv_params_y.parquet",
-        "sv_latent_y": base_dir / "sv_latent_y.parquet",
-        "sv_params_f": base_dir / "sv_params_f.parquet",
-        "sv_latent_f": base_dir / "sv_latent_f.parquet",
-        "sv_validation_summary": base_dir / "sv_validation_summary.parquet",
+        "series_order": layout.factors_dir / "series_order.parquet",
+        "forecast_metadata": layout.forecasts_dir / "forecast_metadata.parquet",
+        "regression_coefs_y": layout.forecasts_dir / "regression_coefs_y.parquet",
+        "regression_coefs_f": layout.forecasts_dir / "regression_coefs_f.parquet",
+        "sv_params_y": layout.sv_dir / "sv_params_y.parquet",
+        "sv_latent_y": layout.sv_dir / "sv_latent_y.parquet",
+        "sv_params_f": layout.sv_dir / "sv_params_f.parquet",
+        "sv_latent_f": layout.sv_dir / "sv_latent_f.parquet",
+        "sv_validation_summary": layout.sv_diagnostics_dir
+        / "sv_validation_summary.parquet",
     }
 
 
-def _uncertainty_outputs(base_dir: Path) -> dict[str, Path]:
+def _uncertainty_outputs(layout: AnalysisOutputLayout) -> dict[str, Path]:
     return {
-        "uncertainty_variance": base_dir / "uncertainty_variance.parquet",
+        "uncertainty_variance": layout.uncertainty_dir / "uncertainty_variance.parquet",
     }
 
 
@@ -78,8 +80,8 @@ for _spec in ANALYSIS_PANELS:
 
     @pytask.task(id=_spec.task_id)
     def task_compute_uncertainty(
-        depends_on: dict[str, Path] = _uncertainty_dependencies(_spec.output_dir),
-        produces: dict[str, Path] = _uncertainty_outputs(_spec.output_dir),
+        depends_on: dict[str, Path] = _uncertainty_dependencies(_spec.layout),
+        produces: dict[str, Path] = _uncertainty_outputs(_spec.layout),
         panel_name: str = _spec.panel_name,
     ) -> None:
         """Run the uncertainty stage for one cleaned panel."""

@@ -10,10 +10,13 @@ strict endpoint-specific panels as its supported preprocessing path.
 
 In practical terms, the project has moved beyond building the baseline MEU
 engine. The core workflow now runs on the three strict cleaned endpoints, 2021,
-2022, and 2025, with panel-specific outputs under `bld/analysis/<panel_name>/`.
-The next phase is about investigating the remaining correlation gap with the
-paper and then broadening the outputs from euro-area series to a full set of
-euro-area and country-level MEUs.
+2022, and 2025, with panel-specific outputs under
+`bld/analysis/panels/<panel_name>/`. Each panel now uses a results-first
+structure with `results/`, `diagnostics/`, `artifacts/`, and `internal/`
+subdirectories so the public MEU outputs are easier to browse. The next phase
+is about investigating the remaining correlation gap with the paper and then
+broadening the outputs from euro-area series to a full set of euro-area and
+country-level MEUs.
 
 ## What Has Already Been Done
 
@@ -28,9 +31,15 @@ replication workflow:
 - stochastic-volatility estimation
 - uncertainty computation
 - baseline euro-area MEU aggregation
+- country-level MEU aggregation for all 19 EA members
 
-As a result, the repo now produces EA-wide MEUs for all three cleaned strict
-panels.
+As a result, the repo now produces EA-wide and country-level MEUs for all three
+cleaned strict panels. Country MEUs are derived from the common euro-area model
+outputs, not estimated in isolated country reruns. Each country's basket
+includes its own retained series plus the shared `U2_FX_*` bilateral
+exchange-rate series. This basket rule is a project assumption; the paper text
+is ambiguous between "euro area-wide common variables" and "bilateral exchange
+rates."
 The root [README](../README.md) remains the main technical entry point for the
 implemented pipeline and the current analysis outputs.
 
@@ -71,20 +80,16 @@ with a safer two-worker default on Windows. Single-panel reruns can be targeted
 with `pytask -k analysis_2025` and the analogous `analysis_2021` and
 `analysis_2022` keys.
 
-The most important next extension is now to calculate country-level MEUs
-using the same method. This should not require a new uncertainty model. The
-existing pipeline should be reused, with the main change happening at the final
-aggregation step, where the series included in the average are restricted to a
-given country instead of the full euro-area panel.
-
-This country-level extension is the key step that turns the project from a
-single baseline replication into a broader uncertainty framework.
+Country-level MEUs are now implemented as a lightweight post-uncertainty
+aggregation stage. Each country's MEU restricts the cross-sectional average to
+that country's retained series plus the shared FX block, without rerunning any
+upstream model stages. The correlation-cleaning gap remains an open upstream
+question that does not block country-MEU output generation.
 
 ## Priority Order
 
 1. investigate the high correlation drops
-2. compute country MEUs for all countries
-3. add alternative aggregation choices if needed for the paper comparison
+2. add alternative aggregation choices if needed for the paper comparison
 
 ## Closing Note
 

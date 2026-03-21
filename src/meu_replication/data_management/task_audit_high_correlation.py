@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pandas as pd
 
+from meu_replication.analysis.output_layout import CORRELATION_AUDIT_DIR
 from meu_replication.cleaning.correlation_audit import (
     build_cross_window_correlation_audit,
     build_window_correlation_audit,
     render_correlation_review_markdown,
 )
 from meu_replication.config import (
-    ANALYSIS,
     BLD,
     HIGH_CORR_THRESHOLD,
     SAMPLE_END_2021,
@@ -41,7 +41,7 @@ def _build_audit_depends() -> dict[str, Path]:
 
 
 def _build_audit_outputs() -> dict[str, Path]:
-    base = ANALYSIS / "correlation_audit"
+    base = CORRELATION_AUDIT_DIR
     outputs: dict[str, Path] = {}
     for window, _, _ in _AUDIT_VARIANTS:
         outputs[f"{window}_pairs"] = base / f"{window}_pairs.csv"

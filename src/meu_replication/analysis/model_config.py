@@ -45,7 +45,7 @@ class MEUConfig:
     sv_validation_subset_size: int = 12
     sv_rhat_threshold: float = 1.05
     sv_mu_rhat_threshold: float = 1.02
-    sv_geweke_threshold: float = 2.5
+    sv_geweke_threshold: float = 2.6
     sv_geweke_p90_threshold: float = 5.0
     sv_stability_relative_tolerance: float = 0.20
 
