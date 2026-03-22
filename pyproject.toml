@@ -35,8 +35,8 @@ content-type = "text/markdown"
 text = "MIT"
 
 [project.urls]
-Github = "https://github.com/iame-uni-bonn/final-project-BellerNiklas"
-Tracker = "https://github.com/iame-uni-bonn/final-project-BellerNiklas/issues"
+Github = "https://github.com/BellerNiklas/Replication-Comunale-Ngyuen-2025-MEU-"
+Tracker = "https://github.com/BellerNiklas/Replication-Comunale-Ngyuen-2025-MEU-/issues"
 
 # ======================================================================================
 # Build system configuration

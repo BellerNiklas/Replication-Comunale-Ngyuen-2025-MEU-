@@ -1,9 +1,8 @@
 # What Works Well in the Current Replication
 
-This note summarizes the parts of the repository that already work well and
-that are already close to the MacroEconomic Uncertainty (MEU) construction in
-Comunale and Nguyen (2025), leaving aside the later BVAR applications and
-robustness exercises.
+This note is a short strengths summary for the current repository. It is meant
+as optional background after the main [README](../README.md), not as a second
+run guide.
 
 ## Overall Assessment
 
