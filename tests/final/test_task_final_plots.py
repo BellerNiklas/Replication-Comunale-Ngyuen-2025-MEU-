@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from meu_replication.final.task_final_template import (
+    run_appendix_availability_comparison_plot,
     run_availability_overview_plot,
     run_country_availability_plot,
     run_country_vs_ea_plot,
@@ -137,6 +138,15 @@ def test_final_plot_tasks_write_expected_html_and_png_outputs(tmp_path: Path):
         produces=availability_overview_outputs,
     )
 
+    appendix_comparison_outputs = {
+        "html": tmp_path / "plots" / "availability" / "availability_vs_appendix_2021.html",
+        "png": tmp_path / "plots" / "availability" / "availability_vs_appendix_2021.png",
+    }
+    run_appendix_availability_comparison_plot(
+        depends_on={"strict_2021": availability_inputs["strict_2021"]},
+        produces=appendix_comparison_outputs,
+    )
+
     country_availability_outputs = {
         "html": tmp_path / "plots" / "availability" / "availability_by_country_2021.html",
         "png": tmp_path / "plots" / "availability" / "availability_by_country_2021.png",
@@ -179,6 +189,7 @@ def test_final_plot_tasks_write_expected_html_and_png_outputs(tmp_path: Path):
 
     expected_files = [
         *availability_overview_outputs.values(),
+        *appendix_comparison_outputs.values(),
         *country_availability_outputs.values(),
         *ea_meu_outputs.values(),
         *country_vs_ea_outputs.values(),

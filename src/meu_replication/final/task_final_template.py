@@ -10,6 +10,8 @@ import pytask
 from meu_replication.analysis.panel_specs import ANALYSIS_PANELS
 from meu_replication.config import BLD, FINAL_PLOTS
 from meu_replication.final.plotly_figures import (
+    build_appendix_availability_comparison_data,
+    build_appendix_availability_comparison_figure,
     build_availability_overview_data,
     build_availability_overview_figure,
     build_country_availability_data,
@@ -101,6 +103,20 @@ def run_country_availability_plot(
     write_plot_outputs(fig, html_path=produces["html"], png_path=produces["png"])
 
 
+def run_appendix_availability_comparison_plot(
+    *,
+    depends_on: dict[str, Path],
+    produces: dict[str, Path],
+) -> None:
+    """Render the repo-versus-appendix availability comparison figure."""
+    data = build_appendix_availability_comparison_data(
+        strict_panel=pd.read_parquet(depends_on["strict_2021"]),
+        country_names=build_country_name_map(),
+    )
+    fig = build_appendix_availability_comparison_figure(data)
+    write_plot_outputs(fig, html_path=produces["html"], png_path=produces["png"])
+
+
 def run_ea_meu_h3_plot(
     *,
     depends_on: dict[str, Path],
@@ -149,6 +165,20 @@ def task_plot_availability_overview(
 ) -> None:
     """Generate the aggregate availability overview figure."""
     run_availability_overview_plot(depends_on=depends_on, produces=produces)
+
+
+@pytask.task(id="availability_appendix_2021")
+def task_plot_appendix_availability_comparison(
+    depends_on: dict[str, Path] = {
+        "strict_2021": _availability_paths(2021)["strict"],
+    },
+    produces: dict[str, Path] = _availability_outputs("availability_vs_appendix_2021"),
+) -> None:
+    """Generate the appendix-style 2021 availability comparison figure."""
+    run_appendix_availability_comparison_plot(
+        depends_on=depends_on,
+        produces=produces,
+    )
 
 
 for _year in _PLOT_YEARS:

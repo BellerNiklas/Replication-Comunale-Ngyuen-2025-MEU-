@@ -32,6 +32,32 @@ PANEL_COLORS: dict[int, str] = {
 PLOT_FONT_FAMILY = "Source Sans Pro, Segoe UI, Arial, sans-serif"
 MAX_COUNTRY_VARIABLES = 122
 MAX_FACET_COLS = 4
+APPENDIX_A1_COUNTS_2021: dict[str, int] = {
+    "DE": 122,
+    "AT": 116,
+    "PT": 106,
+    "SK": 96,
+    "FR": 95,
+    "FI": 94,
+    "ES": 86,
+    "NL": 84,
+    "IT": 79,
+    "BE": 77,
+    "SI": 72,
+    "LT": 69,
+    "EE": 65,
+    "LU": 64,
+    "IE": 62,
+    "LV": 60,
+    "MT": 36,
+    "GR": 30,
+    "CY": 29,
+}
+APPENDIX_A1_COUNTRY_ORDER_2021: tuple[str, ...] = tuple(APPENDIX_A1_COUNTS_2021)
+APPENDIX_A1_COLORS: dict[str, str] = {
+    "Paper appendix (Figure A1)": "#355C7D",
+    "Repo 2021 strict": "#F39C12",
+}
 
 
 def build_country_name_map() -> dict[str, str]:
@@ -64,6 +90,33 @@ def restrict_to_panel_window(
     return transformed_panel.loc[
         transformed_panel["date"].astype(str).between(start, end)
     ].copy()
+
+
+def infer_country_order_from_panel(
+    panel: pd.DataFrame,
+    *,
+    fallback_order: Sequence[str] = MEU_COUNTRIES,
+) -> tuple[str, ...]:
+    """Order countries by descending available series count in one panel."""
+    counts = (
+        panel.loc[
+            panel["country_iso2"].astype(str) != "U2",
+            ["country_iso2", "series_id"],
+        ]
+        .drop_duplicates()
+        .groupby("country_iso2")
+        .size()
+        .to_dict()
+    )
+    fallback_rank = {country: idx for idx, country in enumerate(fallback_order)}
+    ordered = sorted(
+        fallback_order,
+        key=lambda country: (
+            -int(counts.get(country, 0)),
+            fallback_rank.get(country, len(fallback_rank)),
+        ),
+    )
+    return tuple(str(country) for country in ordered)
 
 
 def build_availability_overview_data(
@@ -105,7 +158,7 @@ def build_country_availability_data(
     clean_panel: pd.DataFrame,
     *,
     year: int,
-    country_order: Sequence[str] = MEU_COUNTRIES,
+    country_order: Sequence[str] | None = None,
     country_names: Mapping[str, str] | None = None,
 ) -> pd.DataFrame:
     """Count unique country-specific series for each stage of one panel."""
@@ -113,6 +166,14 @@ def build_country_availability_data(
         build_country_name_map() if country_names is None else dict(country_names)
     )
     before_panel = restrict_to_panel_window(transformed_panel, strict_panel)
+    resolved_country_order = (
+        infer_country_order_from_panel(before_panel)
+        if country_order is None
+        else tuple(str(country) for country in country_order)
+    )
+    country_rank = {
+        country_iso2: idx for idx, country_iso2 in enumerate(resolved_country_order)
+    }
     rows: list[dict[str, object]] = []
 
     for stage, panel in (
@@ -125,9 +186,9 @@ def build_country_availability_data(
             .drop_duplicates()
             .groupby("country_iso2")
             .size()
-            .reindex(country_order, fill_value=0)
+            .reindex(resolved_country_order, fill_value=0)
         )
-        for country_iso2 in country_order:
+        for country_iso2 in resolved_country_order:
             rows.append(
                 {
                     "panel_end_year": int(year),
@@ -135,6 +196,7 @@ def build_country_availability_data(
                     "country_name": country_names.get(str(country_iso2), str(country_iso2)),
                     "stage": stage,
                     "series_count": int(counts.loc[country_iso2]),
+                    "country_rank": int(country_rank[str(country_iso2)]),
                 }
             )
 
@@ -145,7 +207,56 @@ def build_country_availability_data(
         ordered=True,
     )
     return country_availability.sort_values(
-        ["country_iso2", "stage"],
+        ["country_rank", "stage"],
+    ).reset_index(drop=True)
+
+
+def build_appendix_availability_comparison_data(
+    strict_panel: pd.DataFrame,
+    *,
+    country_names: Mapping[str, str] | None = None,
+) -> pd.DataFrame:
+    """Compare repo 2021 pre-correlation counts against Appendix Figure A1."""
+    country_names = (
+        build_country_name_map() if country_names is None else dict(country_names)
+    )
+    repo_counts = (
+        strict_panel.loc[
+            strict_panel["country_iso2"].astype(str) != "U2",
+            ["country_iso2", "series_id"],
+        ]
+        .drop_duplicates()
+        .groupby("country_iso2")
+        .size()
+        .reindex(APPENDIX_A1_COUNTRY_ORDER_2021, fill_value=0)
+    )
+
+    rows: list[dict[str, object]] = []
+    for country_iso2 in APPENDIX_A1_COUNTRY_ORDER_2021:
+        for source, count in (
+            ("Paper appendix (Figure A1)", APPENDIX_A1_COUNTS_2021[country_iso2]),
+            ("Repo 2021 strict", int(repo_counts.loc[country_iso2])),
+        ):
+            rows.append(
+                {
+                    "country_iso2": country_iso2,
+                    "country_name": country_names.get(country_iso2, country_iso2),
+                    "source": source,
+                    "series_count": int(count),
+                    "country_rank": int(
+                        APPENDIX_A1_COUNTRY_ORDER_2021.index(country_iso2),
+                    ),
+                }
+            )
+
+    comparison = pd.DataFrame(rows)
+    comparison["source"] = pd.Categorical(
+        comparison["source"],
+        categories=list(APPENDIX_A1_COLORS),
+        ordered=True,
+    )
+    return comparison.sort_values(
+        ["country_rank", "source"],
     ).reset_index(drop=True)
 
 
@@ -233,11 +344,22 @@ def build_country_availability_figure(
     data: pd.DataFrame,
     *,
     year: int,
-    country_order: Sequence[str] = MEU_COUNTRIES,
+    country_order: Sequence[str] | None = None,
 ) -> go.Figure:
     """Build the appendix-style country availability comparison figure."""
     fig = go.Figure()
-    category_order = [data.loc[data["country_iso2"] == iso, "country_name"].iloc[0] for iso in country_order]
+    if country_order is None:
+        ordered_countries = (
+            data.loc[:, ["country_iso2", "country_name", "country_rank"]]
+            .drop_duplicates()
+            .sort_values("country_rank")
+        )
+        category_order = ordered_countries["country_name"].tolist()
+    else:
+        category_order = [
+            data.loc[data["country_iso2"] == iso, "country_name"].iloc[0]
+            for iso in country_order
+        ]
     for stage in AVAILABILITY_STAGE_ORDER:
         stage_data = data.loc[data["stage"] == stage]
         fig.add_bar(
@@ -269,6 +391,45 @@ def build_country_availability_figure(
         opacity=0.8,
         annotation_text="Appendix maximum (122)",
         annotation_position="top right",
+    )
+    return fig
+
+
+def build_appendix_availability_comparison_figure(data: pd.DataFrame) -> go.Figure:
+    """Build a repo-versus-paper comparison for Appendix Figure A1."""
+    fig = go.Figure()
+    for source, color in APPENDIX_A1_COLORS.items():
+        source_data = data.loc[data["source"] == source]
+        fig.add_bar(
+            x=source_data["country_iso2"],
+            y=source_data["series_count"],
+            name=source,
+            marker_color=color,
+            hovertemplate="%{x}<br>Series %{y}<extra>" + source + "</extra>",
+        )
+
+    _apply_shared_layout(
+        fig,
+        title="2021 Pre-Correlation Availability: Repo vs Appendix Figure A1",
+    )
+    fig.update_layout(
+        barmode="group",
+        xaxis_title="Country",
+        yaxis_title="Unique country-specific series count",
+    )
+    fig.add_annotation(
+        x=0,
+        xref="paper",
+        y=-0.2,
+        yref="paper",
+        xanchor="left",
+        showarrow=False,
+        align="left",
+        font={"size": 11, "color": "#4B5563"},
+        text=(
+            "Paper counts follow the appendix figure ordering. "
+            "CY, GR, and MT are exact from the text; the rest are approximate."
+        ),
     )
     return fig
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import pandas as pd
 
 from meu_replication.final.plotly_figures import (
+    build_appendix_availability_comparison_data,
+    build_appendix_availability_comparison_figure,
     build_availability_overview_data,
     build_country_availability_data,
     build_country_availability_figure,
@@ -107,6 +109,45 @@ def test_build_country_availability_data_excludes_u2_and_respects_country_order(
     assert int(clean_stage.loc["BE", "series_count"]) == 0
 
 
+def test_build_country_availability_data_defaults_to_preclean_order():
+    transformed = _make_long_panel(
+        ["2020-02", "2020-03"],
+        [
+            ("AT_A", "AT"),
+            ("AT_B", "AT"),
+            ("AT_C", "AT"),
+            ("BE_A", "BE"),
+            ("BE_B", "BE"),
+            ("CY_A", "CY"),
+            ("U2_FX_001", "U2"),
+        ],
+    )
+    strict = _make_long_panel(
+        ["2020-02", "2020-03"],
+        [("AT_A", "AT"), ("BE_A", "BE"), ("CY_A", "CY"), ("U2_FX_001", "U2")],
+    )
+    clean = _make_long_panel(
+        ["2020-02", "2020-03"],
+        [("AT_A", "AT"), ("CY_A", "CY"), ("U2_FX_001", "U2")],
+    )
+
+    data = build_country_availability_data(
+        transformed_panel=transformed,
+        strict_panel=strict,
+        clean_panel=clean,
+        year=2021,
+        country_names={"AT": "Austria", "BE": "Belgium", "CY": "Cyprus"},
+    )
+
+    ordered = (
+        data.loc[:, ["country_iso2", "country_rank"]]
+        .drop_duplicates()
+        .sort_values("country_rank")["country_iso2"]
+        .tolist()
+    )
+    assert ordered[:3] == ["AT", "BE", "CY"]
+
+
 def test_prepare_ea_meu_plot_data_filters_to_horizon_three():
     ea_frames = {
         2021: pd.DataFrame(
@@ -156,6 +197,42 @@ def test_prepare_country_vs_ea_plot_data_merges_and_preserves_order():
     assert data["country_meu"].tolist() == [0.7, 0.75, 0.8, 0.85]
 
 
+def test_build_appendix_availability_comparison_data_uses_appendix_order():
+    strict = _make_long_panel(
+        ["2020-02", "2020-03"],
+        [
+            ("DE_A", "DE"),
+            ("DE_B", "DE"),
+            ("AT_A", "AT"),
+            ("PT_A", "PT"),
+            ("PT_B", "PT"),
+            ("PT_C", "PT"),
+            ("CY_A", "CY"),
+        ],
+    )
+
+    data = build_appendix_availability_comparison_data(
+        strict_panel=strict,
+        country_names={
+            "DE": "Germany",
+            "AT": "Austria",
+            "PT": "Portugal",
+            "CY": "Cyprus",
+        },
+    )
+
+    ordered = (
+        data.loc[:, ["country_iso2", "country_rank"]]
+        .drop_duplicates()
+        .sort_values("country_rank")["country_iso2"]
+        .tolist()
+    )
+    assert ordered[:4] == ["DE", "AT", "PT", "SK"]
+    repo_counts = data.loc[data["source"] == "Repo 2021 strict"].set_index("country_iso2")
+    assert int(repo_counts.loc["PT", "series_count"]) == 3
+    assert int(repo_counts.loc["CY", "series_count"]) == 1
+
+
 def test_country_availability_figure_adds_appendix_reference_line():
     data = pd.DataFrame(
         {
@@ -188,6 +265,39 @@ def test_country_availability_figure_adds_appendix_reference_line():
     assert len(fig.data) == 3
     assert len(fig.layout.shapes) == 1
     assert fig.layout.shapes[0].x0 == 122
+    assert list(fig.layout.yaxis.categoryarray)[-1] == "Austria"
+
+
+def test_appendix_availability_comparison_figure_has_two_traces():
+    data = pd.DataFrame(
+        {
+            "country_iso2": ["DE", "AT", "DE", "AT"],
+            "country_name": ["Germany", "Austria", "Germany", "Austria"],
+            "source": [
+                "Paper appendix (Figure A1)",
+                "Paper appendix (Figure A1)",
+                "Repo 2021 strict",
+                "Repo 2021 strict",
+            ],
+            "series_count": [122, 116, 116, 106],
+            "country_rank": [0, 1, 0, 1],
+        }
+    )
+    data["source"] = pd.Categorical(
+        data["source"],
+        categories=[
+            "Paper appendix (Figure A1)",
+            "Repo 2021 strict",
+        ],
+        ordered=True,
+    )
+
+    fig = build_appendix_availability_comparison_figure(data)
+
+    assert len(fig.data) == 2
+    assert fig.data[0].name == "Paper appendix (Figure A1)"
+    assert fig.data[1].name == "Repo 2021 strict"
+    assert len(fig.layout.annotations) >= 1
 
 
 def test_country_vs_ea_figure_uses_one_facet_per_country():
