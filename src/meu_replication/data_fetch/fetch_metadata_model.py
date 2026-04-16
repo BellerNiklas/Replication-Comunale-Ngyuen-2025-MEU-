@@ -1,4 +1,4 @@
-"""Deterministic metadata model for raw data snapshot logging."""
+"""Schema helpers for raw data snapshot metadata."""
 
 from typing import TypedDict
 
@@ -33,7 +33,7 @@ class SourceStats(TypedDict):
 
 
 class FetchMetadata(TypedDict):
-    """Top-level raw snapshot metadata schema (v2, deterministic)."""
+    """Top-level schema for raw snapshot metadata written to JSON."""
 
     metadata_schema_version: int
     git_commit: str
@@ -52,9 +52,7 @@ def build_fetch_metadata(
     git_commit: str,
     git_branch: str,
 ) -> FetchMetadata:
-    """Build deterministic fetch metadata dict from pre-loaded data.
-
-    Pure function: receives data and identifiers, returns dict.
+    """Build raw snapshot metadata from the fetched files and registry state.
 
     Args:
         availability: Probe availability manifest DataFrame.

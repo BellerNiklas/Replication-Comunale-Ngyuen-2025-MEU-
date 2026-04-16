@@ -33,11 +33,7 @@ def task_log_fetch_metadata(
     depends_on: dict = _build_meta_depends(),
     produces: Path = BLD / "meta" / "raw_snapshot_meta.json",
 ) -> None:
-    """Log deterministic metadata about raw fetch for replication package.
-
-    Short and boring task: reads all dependency files, delegates aggregation
-    to build_fetch_metadata(), writes JSON.
-    """
+    """Write reproducibility metadata for the raw data snapshot."""
     availability = pd.read_parquet(depends_on["availability"])
     registry = pd.read_csv(depends_on["registry"])
     registry_checksum = _file_sha256(depends_on["registry"])
@@ -102,5 +98,4 @@ def _get_git_branch() -> str:
 def _file_sha256(path: Path) -> str:
     """Compute SHA-256 checksum of file."""
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
 

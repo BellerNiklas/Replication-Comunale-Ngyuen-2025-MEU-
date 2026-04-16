@@ -1,4 +1,4 @@
-"""Pure functions for stationarity transformations (Comunale & Nguyen 2025).
+"""Helpers for applying stationarity transformations (Comunale & Nguyen 2025).
 
 Each series in the macro panel has a transformationcode from the registry:
     Code 1: x_t           (no transformation - sentiment indicators)
@@ -80,8 +80,6 @@ def apply_stationarity_transforms(
 ) -> pd.DataFrame:
     """Apply per-series stationarity transformations to the macro panel.
 
-    Pure function: constructs a new DataFrame, no mutation.
-
     Args:
         panel: Long-format panel with columns [date, value, series_id,
             country_iso2, variable_name, category, category_name, source].
@@ -95,7 +93,8 @@ def apply_stationarity_transforms(
     """
     if panel.empty:
         empty_cols = [*panel.columns, "transformationcode"]
-        return pd.DataFrame(columns=pd.Index(empty_cols))
+        empty_panel = pd.DataFrame(columns=pd.Index(empty_cols))
+        return empty_panel
 
     merged = panel.merge(transform_map, on="series_id", how="left")
 
@@ -120,7 +119,7 @@ def apply_stationarity_transforms(
         )
     transformed_values = pd.concat(transformed_parts, ignore_index=True)
 
-    return pd.DataFrame(
+    transformed_panel = pd.DataFrame(
         {
             "date": merged["date"].values,
             "value": transformed_values.values,
@@ -132,4 +131,8 @@ def apply_stationarity_transforms(
             "source": merged["source"].values,
             "transformationcode": merged["transformationcode"].astype(int).values,
         }
-    ).dropna(subset=["value"]).reset_index(drop=True)
+    )
+    transformed_panel = transformed_panel.dropna(subset=["value"]).reset_index(
+        drop=True
+    )
+    return transformed_panel

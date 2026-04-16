@@ -53,10 +53,7 @@ def _probe_source_country(
     country: str,
     registry: pd.DataFrame,
 ) -> list[dict[str, Any]]:
-    """Probe all series for one (source, country) pair.
-
-    Returns list of result dicts (may be empty).
-    """
+    """Probe availability for all registry series in one source-country pair."""
     from meu_replication.data_fetch.probe import probe_many
 
     mask = (registry.country_iso2 == country) & (registry.source == source)
@@ -129,10 +126,7 @@ def _build_oecd_availability(
     oecd_series: pd.DataFrame,
     country: str,
 ) -> pd.DataFrame:
-    """Classify OECD series as ok/ok_short/missing from bulk fetch.
-
-    Pure function: no I/O.
-    """
+    """Classify OECD series as ok, ok_short, or missing from the bulk fetch."""
     row_counts = (
         {str(k): int(v) for k, v in bulk["series_id"].value_counts().to_dict().items()}
         if not bulk.empty
@@ -225,10 +219,7 @@ def task_combine_availability(
     depends_on: dict = _build_probe_depends(),
     produces: Path = BLD / "meta" / "series_availability.parquet",
 ) -> None:
-    """Combine all per-country-per-source probe results into one manifest.
-
-    Short and boring: read all parquet files, concatenate, write.
-    """
+    """Combine all per-country availability results into one manifest."""
     dfs = []
     for path in depends_on.values():
         if path.exists():

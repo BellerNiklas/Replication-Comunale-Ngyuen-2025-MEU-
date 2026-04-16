@@ -40,9 +40,7 @@ def task_build_clean(
 
 
 def _clean_macro_panel(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean combined macro panel following EPP functional rules.
-
-    Pure function: constructs new DataFrame, no mutations.
+    """Clean the combined raw macro panel into the standard panel schema.
 
     Args:
         df: Raw combined DataFrame from all sources
@@ -50,32 +48,31 @@ def _clean_macro_panel(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         Cleaned DataFrame with standardized schema.
     """
-    return (
-        pd.DataFrame(
-            {
-                "date": _parse_dates(df["date"]),
-                "value": pd.to_numeric(df["value"], errors="coerce"),
-                "series_id": df["series_id"].astype(str),
-                "country_iso2": df["country_iso2"].astype(str),
-                "variable_name": df["variable_name"].astype(str),
-                "category": pd.to_numeric(df["category"], errors="coerce").astype(
-                    "Int64"
-                ),
-                "category_name": df["category_name"].astype(str),
-                "source": df["source"].astype(str),
-            }
-        )
-        .dropna(subset=["value", "date"])
+    cleaned = pd.DataFrame(
+        {
+            "date": _parse_dates(df["date"]),
+            "value": pd.to_numeric(df["value"], errors="coerce"),
+            "series_id": df["series_id"].astype(str),
+            "country_iso2": df["country_iso2"].astype(str),
+            "variable_name": df["variable_name"].astype(str),
+            "category": pd.to_numeric(df["category"], errors="coerce").astype(
+                "Int64"
+            ),
+            "category_name": df["category_name"].astype(str),
+            "source": df["source"].astype(str),
+        }
+    )
+    cleaned = (
+        cleaned.dropna(subset=["value", "date"])
         .drop_duplicates(subset=["series_id", "date"])
         .sort_values(["country_iso2", "series_id", "date"])
         .reset_index(drop=True)
     )
+    return cleaned
 
 
 def _parse_dates(dates: pd.Series) -> pd.Series:
     """Parse monthly dates to consistent YYYY-MM string format.
-
-    Pure function: no side effects.
 
     Args:
         dates: Series of date strings in various formats

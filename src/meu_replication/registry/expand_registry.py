@@ -1,8 +1,4 @@
-"""Expand series templates to full multi-country registry.
-
-Pure function module: deterministic expansion with no side effects.
-The core logic (expand_registry, _expand_placeholders, etc.) depends only
-on its inputs and produces a DataFrame as output.
+"""Expand series templates into the committed multi-country registry.
 
 Usage:
     pixi run python -m meu_replication.registry.expand_registry
@@ -20,7 +16,7 @@ def expand_registry(
     templates: pd.DataFrame,
     countries: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Expand templates to full registry (deterministic, no side effects).
+    """Expand template rows into the full series registry.
 
     Args:
         templates: DataFrame with template definitions (148 rows).
@@ -52,7 +48,8 @@ def expand_registry(
             msg = f"Unknown scope '{scope}' in template '{template['template_id']}'"
             raise ValueError(msg)
 
-    return pd.DataFrame(expanded_rows)
+    expanded_registry = pd.DataFrame(expanded_rows)
+    return expanded_registry
 
 
 def _expand_template_for_ea(template: pd.Series) -> dict:
@@ -60,7 +57,7 @@ def _expand_template_for_ea(template: pd.Series) -> dict:
     key_raw = template.get("key_template", "")
     filters_raw = template.get("filters_json_template", "")
 
-    return {
+    row = {
         "series_id": f"U2_{template['template_id']}",
         "source": template["source"],
         "category": template["category"],
@@ -75,6 +72,7 @@ def _expand_template_for_ea(template: pd.Series) -> dict:
         "start_period": template.get("start_period", "2003-01"),
         "transformationcode": int(template["transformationcode"]),
     }
+    return row
 
 
 def _expand_template_for_country(
@@ -88,7 +86,7 @@ def _expand_template_for_country(
     key = _expand_placeholders(key_raw, country)
     filters_json = _expand_placeholders(filters_raw, country)
 
-    return {
+    row = {
         "series_id": f"{country['country_iso2']}_{template['template_id']}",
         "source": template["source"],
         "category": template["category"],
@@ -103,10 +101,11 @@ def _expand_template_for_country(
         "start_period": template.get("start_period", "2003-01"),
         "transformationcode": int(template["transformationcode"]),
     }
+    return row
 
 
 def _expand_placeholders(template_str: str, country: pd.Series) -> str:
-    """Replace placeholders with country-specific values.
+    """Replace country placeholders in a registry template string.
 
     Placeholders:
         {COUNTRY_ISO2}     → "DE", "FR", etc. (used for most sources)

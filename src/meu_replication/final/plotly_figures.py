@@ -63,13 +63,14 @@ APPENDIX_A1_COLORS: dict[str, str] = {
 def build_country_name_map() -> dict[str, str]:
     """Return an ISO2 -> display-name mapping."""
     countries = load_countries()
-    return dict(
+    country_name_map = dict(
         zip(
             countries["country_iso2"].astype(str),
             countries["country_name"].astype(str),
             strict=True,
         )
     )
+    return country_name_map
 
 
 def month_strings_to_timestamp(months: Sequence[str] | pd.Series) -> pd.Series:
@@ -87,9 +88,10 @@ def restrict_to_panel_window(
 
     start = str(panel_window["date"].min())
     end = str(panel_window["date"].max())
-    return transformed_panel.loc[
+    restricted_panel = transformed_panel.loc[
         transformed_panel["date"].astype(str).between(start, end)
     ].copy()
+    return restricted_panel
 
 
 def infer_country_order_from_panel(
@@ -149,7 +151,10 @@ def build_availability_overview_data(
         categories=list(AVAILABILITY_STAGE_ORDER),
         ordered=True,
     )
-    return overview.sort_values(["panel_end_year", "stage"]).reset_index(drop=True)
+    sorted_overview = overview.sort_values(
+        ["panel_end_year", "stage"]
+    ).reset_index(drop=True)
+    return sorted_overview
 
 
 def build_country_availability_data(
@@ -206,9 +211,10 @@ def build_country_availability_data(
         categories=list(AVAILABILITY_STAGE_ORDER),
         ordered=True,
     )
-    return country_availability.sort_values(
+    sorted_country_availability = country_availability.sort_values(
         ["country_rank", "stage"],
     ).reset_index(drop=True)
+    return sorted_country_availability
 
 
 def build_appendix_availability_comparison_data(
@@ -255,9 +261,10 @@ def build_appendix_availability_comparison_data(
         categories=list(APPENDIX_A1_COLORS),
         ordered=True,
     )
-    return comparison.sort_values(
+    sorted_comparison = comparison.sort_values(
         ["country_rank", "source"],
     ).reset_index(drop=True)
+    return sorted_comparison
 
 
 def prepare_ea_meu_plot_data(
@@ -274,12 +281,12 @@ def prepare_ea_meu_plot_data(
         filtered["date_ts"] = month_strings_to_timestamp(filtered["date"])
         parts.append(filtered)
 
-    return (
-        pd.concat(parts, ignore_index=True)
-        .loc[:, ["panel_end_year", "date", "date_ts", "meu"]]
-        .sort_values(["panel_end_year", "date"])
-        .reset_index(drop=True)
+    combined = pd.concat(parts, ignore_index=True)
+    combined = combined.loc[:, ["panel_end_year", "date", "date_ts", "meu"]]
+    combined = combined.sort_values(["panel_end_year", "date"]).reset_index(
+        drop=True
     )
+    return combined
 
 
 def prepare_country_vs_ea_plot_data(
@@ -312,7 +319,8 @@ def prepare_country_vs_ea_plot_data(
     )
     merged["country_name"] = merged["country_iso2"].astype(str).map(country_names)
     merged["date_ts"] = month_strings_to_timestamp(merged["date"])
-    return merged.sort_values(["country_iso2", "date"]).reset_index(drop=True)
+    sorted_merged = merged.sort_values(["country_iso2", "date"]).reset_index(drop=True)
+    return sorted_merged
 
 
 def build_availability_overview_figure(data: pd.DataFrame) -> go.Figure:

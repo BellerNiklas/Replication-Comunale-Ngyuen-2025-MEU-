@@ -61,11 +61,7 @@ def _fetch_source_country(
     registry: pd.DataFrame,
     availability: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Filter to available series and fetch them.
-
-    Pure function (except network calls via fetch_many, which is its purpose).
-    Returns DataFrame (may be empty).
-    """
+    """Fetch all available series for one source-country combination."""
     from meu_replication.data_fetch.fetch import fetch_many
 
     country_series = registry[
@@ -139,12 +135,7 @@ def task_fetch_oecd_bulk(
     depends_on: dict = _OECD_BULK_DEPENDS,
     produces: Path = BLD / "data" / "raw" / "oecd" / "bulk_snapshot.parquet",
 ) -> None:
-    """Fetch all OECD data in 4 bulk API calls and standardize.
-
-    Short and boring: load registry + countries, call bulk adapter,
-    standardize, write. Uses SDMX '+' syntax to combine all countries
-    and indicator variants per dataset.
-    """
+    """Fetch all OECD data in four bulk API calls and standardize it."""
     from meu_replication.data_fetch.adapters import fetch_oecd_bulk
     from meu_replication.data_fetch.standardize import standardize_oecd_bulk
 
@@ -170,12 +161,7 @@ def task_split_oecd_by_country(
     depends_on: Path = BLD / "data" / "raw" / "oecd" / "bulk_snapshot.parquet",
     produces: dict = _build_oecd_split_produces(),
 ) -> None:
-    """Split bulk OECD snapshot into per-country parquet files.
-
-    Short and boring: read bulk, group by country, write 19 files.
-    Downstream tasks expect per-country files at
-    bld/data/raw/oecd/{ISO2}_snapshot.parquet.
-    """
+    """Split the bulk OECD snapshot into per-country parquet files."""
     bulk = pd.read_parquet(depends_on)
 
     for country, path in produces.items():

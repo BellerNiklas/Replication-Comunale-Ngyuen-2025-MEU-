@@ -18,10 +18,7 @@ def task_transform_stationarity(
     },
     produces: Path = BLD / "data" / "clean" / "transformed_panel.parquet",
 ) -> None:
-    """Join transformationcode from registry and apply stationarity transforms.
-
-    Short and boring: read panel + registry, call pure function, write.
-    """
+    """Apply registry transformation codes to the clean macro panel."""
     panel = pd.read_parquet(depends_on["panel"])
     registry = pd.read_csv(depends_on["registry"])
 

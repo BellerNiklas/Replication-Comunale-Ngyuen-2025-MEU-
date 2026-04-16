@@ -1,9 +1,8 @@
-"""Transform raw API responses to canonical long format.
+"""Transform provider-specific API responses into the canonical long format.
 
-All functions follow EPP functional rules:
-- Start with empty DataFrame (no mutations)
-- Touch each variable once
-- Pure functions (no side effects)
+Each helper returns the standard columns used throughout the pipeline:
+date, value, series_id, country_iso2, variable_name, category,
+category_name, and source.
 """
 
 from typing import Any
@@ -12,9 +11,7 @@ import pandas as pd
 
 
 def standardize_from_eurostat(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.DataFrame:
-    """Transform Eurostat wide format to canonical long (pure function).
-
-    Follows EPP: constructs new DataFrame, no mutations.
+    """Convert a Eurostat wide response into the canonical long schema.
 
     Args:
         raw: Wide format DataFrame from Eurostat API (time columns + dimension columns)
@@ -33,7 +30,6 @@ def standardize_from_eurostat(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.Dat
         msg = f"No time columns found in Eurostat response for {spec['series_id']}"
         raise ValueError(msg)
 
-    # Melt to long format (pure operation - creates new DataFrame)
     long = raw.melt(
         id_vars=[c for c in raw.columns if c not in time_cols],
         value_vars=time_cols,
@@ -41,9 +37,7 @@ def standardize_from_eurostat(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.Dat
         value_name="value",
     )
 
-    # Construct new standardized DataFrame (EPP rule 1: start with empty)
-    # Touch each column once (EPP rule 2)
-    return pd.DataFrame(
+    result = pd.DataFrame(
         {
             "date": long["date"].astype(str),
             "value": pd.to_numeric(long["value"], errors="coerce"),
@@ -54,14 +48,16 @@ def standardize_from_eurostat(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.Dat
             "category_name": spec["category_name"],
             "source": "eurostat",
         }
-    ).dropna(subset=["value"]).reset_index(drop=True)
+    )
+    result = result.dropna(subset=["value"]).reset_index(drop=True)
+    return result
 
 
 def standardize_from_ecb_like(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.DataFrame:
-    """Transform ECB/OECD long format to canonical long (pure function).
+    """Convert an ECB-style long response into the canonical long schema.
 
-    Used for both ECB and OECD (same API response format).
-    Follows EPP: constructs new DataFrame.
+    This helper is used for both ECB and OECD series that share the same
+    response layout.
 
     Args:
         raw: Long format DataFrame with TIME_PERIOD and OBS_VALUE columns
@@ -82,8 +78,7 @@ def standardize_from_ecb_like(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.Dat
         )
         raise ValueError(msg)
 
-    # Construct new standardized DataFrame (EPP: start empty, touch once)
-    return pd.DataFrame(
+    result = pd.DataFrame(
         {
             "date": raw[time_col].astype(str),
             "value": pd.to_numeric(raw[value_col], errors="coerce"),
@@ -94,13 +89,13 @@ def standardize_from_ecb_like(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.Dat
             "category_name": spec["category_name"],
             "source": spec["source"],
         }
-    ).dropna(subset=["value"]).reset_index(drop=True)
+    )
+    result = result.dropna(subset=["value"]).reset_index(drop=True)
+    return result
 
 
 def standardize_from_bis(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.DataFrame:
-    """Transform BIS long format to canonical long (pure function).
-
-    Follows EPP: constructs new DataFrame.
+    """Convert a BIS long response into the canonical long schema.
 
     Args:
         raw: Long format DataFrame with TIME_PERIOD and OBS_VALUE columns
@@ -121,7 +116,6 @@ def standardize_from_bis(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.DataFram
         )
         raise ValueError(msg)
 
-    # Filter by unit_measure if specified (pure operation - creates new DataFrame)
     filtered = raw
     unit_measure_filter = spec.get("unit_measure_filter")
     if (
@@ -134,8 +128,7 @@ def standardize_from_bis(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.DataFram
             unit_measure_filter = int(unit_measure_filter)
         filtered = raw[raw["UNIT_MEASURE"] == unit_measure_filter]
 
-    # Construct new standardized DataFrame (EPP: start empty, touch once)
-    return pd.DataFrame(
+    result = pd.DataFrame(
         {
             "date": filtered[time_col].astype(str),
             "value": pd.to_numeric(filtered[value_col], errors="coerce"),
@@ -146,7 +139,9 @@ def standardize_from_bis(raw: pd.DataFrame, spec: dict[str, Any]) -> pd.DataFram
             "category_name": spec["category_name"],
             "source": "bis",
         }
-    ).dropna(subset=["value"]).reset_index(drop=True)
+    )
+    result = result.dropna(subset=["value"]).reset_index(drop=True)
+    return result
 
 
 def standardize_oecd_bulk(
@@ -154,7 +149,7 @@ def standardize_oecd_bulk(
     registry: pd.DataFrame,
     countries: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Transform bulk OECD response to canonical long format (pure function).
+    """Convert the bulk OECD download into the canonical long schema.
 
     Reconstructs SDMX keys from dimension columns and matches each row
     to its registry series_id using a vectorized merge (faster than
@@ -217,7 +212,6 @@ def standardize_oecd_bulk(
     time_col = _find_column(merged, ["TIME_PERIOD", "time_period", "TIME"])
     value_col = _find_column(merged, ["OBS_VALUE", "obs_value", "VALUE"])
 
-    # Construct new DataFrame (EPP: start empty, touch each column once)
     result = pd.DataFrame(
         {
             "date": merged[time_col].astype(str),
@@ -232,11 +226,12 @@ def standardize_oecd_bulk(
     )
 
     # Drop rows with no registry match and no value.
-    return result.dropna(subset=["series_id", "value"]).reset_index(drop=True)
+    result = result.dropna(subset=["series_id", "value"]).reset_index(drop=True)
+    return result
 
 
 def validate_long(df: pd.DataFrame, series_id: str) -> None:
-    """Validate standardized long DataFrame (pure function - no side effects).
+    """Validate a standardized long-format DataFrame.
 
     Args:
         df: Standardized long format DataFrame to validate
@@ -277,7 +272,7 @@ def validate_long(df: pd.DataFrame, series_id: str) -> None:
 
 
 def _find_column(df: pd.DataFrame, candidates: list[str]) -> str:
-    """Find first matching column name from candidates (pure helper function).
+    """Return the first matching column name from a list of candidates.
 
     Args:
         df: DataFrame to search

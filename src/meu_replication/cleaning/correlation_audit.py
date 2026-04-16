@@ -1,4 +1,4 @@
-"""Pure helpers for auditing high-correlation cleaning decisions."""
+"""Helpers for auditing high-correlation cleaning decisions."""
 
 from __future__ import annotations
 
@@ -205,7 +205,7 @@ def build_window_correlation_audit(
         threshold=threshold,
     )
 
-    return {
+    audit_tables = {
         "pairs": pairs,
         "decisions": decisions,
         "summary_country": _summarize_pairs_by_country(pairs),
@@ -223,6 +223,7 @@ def build_window_correlation_audit(
             pairs=pairs, decisions=decisions, components=components
         ),
     }
+    return audit_tables
 
 
 def build_cross_window_correlation_audit(
@@ -233,7 +234,7 @@ def build_cross_window_correlation_audit(
         [audit["pairs"] for audit in window_audits.values()], ignore_index=True
     )
     if all_pairs.empty:
-        return {
+        empty_tables = {
             "window_overview": pd.concat(
                 [audit["window_overview"] for audit in window_audits.values()],
                 ignore_index=True,
@@ -241,6 +242,7 @@ def build_cross_window_correlation_audit(
             "pair_stability": pd.DataFrame(columns=pd.Index(_PAIR_STABILITY_COLUMNS)),
             "fix_readiness": pd.DataFrame(columns=pd.Index(_FIX_READINESS_COLUMNS)),
         }
+        return empty_tables
 
     window_overview = pd.concat(
         [audit["window_overview"] for audit in window_audits.values()],
@@ -248,11 +250,12 @@ def build_cross_window_correlation_audit(
     )
     pair_stability = _build_pair_stability(all_pairs)
     fix_readiness = _build_fix_readiness(pair_stability)
-    return {
+    combined_audit = {
         "window_overview": window_overview,
         "pair_stability": pair_stability,
         "fix_readiness": fix_readiness,
     }
+    return combined_audit
 
 
 def render_correlation_review_markdown(
@@ -366,11 +369,13 @@ def _build_series_metadata(panel: pd.DataFrame, registry: pd.DataFrame) -> pd.Da
         for series_id, country in zip(merged["series_id"], merged["country_iso2"])
     ]
     family_prefix = [_extract_family_prefix(template) for template in template_id]
-    return (
-        merged.assign(template_id=template_id, family_prefix=family_prefix)
-        .sort_values(["country_iso2", "series_id"])
-        .reset_index(drop=True)
+    series_metadata = merged.assign(
+        template_id=template_id, family_prefix=family_prefix
     )
+    series_metadata = series_metadata.sort_values(
+        ["country_iso2", "series_id"]
+    ).reset_index(drop=True)
+    return series_metadata
 
 
 def _build_pair_audit(
@@ -432,10 +437,11 @@ def _build_pair_audit(
     pairs = pd.DataFrame(records)
     pairs = _join_pair_metadata(pairs, series_meta)
     pairs = _classify_pairs(pairs, threshold=threshold)
-    return pairs.sort_values(
+    sorted_pairs = pairs.sort_values(
         ["window", "country_iso2", "abs_correlation", "series_a", "series_b"],
         ascending=[True, True, False, True, True],
     ).reset_index(drop=True)
+    return sorted_pairs
 
 
 def _raw_pair_stats(
@@ -820,7 +826,8 @@ def _build_window_overview(
         "greedy_keep_gain": int(components["greedy_keep_gain"].sum()),
         "kept_pair_violation_count": kept_pair_violation_count,
     }
-    return pd.DataFrame([row], columns=pd.Index(_WINDOW_OVERVIEW_COLUMNS))
+    overview = pd.DataFrame([row], columns=pd.Index(_WINDOW_OVERVIEW_COLUMNS))
+    return overview
 
 
 def _kept_series(decisions: pd.DataFrame) -> set[str]:
@@ -919,10 +926,11 @@ def _build_pair_stability(all_pairs: pd.DataFrame) -> pd.DataFrame:
             }
         )
     result = pd.DataFrame(records, columns=pd.Index(_PAIR_STABILITY_COLUMNS))
-    return result.sort_values(
+    sorted_result = result.sort_values(
         ["window_count", "max_abs_correlation", "pair_key"],
         ascending=[False, False, True],
     ).reset_index(drop=True)
+    return sorted_result
 
 
 def _build_fix_readiness(pair_stability: pd.DataFrame) -> pd.DataFrame:
@@ -1012,10 +1020,11 @@ def _build_fix_readiness(pair_stability: pd.DataFrame) -> pd.DataFrame:
             )
 
     result = pd.DataFrame(records, columns=pd.Index(_FIX_READINESS_COLUMNS))
-    return result.sort_values(
+    sorted_result = result.sort_values(
         ["priority_rank", "pair_window_count", "pair_count", "review_target"],
         ascending=[True, False, False, True],
     ).reset_index(drop=True)
+    return sorted_result
 
 
 def _priority_rank(triage_bucket: str) -> int:
