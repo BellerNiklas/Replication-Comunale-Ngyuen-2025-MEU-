@@ -449,6 +449,57 @@ DE, FR, IT, ES, NL, BE, AT, FI, GR, PT, IE, SK, SI, LT, LV, EE, LU, CY, MT
 
 ---
 
+## 13. REVIEW RULES ADDED FROM THE 2026-04-16 AUDIT
+
+### 13.1 Docstrings Must Describe Behavior First
+
+- Start the first sentence with what the function does in domain terms.
+- Mention purity, determinism, or EPP rules only after the behavior is clear.
+- Avoid openings like `Pure function`, `Short and boring`, or `Follows EPP rules`
+  as the main explanation.
+
+### 13.2 Validation Must Fail Loudly or Be Explicitly Documented
+
+- If code checks an argument, dependency, or intermediate object, either raise
+  an informative exception immediately or return a clearly documented sentinel
+  result.
+- Do not silently continue after detecting invalid state.
+- If writing an empty output is intentional, say so in the docstring and cover
+  that branch with tests.
+
+### 13.3 Prefer Named Results Over Complex Return Statements
+
+- Avoid multi-step DataFrame construction, filtering, and sorting chains
+  directly inside `return`.
+- Assign the final object to a well-named variable, then return that variable.
+- Treat this as especially important in cleaning and standardization code.
+
+### 13.4 Separate Heavy Computation From Lightweight Reporting
+
+- Keep long-running estimation tasks separate from normalization, README, plot,
+  and report-rendering tasks.
+- If a task writes both audit tables and a markdown report, keep rendering thin
+  and consider splitting it once the task becomes hard to scan.
+
+### 13.5 Treat Registry Expansion As Pipeline-Critical
+
+- The registry is not just an auxiliary file; it defines fetch, cleaning, and
+  transformation behavior.
+- Either integrate registry expansion into the DAG or keep a strong parity test
+  plus a clearly documented regeneration command.
+- Never allow templates, countries, and committed registry to drift silently.
+
+### 13.6 Use Evidence-Based Reproducibility Reviews
+
+- For a reproducibility audit, run:
+  - `pixi run pytest`
+  - `pixi run pytest --cov=src/meu_replication --cov-report=term-missing`
+  - `pixi run pytask collect`
+- Only claim that the full pipeline was verified if `pixi run pytask` was
+  actually run to completion.
+
+---
+
 ## FINAL REMINDER
 
 **Reproducibility = Someone else can get your exact results**
