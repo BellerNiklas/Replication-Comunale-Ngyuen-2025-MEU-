@@ -9,6 +9,7 @@ from meu_replication.final.task_final_template import (
     run_availability_overview_plot,
     run_country_availability_plot,
     run_country_vs_ea_plot,
+    run_ea_meu_h3_2025_website_plot,
     run_ea_meu_h3_plot,
 )
 
@@ -174,6 +175,15 @@ def test_final_plot_tasks_write_expected_html_and_png_outputs(tmp_path: Path):
         produces=ea_meu_outputs,
     )
 
+    website_meu_outputs = {
+        "html": tmp_path / "plots" / "meu" / "ea_meu_h3_2025_website.html",
+        "png": tmp_path / "plots" / "meu" / "ea_meu_h3_2025_website.png",
+    }
+    run_ea_meu_h3_2025_website_plot(
+        depends_on={"ea_2025": meu_inputs["ea_2025"]},
+        produces=website_meu_outputs,
+    )
+
     country_vs_ea_outputs = {
         "html": tmp_path / "plots" / "meu" / "country_vs_ea_h3_2021.html",
         "png": tmp_path / "plots" / "meu" / "country_vs_ea_h3_2021.png",
@@ -192,6 +202,7 @@ def test_final_plot_tasks_write_expected_html_and_png_outputs(tmp_path: Path):
         *appendix_comparison_outputs.values(),
         *country_availability_outputs.values(),
         *ea_meu_outputs.values(),
+        *website_meu_outputs.values(),
         *country_vs_ea_outputs.values(),
     ]
     for path in expected_files:

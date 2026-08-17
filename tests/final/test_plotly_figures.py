@@ -9,6 +9,7 @@ from meu_replication.final.plotly_figures import (
     build_country_availability_data,
     build_country_availability_figure,
     build_country_vs_ea_figure,
+    build_ea_meu_h3_2025_website_figure,
     prepare_country_vs_ea_plot_data,
     prepare_ea_meu_plot_data,
 )
@@ -164,6 +165,27 @@ def test_prepare_ea_meu_plot_data_filters_to_horizon_three():
     assert data["panel_end_year"].tolist() == [2021, 2021]
     assert data["date"].tolist() == ["2020-01", "2020-02"]
     assert data["meu"].tolist() == [0.3, 0.4]
+
+
+def test_ea_meu_h3_2025_website_figure_uses_only_the_2025_panel():
+    expected_recession_windows = 3
+    data = pd.DataFrame(
+        {
+            "panel_end_year": [2021, 2025, 2025, 2025],
+            "date_ts": pd.to_datetime(
+                ["2020-01-01", "2003-01-01", "2020-04-01", "2025-12-01"]
+            ),
+            "meu": [9.0, 0.3, 1.2, 0.5],
+        }
+    )
+
+    fig = build_ea_meu_h3_2025_website_figure(data)
+
+    assert len(fig.data) == 1
+    assert list(fig.data[0].y) == [0.3, 1.2, 0.5]
+    assert len(fig.layout.shapes) == expected_recession_windows
+    assert "2003-2025" in fig.layout.title.text
+    assert any("Peak: Apr 2020" in item.text for item in fig.layout.annotations)
 
 
 def test_prepare_country_vs_ea_plot_data_merges_and_preserves_order():

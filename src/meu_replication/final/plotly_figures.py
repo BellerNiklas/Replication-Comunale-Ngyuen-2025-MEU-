@@ -24,6 +24,7 @@ AVAILABILITY_STAGE_COLORS: dict[str, str] = {
 }
 EA_COLOR = "#1F5AA6"
 COUNTRY_COLOR = "#D1495B"
+WEBSITE_ACCENT = "#8F4B3E"
 PANEL_COLORS: dict[int, str] = {
     2021: "#4C78A8",
     2022: "#F58518",
@@ -481,6 +482,101 @@ def build_ea_meu_h3_figure(data: pd.DataFrame) -> go.Figure:
     fig.update_layout(height=320 * len(years))
     fig.update_yaxes(title_text="MEU", row=2 if len(years) >= 2 else 1, col=1)
     fig.update_xaxes(title_text="Date", row=len(years), col=1)
+    return fig
+
+
+def build_ea_meu_h3_2025_website_figure(data: pd.DataFrame) -> go.Figure:
+    """Build the single-panel 2025 MEU figure used on the research website."""
+    panel = data.loc[data["panel_end_year"].astype(int).eq(2025)].copy()
+    if panel.empty:
+        message = "The website MEU figure requires the 2025 panel."
+        raise ValueError(message)
+    panel = panel.sort_values("date_ts")
+
+    fig = go.Figure()
+    recession_windows = (
+        ("2008-04-01", "2009-06-01", "Global financial crisis"),
+        ("2011-10-01", "2013-03-01", "Euro-area recession"),
+        ("2020-02-01", "2020-05-01", "COVID-19"),
+    )
+    for start, end, _label in recession_windows:
+        fig.add_vrect(
+            x0=start,
+            x1=end,
+            fillcolor="#D8D2C8",
+            opacity=0.28,
+            line_width=0,
+            layer="below",
+        )
+
+    fig.add_trace(
+        go.Scatter(
+            x=panel["date_ts"],
+            y=panel["meu"],
+            mode="lines",
+            line={"color": WEBSITE_ACCENT, "width": 3.2},
+            hovertemplate="%{x|%B %Y}<br>MEU %{y:.3f}<extra></extra>",
+            name="Euro-area MEU",
+            showlegend=False,
+        )
+    )
+
+    y_min = float(panel["meu"].min())
+    y_max = float(panel["meu"].max())
+    y_span = y_max - y_min
+    for start, end, label in recession_windows:
+        midpoint = pd.Timestamp(start) + (
+            pd.Timestamp(end) - pd.Timestamp(start)
+        ) / 2
+        fig.add_annotation(
+            x=midpoint,
+            y=y_max + y_span * 0.07,
+            text=label,
+            showarrow=False,
+            textangle=-90 if label != "COVID-19" else 0,
+            font={"size": 10, "color": "#6B7280"},
+        )
+
+    peak = panel.loc[panel["meu"].idxmax()]
+    fig.add_annotation(
+        x=peak["date_ts"],
+        y=peak["meu"],
+        text=f"Peak: {peak['date_ts']:%b %Y}",
+        showarrow=True,
+        arrowhead=0,
+        arrowwidth=1,
+        arrowcolor="#6B7280",
+        ax=58,
+        ay=-42,
+        bgcolor="rgba(255,253,249,0.9)",
+        borderpad=4,
+        font={"size": 11, "color": "#374151"},
+    )
+
+    _apply_shared_layout(
+        fig,
+        title=(
+            "Euro-area macroeconomic uncertainty, 2003-2025"
+            "<br><span style='font-size:0.62em;color:#66717B'>"
+            "Three-month-ahead measure (h = 3)</span>"
+        ),
+    )
+    fig.update_layout(
+        width=1040,
+        height=530,
+        margin={"l": 82, "r": 32, "t": 105, "b": 70},
+    )
+    fig.update_xaxes(
+        title_text="Date",
+        tickformat="%Y",
+        showgrid=False,
+    )
+    fig.update_yaxes(
+        title_text="Macroeconomic uncertainty index",
+        range=[y_min - y_span * 0.08, y_max + y_span * 0.18],
+        gridcolor="#E7E0D7",
+        zeroline=False,
+    )
     return fig
 
 

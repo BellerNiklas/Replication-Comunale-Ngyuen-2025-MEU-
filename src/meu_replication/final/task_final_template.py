@@ -18,6 +18,7 @@ from meu_replication.final.plotly_figures import (
     build_country_availability_figure,
     build_country_name_map,
     build_country_vs_ea_figure,
+    build_ea_meu_h3_2025_website_figure,
     build_ea_meu_h3_figure,
     prepare_country_vs_ea_plot_data,
     prepare_ea_meu_plot_data,
@@ -134,6 +135,20 @@ def run_ea_meu_h3_plot(
     write_plot_outputs(fig, html_path=produces["html"], png_path=produces["png"])
 
 
+def run_ea_meu_h3_2025_website_plot(
+    *,
+    depends_on: dict[str, Path],
+    produces: dict[str, Path],
+) -> None:
+    """Render the single-panel 2025 MEU figure for the research website."""
+    data = prepare_ea_meu_plot_data(
+        {2025: pd.read_parquet(depends_on["ea_2025"])},
+        horizon=3,
+    )
+    fig = build_ea_meu_h3_2025_website_figure(data)
+    write_plot_outputs(fig, html_path=produces["html"], png_path=produces["png"])
+
+
 def run_country_vs_ea_plot(
     *,
     depends_on: dict[str, Path],
@@ -211,6 +226,18 @@ def task_plot_ea_meu_h3(
 ) -> None:
     """Generate the EA MEU figure at horizon three."""
     run_ea_meu_h3_plot(depends_on=depends_on, produces=produces)
+
+
+@pytask.task(id="ea_meu_h3_2025_website")
+def task_plot_ea_meu_h3_2025_website(
+    depends_on: dict[str, Path] = {"ea_2025": _ea_meu_path(2025)},
+    produces: dict[str, Path] = _meu_outputs("ea_meu_h3_2025_website"),
+) -> None:
+    """Generate the single-panel 2025 MEU website figure."""
+    run_ea_meu_h3_2025_website_plot(
+        depends_on=depends_on,
+        produces=produces,
+    )
 
 
 for _year in _PLOT_YEARS:
